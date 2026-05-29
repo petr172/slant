@@ -1,0 +1,48 @@
+---
+// AnimationInit.astro
+// Inicializuje Lenis (smooth scroll) + GSAP ScrollTrigger.
+// Zahrnutý v Layout.astro — spouští se automaticky na každé stránce.
+---
+<script>
+  import { gsap } from 'gsap'
+  import { ScrollTrigger } from 'gsap/ScrollTrigger'
+  import { SplitText } from 'gsap/SplitText'
+  import Lenis from 'lenis'
+
+  // Zaregistruj GSAP pluginy (všechny jsou od 4/2025 zdarma)
+  gsap.registerPlugin(ScrollTrigger, SplitText)
+
+  // ─── Lenis smooth scroll ────────────────────────────────────────────────
+  const lenis = new Lenis({
+    duration: 1.2,
+    easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true,
+  })
+
+  // Propoj Lenis s GSAP ScrollTrigger
+  lenis.on('scroll', ScrollTrigger.update)
+  gsap.ticker.add((time: number) => { lenis.raf(time * 1000) })
+  gsap.ticker.lagSmoothing(0)
+
+  // Zpřístupni globally pro ostatní skripty na stránce
+  ;(window as any).__lenis = lenis
+  ;(window as any).__gsap = gsap
+  ;(window as any).__ScrollTrigger = ScrollTrigger
+  ;(window as any).__SplitText = SplitText
+
+  // ─── Základní page-in animace ────────────────────────────────────────────
+  // Elementy s [data-fade] se při načtení stránky vyjeví zdola
+  document.addEventListener('DOMContentLoaded', () => {
+    const fadeEls = document.querySelectorAll('[data-fade]')
+    if (fadeEls.length) {
+      gsap.from(fadeEls, {
+        y: 40,
+        opacity: 0,
+        duration: 0.9,
+        stagger: 0.08,
+        ease: 'power3.out',
+        clearProps: 'all',
+      })
+    }
+  })
+</script>

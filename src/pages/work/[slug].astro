@@ -1,0 +1,355 @@
+---
+// src/pages/work/[slug].astro — Detailní stránka case study
+import Layout from '../../layouts/Layout.astro'
+import PortableText from '../../components/PortableText.astro'
+import { client } from '../../lib/sanity'
+import { urlFor } from '../../lib/imageUrl'
+import { ALL_SLUGS_QUERY, CASE_STUDY_BY_SLUG_QUERY } from '../../lib/queries'
+
+export async function getStaticPaths() {
+  const slugs = await client.fetch<{ slug: string }[]>(ALL_SLUGS_QUERY)
+  return slugs
+    .filter(item => !!item.slug)
+    .map(item => ({ params: { slug: item.slug } }))
+}
+
+const { slug } = Astro.params
+const cs = await client.fetch(CASE_STUDY_BY_SLUG_QUERY, { slug })
+
+// OG image pro social sharing
+const ogImageUrl = cs?.coverImage
+  ? urlFor(cs.coverImage).width(1200).height(630).fit('crop').format('webp').url()
+  : undefined
+---
+
+<Layout
+  title={cs?.title ?? '404'}
+  description={cs?.seoDescription ?? cs?.tagline}
+  ogImage={ogImageUrl}
+>
+  {!cs ? (
+    <!-- Záložní stav — normálně nenastane, slug vychází z getStaticPaths -->
+    <div class="container" style="padding-block: var(--sp-3xl); color: var(--clr-muted)">
+      Projekt nebyl nalezen.
+    </div>
+  ) : (
+    <article class="cs">
+
+      <!-- ─── Hero ────────────────────────────────────────────────────── -->
+      <header class="cs-hero container">
+        <div class="cs-hero__meta text-micro" data-fade>
+          <a href="/work" style="opacity:0.5">← Work</a>
+        </div>
+
+        <h1 class="cs-hero__title text-display" data-fade>{cs.title}</h1>
+
+        {cs.tagline && (
+          <p class="cs-hero__tagline" data-fade>{cs.tagline}</p>
+        )}
+
+        <!-- Tagy: služby -->
+        {cs.services?.length > 0 && (
+          <ul class="cs-hero__tags" data-fade>
+            {cs.services.map((s: string) => (
+              <li class="cs-hero__tag">{s}</li>
+            ))}
+          </ul>
+        )}
+
+        <!-- Metadata -->
+        <dl class="cs-hero__info" data-fade>
+          {cs.client && (
+            <>
+              <dt>Klient</dt>
+              <dd>{cs.client}</dd>
+            </>
+          )}
+          {cs.year && (
+            <>
+              <dt>Rok</dt>
+              <dd>{cs.year}</dd>
+            </>
+          )}
+          {cs.industry && (
+            <>
+              <dt>Odvětví</dt>
+              <dd>{cs.industry}</dd>
+            </>
+          )}
+          {cs.liveUrl && (
+            <>
+              <dt>Live</dt>
+              <dd>
+                <a href={cs.liveUrl} target="_blank" rel="noopener" class="cs-hero__live">
+                  Zobrazit web ↗
+                </a>
+              </dd>
+            </>
+          )}
+        </dl>
+      </header>
+
+      <!-- ─── Hero media (video nebo cover image) ──────────────────────── -->
+      <div class="cs-media" data-fade>
+        {cs.heroVideo ? (
+          <video
+            src={cs.heroVideo}
+            autoplay
+            loop
+            muted
+            playsinline
+            class="cs-media__video"
+          />
+        ) : cs.coverImage ? (
+          <img
+            src={urlFor(cs.coverImage).width(1800).format('webp').quality(90).url()}
+            alt={cs.coverImage.alt ?? cs.title}
+            class="cs-media__image"
+            width="1800"
+            height="1012"
+            loading="eager"
+          />
+        ) : null}
+      </div>
+
+      <!-- ─── Obsah — sekce ─────────────────────────────────────────────── -->
+      {cs.sections?.length > 0 && (
+        <div class="cs-sections container">
+          {cs.sections.map((section: any) => (
+            <section class="cs-section">
+
+              <!-- Nadpis sekce -->
+              {section.heading && (
+                <h2 class="cs-section__heading" data-fade>{section.heading}</h2>
+              )}
+
+              <!-- Text -->
+              {section.body?.length > 0 && (
+                <div class="cs-section__body" data-fade>
+                  <PortableText blocks={section.body} />
+                </div>
+              )}
+
+              <!-- Obrázky — layout se mění dle počtu -->
+              {section.images?.length > 0 && (
+                <div
+                  class="cs-section__images"
+                  data-count={section.images.length}
+                  data-fade
+                >
+                  {section.images.map((img: any) => (
+                    <figure class="cs-section__figure">
+                      <img
+                        src={urlFor(img)
+                          .width(section.images.length === 1 ? 1800 : 1000)
+                          .format('webp')
+                          .quality(88)
+                          .url()}
+                        alt={img.alt ?? ''}
+                        loading="lazy"
+                        width={section.images.length === 1 ? 1800 : 1000}
+                        height={section.images.length === 1 ? 1013 : 667}
+                      />
+                      {img.caption && (
+                        <figcaption class="cs-section__caption text-small">
+                          {img.caption}
+                        </figcaption>
+                      )}
+                    </figure>
+                  ))}
+                </div>
+              )}
+
+            </section>
+          ))}
+        </div>
+      )}
+
+      <!-- ─── Credits ────────────────────────────────────────────────────── -->
+      {cs.credits && (
+        <footer class="cs-credits container" data-fade>
+          <p class="text-small" style="color: var(--clr-muted)">{cs.credits}</p>
+        </footer>
+      )}
+
+    </article>
+  )}
+</Layout>
+
+<style>
+/* ─── Hero ──────────────────────────────────────────────────────────────── */
+.cs-hero {
+  padding-block: var(--sp-2xl);
+}
+
+.cs-hero__meta {
+  margin-bottom: var(--sp-lg);
+}
+
+.cs-hero__title {
+  max-width: 14ch;
+  margin-bottom: var(--sp-md);
+}
+
+.cs-hero__tagline {
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  color: var(--clr-muted);
+  max-width: 40ch;
+  line-height: 1.4;
+  margin-bottom: var(--sp-lg);
+}
+
+.cs-hero__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+  list-style: none;
+  margin-bottom: var(--sp-lg);
+}
+
+.cs-hero__tag {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.3em 0.75em;
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  color: var(--clr-muted);
+}
+
+.cs-hero__info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1.5rem;
+  font-size: 0.875rem;
+  max-width: 28rem;
+}
+
+.cs-hero__info dt {
+  color: var(--clr-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-top: 0.1em;
+}
+
+.cs-hero__live {
+  opacity: 0.7;
+  border-bottom: 1px solid currentColor;
+  transition: opacity 0.2s;
+}
+.cs-hero__live:hover { opacity: 1; }
+
+/* ─── Hero media ────────────────────────────────────────────────────────── */
+.cs-media {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--clr-surface);
+}
+
+.cs-media__video,
+.cs-media__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ─── Sekce obsahu ──────────────────────────────────────────────────────── */
+.cs-sections {
+  padding-block: var(--sp-3xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3xl);
+}
+
+.cs-section {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--sp-lg) var(--sp-xl);
+  padding-top: var(--sp-xl);
+  border-top: 1px solid var(--clr-border);
+}
+
+@media (max-width: 56em) {
+  .cs-section {
+    grid-template-columns: 1fr;
+    gap: var(--sp-md);
+  }
+}
+
+.cs-section__heading {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  font-weight: 400;
+  padding-top: 0.2em;
+  /* Zůstává v levém sloupci */
+}
+
+.cs-section__body {
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.7;
+  color: var(--clr-text);
+}
+
+/* Pokud není nadpis, body se roztáhne přes oba sloupce */
+.cs-section__body:first-child {
+  grid-column: 1 / -1;
+}
+
+/* Obrázky — přes oba sloupce vždy */
+.cs-section__images {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--sp-sm);
+}
+
+/* Layout dle počtu obrázků */
+.cs-section__images[data-count="1"] {
+  grid-template-columns: 1fr;
+}
+.cs-section__images[data-count="2"] {
+  grid-template-columns: 1fr 1fr;
+}
+.cs-section__images[data-count="3"] {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.cs-section__images[data-count="4"] {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 48em) {
+  .cs-section__images[data-count="2"],
+  .cs-section__images[data-count="3"],
+  .cs-section__images[data-count="4"] {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cs-section__figure {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--clr-surface);
+}
+
+.cs-section__figure img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  display: block;
+}
+
+.cs-section__caption {
+  padding: var(--sp-xs) var(--sp-sm);
+  color: var(--clr-muted);
+}
+
+/* ─── Credits ───────────────────────────────────────────────────────────── */
+.cs-credits {
+  padding-block: var(--sp-xl);
+  border-top: 1px solid var(--clr-border);
+}
+</style>

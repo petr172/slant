@@ -1,0 +1,126 @@
+---
+// src/pages/index.astro — Homepage
+import Layout from '../layouts/Layout.astro'
+import CaseStudyCard from '../components/CaseStudyCard.astro'
+import { client } from '../lib/sanity'
+import { FEATURED_CASE_STUDIES_QUERY } from '../lib/queries'
+
+const featured = await client.fetch(FEATURED_CASE_STUDIES_QUERY)
+---
+
+<Layout title="Slant">
+
+  <!-- ─── Hero ──────────────────────────────────────────────────────────── -->
+  <section class="hero container">
+    <!--
+      DESIGN TADY — toto je tvoje hlavní „wow" místo.
+      Přidej sem GSAP SplitText animaci na nadpis, SVG, video smyčku…
+    -->
+    <h1 class="hero__headline text-display" data-fade>
+      Branding & UX<br />Studio
+    </h1>
+    <p class="hero__sub text-body" data-fade>
+      Vytváříme identity, které si lidi pamatují.
+    </p>
+  </section>
+
+  <!-- ─── Featured work ─────────────────────────────────────────────────── -->
+  {featured?.length > 0 && (
+    <section class="work-grid container">
+      <div class="work-grid__header" data-fade>
+        <span class="text-micro" style="color: var(--clr-muted)">Selected Work</span>
+        <a href="/work" class="work-grid__all text-small">Zobrazit vše →</a>
+      </div>
+      <div class="work-grid__items">
+        {featured.map((cs: any) => (
+          <CaseStudyCard
+            title={cs.title}
+            slug={cs.slug}
+            tagline={cs.tagline}
+            year={cs.year}
+            services={cs.services}
+            coverImage={cs.coverImage}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- ─── Contact CTA ───────────────────────────────────────────────────── -->
+  <section class="cta container" id="contact" data-fade>
+    <h2 class="cta__headline text-hero">Pojďme spolupracovat</h2>
+    <a href="mailto:ahoj@slant.cz" class="cta__email">ahoj@slant.cz</a>
+  </section>
+
+</Layout>
+
+<style>
+/* ─── Hero ──────────────────────────────────────────────────────────────── */
+.hero {
+  min-height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-block: var(--sp-3xl) var(--sp-2xl);
+}
+
+.hero__headline {
+  max-width: 14ch;
+  margin-bottom: var(--sp-md);
+}
+
+.hero__sub {
+  color: var(--clr-muted);
+  max-width: 40ch;
+}
+
+/* ─── Work grid ─────────────────────────────────────────────────────────── */
+.work-grid {
+  margin-top: var(--sp-3xl);
+}
+
+.work-grid__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-lg);
+  padding-bottom: var(--sp-sm);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.work-grid__all {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.work-grid__all:hover { opacity: 1; }
+
+.work-grid__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 28rem), 1fr));
+  gap: var(--sp-xl) var(--sp-lg);
+}
+
+/* ─── CTA ───────────────────────────────────────────────────────────────── */
+.cta {
+  margin-top: var(--sp-3xl);
+  padding-block: var(--sp-3xl);
+  border-top: 1px solid var(--clr-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-lg);
+}
+
+.cta__headline { max-width: 14ch; }
+
+.cta__email {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  letter-spacing: -0.02em;
+  border-bottom: 1px solid currentColor;
+  display: inline-block;
+  padding-bottom: 0.1em;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.cta__email:hover { opacity: 1; }
+</style>

@@ -1,0 +1,57 @@
+---
+// PortableText.astro
+// Jednoduchý renderer pro Sanity blokový obsah.
+// Podporuje: odstavce, h3, tučné, kurzíva, odkazy.
+
+type MarkDef = { _key: string; _type: string; href?: string }
+type BlockChild = { _key: string; _type: string; text: string; marks: string[] }
+type Block = {
+  _key: string
+  _type: string
+  style?: string
+  children?: BlockChild[]
+  markDefs?: MarkDef[]
+}
+
+interface Props {
+  blocks: Block[]
+  class?: string
+}
+
+const { blocks = [], class: cls } = Astro.props
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function renderChild(child: BlockChild, markDefs: MarkDef[] = []): string {
+  let text = escapeHtml(child.text)
+  for (const mark of child.marks) {
+    if (mark === 'strong') { text = `<strong>${text}</strong>`; continue }
+    if (mark === 'em')     { text = `<em>${text}</em>`; continue }
+    const def = markDefs.find(d => d._key === mark)
+    if (def?._type === 'link' && def.href) {
+      text = `<a href="${def.href}" target="_blank" rel="noopener noreferrer">${text}</a>`
+    }
+  }
+  return text
+}
+
+function renderBlock(block: Block): string {
+  if (block._type !== 'block') return ''
+  const inner = (block.children ?? []).map(c => renderChild(c, block.markDefs)).join('')
+  if (!inner.trim()) return ''
+  switch (block.style) {
+    case 'h3': return `<h3>${inner}</h3>`
+    case 'h4': return `<h4>${inner}</h4>`
+    default:   return `<p>${inner}</p>`
+  }
+}
+
+const html = (blocks ?? []).map(renderBlock).join('\n')
+---
+<div class:list={['portable-text', cls]} set:html={html} />
