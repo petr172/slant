@@ -1,6 +1,7 @@
 ---
 import AnimationInit from '../components/AnimationInit.astro'
 import Analytics from '../components/Analytics.astro'
+import FloatBadge from '../components/FloatBadge.astro'
 import '../styles/global.css'
 import type { Lang } from '../i18n/ui'
 
@@ -385,6 +386,8 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
       })
     }
   </script>
+
+  <FloatBadge />
 </body>
 </html>
 

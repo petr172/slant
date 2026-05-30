@@ -1,0 +1,132 @@
+---
+// FloatBadge — scroll-reactive rotating badge
+// States: default → hover:contact → bottom-of-page:back-to-top
+---
+
+<div id="float-badge" class="float-badge" aria-label="Contact or back to top">
+  <!-- Default state -->
+  <div class="float-badge__img float-badge__img--default">
+    <img src="/badge-default.svg" alt="Slant badge" width="88" height="86" />
+  </div>
+  <!-- Hover: contact -->
+  <a href="mailto:ahoj@slant.cz" class="float-badge__img float-badge__img--contact" aria-label="Napište nám">
+    <img src="/badge-contact.svg" alt="Contact" width="88" height="86" />
+  </a>
+  <!-- Bottom: back to top -->
+  <button class="float-badge__img float-badge__img--backtop" aria-label="Zpět nahoru">
+    <img src="/badge-back-top.svg" alt="Back to top" width="88" height="86" />
+  </button>
+</div>
+
+<script>
+  const badge    = document.getElementById('float-badge')!
+  const BOTTOM_THRESHOLD = 120
+
+  // ── Scroll-driven rotation (default state only) ──────────────────────────
+  let lastY          = window.scrollY
+  let rotation       = 0
+  let rafId          = 0
+  let isHovered      = false
+  let scrollingToTop = false
+
+  badge.addEventListener('mouseenter', () => { isHovered = true  })
+  badge.addEventListener('mouseleave', () => { isHovered = false })
+
+  function onScroll() {
+    const currentY  = window.scrollY
+    const delta     = currentY - lastY
+    lastY = currentY
+
+    // Back-to-top state
+    const nearBottom =
+      window.innerHeight + currentY >= document.documentElement.scrollHeight - BOTTOM_THRESHOLD
+    badge.classList.toggle('is-bottom', nearBottom)
+
+    // Clear scrollingToTop once near top
+    if (scrollingToTop && currentY < 50) {
+      scrollingToTop = false
+      badge.classList.remove('is-scrolling-to-top')
+    }
+
+    // Rotate only in default state (not bottom, not hovered, not scrolling-to-top)
+    if (!nearBottom && !isHovered && !scrollingToTop) {
+      rotation -= delta * 0.3
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        badge.style.setProperty('--badge-rot', `${rotation}deg`)
+      })
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true })
+
+  // ── Back to top click ────────────────────────────────────────────────────
+  badge.querySelector('.float-badge__img--backtop')?.addEventListener('click', () => {
+    scrollingToTop = true
+    badge.classList.add('is-scrolling-to-top')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+</script>
+
+<style>
+.float-badge {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 90;
+  width: 88px;
+  height: 86px;
+  cursor: pointer;
+
+  /* Rotation driven by JS custom property */
+  --badge-rot: 0deg;
+}
+
+/* All layers stacked, transition between them via opacity */
+.float-badge__img {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Rotate only the default badge */
+.float-badge__img--default img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(var(--badge-rot, 0deg));
+  will-change: transform;
+}
+
+.float-badge__img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Default state: show default, hide others */
+.float-badge:not(.is-bottom) .float-badge__img--default { opacity: 1; }
+.float-badge:not(.is-bottom):not(.is-scrolling-to-top):hover .float-badge__img--default { opacity: 0; }
+.float-badge:not(.is-bottom):not(.is-scrolling-to-top):hover .float-badge__img--contact { opacity: 1; }
+
+/* Bottom state: show back-to-top */
+.float-badge.is-bottom .float-badge__img--backtop { opacity: 1; }
+
+/* Mobile: smaller, safe area aware */
+@media (max-width: 48em) {
+  .float-badge {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    right: 1rem;
+    width: 72px;
+    height: 70px;
+  }
+}
+</style>
