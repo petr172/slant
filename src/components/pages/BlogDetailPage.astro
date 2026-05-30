@@ -1,0 +1,441 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import SanityImage from '../SanityImage.astro'
+import PortableText from '../PortableText.astro'
+import { urlFor } from '../../lib/imageUrl'
+import { useTranslations, type Lang } from '../../i18n/ui'
+
+interface Props {
+  lang: Lang
+  slug: string
+  post: any
+  allNav: any[]
+}
+
+const { lang, slug, post, allNav = [] } = Astro.props
+const t = useTranslations(lang)
+
+const blogUrl = lang === 'cs' ? '/blog' : '/en/blog'
+const alternateUrl = lang === 'cs' ? `/en/blog/${slug}` : `/blog/${slug}`
+
+// Prev / next
+const navIdx = allNav.findIndex((p: any) => p.slug === slug)
+const prevPost = navIdx > 0 ? allNav[navIdx - 1] : null
+const nextPost = navIdx < allNav.length - 1 ? allNav[navIdx + 1] : null
+
+function navTitle(p: any) {
+  return lang === 'en' ? (p.titleEn || p.title) : p.title
+}
+
+const title = lang === 'en' ? (post?.titleEn || post?.title) : post?.title
+const description = lang === 'en' ? (post?.descriptionEn || post?.description) : post?.description
+const body = lang === 'en' && post?.bodyEn?.length ? post.bodyEn : post?.body
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString(
+    lang === 'cs' ? 'cs-CZ' : 'en-GB',
+    { day: 'numeric', month: 'long', year: 'numeric' }
+  )
+}
+
+// ─── SEO / AEO ──────────────────────────────────────────────────────────────
+const canonical = new URL(Astro.url.pathname, Astro.site).toString()
+const ogImage = post?.coverImage
+  ? urlFor(post.coverImage).width(1200).height(630).fit('crop').format('jpg').url()
+  : undefined
+
+const articleLd = post ? {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description,
+  ...(ogImage ? { image: ogImage } : {}),
+  ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+  inLanguage: lang === 'cs' ? 'cs-CZ' : 'en-US',
+  mainEntityOfPage: canonical,
+  author: { '@type': 'Organization', name: 'Slant s.r.o.', url: 'https://slant.cz' },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Slant s.r.o.',
+    logo: { '@type': 'ImageObject', url: 'https://slant.cz/logo.svg' },
+  },
+} : null
+
+const breadcrumbLd = post ? {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Blog', item: new URL(blogUrl, Astro.site).toString() },
+    { '@type': 'ListItem', position: 2, name: title, item: canonical },
+  ],
+} : null
+---
+
+<Layout
+  title={title ?? 'Blog'}
+  description={description}
+  ogImage={ogImage}
+  {lang}
+  {alternateUrl}
+  extraLd={[articleLd, breadcrumbLd].filter(Boolean) as object[]}
+>
+  {!post ? (
+    <div class="container" style="padding-block: var(--sp-3xl); color: var(--clr-muted)">
+      {lang === 'cs' ? 'Článek nenalezen.' : 'Post not found.'}
+    </div>
+  ) : (
+    <article class="blog-detail">
+
+      <!-- Header -->
+      <header class="blog-detail__header container">
+        <a href={blogUrl} class="back-link">
+          ← {lang === 'cs' ? 'Blog' : 'Blog'}
+        </a>
+
+        <div class="blog-detail__meta" data-fade>
+          {post.category && <span class="chip">{post.category}</span>}
+          {post.publishedAt && (
+            <time datetime={post.publishedAt} class="blog-detail__date">
+              {formatDate(post.publishedAt)}
+            </time>
+          )}
+        </div>
+
+        <h1 class="blog-detail__title" data-fade>{title}</h1>
+
+        {description && (
+          <p class="blog-detail__desc" data-fade>{description}</p>
+        )}
+
+        <hr class="blog-detail__divider" data-fade />
+      </header>
+
+      <!-- Cover image -->
+      {post.coverImage && (
+        <div class="blog-detail__cover" data-fade>
+          <SanityImage
+            image={post.coverImage}
+            alt={post.coverImage.alt ?? title}
+            width={1800}
+            height={1012}
+            widths={[800, 1200, 1800]}
+            sizes="100vw"
+            class="blog-detail__cover-img"
+          />
+        </div>
+      )}
+
+      <!-- Body -->
+      {body?.length > 0 && (
+        <div class="blog-body container" data-fade>
+          <PortableText blocks={body} />
+        </div>
+      )}
+
+      <!-- Prev / next nav -->
+      <nav class="cs-nav container" aria-label={lang === 'cs' ? 'Další články' : 'More articles'}>
+
+        {prevPost ? (
+          <a href={`${blogUrl}/${prevPost.slug}`} class="cs-nav__item cs-nav__item--prev">
+            {prevPost.coverImage && (
+              <div class="cs-nav__thumb">
+                <SanityImage
+                  image={prevPost.coverImage}
+                  alt={navTitle(prevPost)}
+                  width={320}
+                  height={200}
+                  widths={[320]}
+                  sizes="160px"
+                  class="cs-nav__thumb-img"
+                />
+              </div>
+            )}
+            <div class="cs-nav__text">
+              <span class="cs-nav__label">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M16 10H4M8 14l-4-4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {lang === 'cs' ? 'Předchozí článek' : 'Previous article'}
+              </span>
+              <span class="cs-nav__title">{navTitle(prevPost)}</span>
+            </div>
+          </a>
+        ) : <span />}
+
+        <a href={blogUrl} class="cs-nav__grid" aria-label={lang === 'cs' ? 'Všechny články' : 'All articles'}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="2" width="6" height="6" rx="1" fill="currentColor"/>
+            <rect x="12" y="2" width="6" height="6" rx="1" fill="currentColor"/>
+            <rect x="2" y="12" width="6" height="6" rx="1" fill="currentColor"/>
+            <rect x="12" y="12" width="6" height="6" rx="1" fill="currentColor"/>
+          </svg>
+        </a>
+
+        {nextPost ? (
+          <a href={`${blogUrl}/${nextPost.slug}`} class="cs-nav__item cs-nav__item--next">
+            <div class="cs-nav__text cs-nav__text--right">
+              <span class="cs-nav__label">
+                {lang === 'cs' ? 'Další článek' : 'Next article'}
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="cs-nav__title">{navTitle(nextPost)}</span>
+            </div>
+            {nextPost.coverImage && (
+              <div class="cs-nav__thumb">
+                <SanityImage
+                  image={nextPost.coverImage}
+                  alt={navTitle(nextPost)}
+                  width={320}
+                  height={200}
+                  widths={[320]}
+                  sizes="160px"
+                  class="cs-nav__thumb-img"
+                />
+              </div>
+            )}
+          </a>
+        ) : <span />}
+
+      </nav>
+    </article>
+  )}
+</Layout>
+
+<style>
+/* Header */
+.blog-detail__header {
+  padding-block: var(--sp-2xl) var(--sp-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+.back-link {
+  font-size: 0.8rem;
+  color: var(--clr-muted);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--clr-text); }
+
+.blog-detail__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+.blog-detail__date {
+  font-size: 0.75rem;
+  color: var(--clr-muted);
+  letter-spacing: 0.06em;
+}
+
+/* Chip */
+.chip {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+
+.blog-detail__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.0;
+  max-width: 18ch;
+  color: var(--clr-text);
+  margin: 0;
+}
+
+.blog-detail__desc {
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  color: var(--clr-muted);
+  max-width: 55ch;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.blog-detail__divider {
+  border: none;
+  border-top: 1px solid var(--clr-border);
+  margin: 0;
+}
+
+/* Cover image */
+.blog-detail__cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--clr-surface);
+}
+.blog-detail__cover :global(picture),
+.blog-detail__cover :global(.blog-detail__cover-img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.blog-detail__cover :global(picture img),
+.blog-detail__cover :global(.blog-detail__cover-img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Body */
+.blog-body {
+  max-width: 65ch;
+  margin-inline: auto;
+  padding-block: var(--sp-2xl);
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.8;
+  color: var(--clr-text);
+}
+
+/* ── Prev/next nav (identical structure to WorkDetailPage) ─────────── */
+.cs-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--sp-lg);
+  padding-block: var(--sp-2xl);
+  border-top: 1px solid var(--clr-border);
+  margin-top: var(--sp-xl);
+}
+
+.cs-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s, opacity 0.2s;
+}
+.cs-nav__item:hover { background: var(--clr-surface); }
+.cs-nav__item--next { justify-content: flex-end; }
+
+.cs-nav__thumb {
+  flex-shrink: 0;
+  width: clamp(64px, 8vw, 100px);
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--clr-surface);
+}
+.cs-nav__thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.cs-nav__item:hover .cs-nav__thumb-img { transform: scale(1.06); }
+
+.cs-nav__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.cs-nav__text--right { align-items: flex-end; }
+
+.cs-nav__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--clr-accent);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.cs-nav__title {
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 1.8vw, 1.35rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--clr-text);
+  line-height: 1.15;
+}
+
+.cs-nav__grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--clr-border);
+  color: var(--clr-muted);
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.cs-nav__grid:hover {
+  color: var(--clr-text);
+  border-color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
+}
+
+@media (max-width: 48em) {
+  .cs-nav {
+    grid-template-columns: 1fr;
+    gap: var(--sp-sm);
+  }
+  .cs-nav__grid       { order: -1; margin: 0 auto var(--sp-xs); }
+  .cs-nav__item--prev { order: 0; }
+  .cs-nav__item--next { order: 1; }
+
+  .cs-nav__item {
+    background: var(--clr-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-md);
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--sp-sm);
+    width: 100%;
+  }
+  .cs-nav__item:hover { background: var(--clr-surface); }
+  .cs-nav__item--prev { flex-direction: row; }
+  .cs-nav__item--next { flex-direction: row-reverse; }
+  .cs-nav__text--right { align-items: flex-end; }
+
+  .cs-nav__thumb { width: 64px; flex-shrink: 0; }
+  .cs-nav__title { font-size: 0.9rem; }
+  .cs-nav__label { font-size: 0.65rem; }
+}
+</style>
+
+<script>
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
+
+const fades = document.querySelectorAll('[data-fade]')
+fades.forEach((el) => {
+  gsap.from(el, {
+    y: 24,
+    opacity: 0,
+    duration: 0.75,
+    ease: 'power3.out',
+    scrollTrigger: {
+      trigger: el,
+      start: 'top 88%',
+    },
+  })
+})
+</script>

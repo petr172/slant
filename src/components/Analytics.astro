@@ -1,18 +1,131 @@
 ---
-// Google Analytics 4
-// Nastav GA_MEASUREMENT_ID v .env souboru
+// Google Analytics 4 — načítá se AŽ po souhlasu (GDPR / ePrivacy)
+// Nastav PUBLIC_GA_MEASUREMENT_ID v .env souboru
 const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID
+const lang = Astro.currentLocale === 'en' ? 'en' : 'cs'
+
+const t = {
+  cs: {
+    text: 'Používáme cookies k anonymnímu měření návštěvnosti. Souhlasíte?',
+    accept: 'Přijmout',
+    decline: 'Odmítnout',
+  },
+  en: {
+    text: 'We use cookies for anonymous analytics. Is that okay?',
+    accept: 'Accept',
+    decline: 'Decline',
+  },
+}[lang]
 ---
 
 {GA_ID && (
   <>
-    <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
+    <div id="cookie-banner" class="cookie-banner" role="dialog" aria-live="polite" aria-label="Cookies" hidden>
+      <p class="cookie-banner__text">{t.text}</p>
+      <div class="cookie-banner__actions">
+        <button id="cookie-decline" class="cookie-banner__btn cookie-banner__btn--ghost">{t.decline}</button>
+        <button id="cookie-accept" class="cookie-banner__btn cookie-banner__btn--primary">{t.accept}</button>
+      </div>
+    </div>
+
     <script define:vars={{ GA_ID }}>
-      window.dataLayer = window.dataLayer || []
-      function gtag() { dataLayer.push(arguments) }
-      gtag('js', new Date())
-      gtag('config', GA_ID, { anonymize_ip: true })
-      window.__gtag = gtag
+      ;(function () {
+        const KEY = 'slant-consent'
+
+        function loadGA() {
+          if (window.__gaLoaded) return
+          window.__gaLoaded = true
+          const s = document.createElement('script')
+          s.async = true
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID
+          document.head.appendChild(s)
+          window.dataLayer = window.dataLayer || []
+          function gtag() { dataLayer.push(arguments) }
+          gtag('js', new Date())
+          gtag('config', GA_ID, { anonymize_ip: true })
+          window.__gtag = gtag
+        }
+
+        const stored = localStorage.getItem(KEY)
+        if (stored === 'granted') {
+          loadGA()
+        } else if (stored !== 'denied') {
+          // Zatím bez rozhodnutí → zobraz lištu
+          const banner = document.getElementById('cookie-banner')
+          banner?.removeAttribute('hidden')
+          requestAnimationFrame(() => banner?.classList.add('is-visible'))
+
+          document.getElementById('cookie-accept')?.addEventListener('click', () => {
+            localStorage.setItem(KEY, 'granted')
+            banner?.classList.remove('is-visible')
+            setTimeout(() => banner?.setAttribute('hidden', ''), 300)
+            loadGA()
+          })
+          document.getElementById('cookie-decline')?.addEventListener('click', () => {
+            localStorage.setItem(KEY, 'denied')
+            banner?.classList.remove('is-visible')
+            setTimeout(() => banner?.setAttribute('hidden', ''), 300)
+          })
+        }
+      })()
     </script>
+
+    <style>
+      .cookie-banner {
+        position: fixed;
+        z-index: 600;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        max-width: 30rem;
+        margin-inline: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        padding: 1.1rem 1.25rem;
+        background: color-mix(in srgb, var(--clr-bg) 92%, transparent);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--clr-border);
+        border-radius: 1rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+      .cookie-banner.is-visible { opacity: 1; transform: translateY(0); }
+
+      .cookie-banner__text {
+        margin: 0;
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        color: var(--clr-text);
+      }
+      .cookie-banner__actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+      .cookie-banner__btn {
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        transition: opacity 0.2s, background 0.2s, color 0.2s;
+      }
+      .cookie-banner__btn--primary { background: var(--clr-accent); color: #fff; }
+      .cookie-banner__btn--primary:hover { opacity: 0.85; }
+      .cookie-banner__btn--ghost { color: var(--clr-muted); }
+      .cookie-banner__btn--ghost:hover { color: var(--clr-text); }
+
+      /* Na mobilu nad spodním island-navem */
+      @media (max-width: 48em) {
+        .cookie-banner { bottom: calc(5rem + env(safe-area-inset-bottom)); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cookie-banner { transition: none; }
+      }
+    </style>
   </>
 )}

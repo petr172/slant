@@ -17,6 +17,41 @@ const heroMedia: any[] = siteSettings?.heroMedia ?? []
 
 const workUrl      = lang === 'cs' ? '/work'  : '/en/work'
 const alternateUrl = lang === 'cs' ? '/en'    : '/'
+
+const projects = allProjects.map((cs: any, i: number) => ({
+  ...cs,
+  title:    lang === 'en' ? (cs.titleEn   || cs.title)   : cs.title,
+  tagline:  lang === 'en' ? (cs.taglineEn || cs.tagline) : cs.tagline,
+  href:     `${workUrl}/${cs.slug}`,
+  isLarge:  i === 0 || i === 3,
+}))
+
+// ─── FAQ — jeden zdroj pravdy pro render i JSON-LD ──────────────────────────
+const faqItems = lang === 'cs' ? [
+  { q: 'Kolik stojí spolupráce?', a: 'Každý projekt je jiný, takže cenu vždy stanovujeme na míru. Orientačně se branding pohybuje od 80 000 Kč, webdesign od 50 000 Kč. Na prvním setkání projdeme rozsah a dostanete konkrétní nabídku.' },
+  { q: 'Jak dlouho trvá projekt?', a: 'Brandingový projekt typicky trvá 6–10 týdnů, webdesign 4–8 týdnů. Záleží na rozsahu a rychlosti zpětné vazby z vaší strany. Termíny vždy nastavíme dopředu a dodržíme je.' },
+  { q: 'Pracujete i s menšími firmami nebo startupy?', a: 'Ano. Pracujeme s firmami v různých fázích — od startupů, které budují brand od nuly, až po zavedené společnosti, které chtějí rebranding. Důležitý je projekt a vzájemná chemie, ne velikost firmy.' },
+  { q: 'Jak probíhá spolupráce krok po kroku?', a: 'Začínáme úvodní schůzkou, kde pochopíme váš byznys a cíle. Následuje discovery fáze, návrh konceptů, prezentace a iterace na základě vaší zpětné vazby. Finální výstupy předáme v dohodnutých formátech.' },
+  { q: 'Dodáváte i webové stránky, nebo jen design?', a: 'Primárně se věnujeme designu — strategii, vizuální identitě a UX/UI. U webu spolupracujeme s prověřenými vývojáři, takže zvládneme i kompletní dodávku od návrhu po spuštění.' },
+  { q: 'Co potřebujete od nás na začátku?', a: 'Stačí základní brief — co děláte, pro koho, jaké máte cíle a případně příklady vizuálů, které se vám líbí. Zbytek dobereme společně na úvodní schůzce.' },
+] : [
+  { q: 'How much does a project cost?', a: 'Every project is unique, so we always price it individually. As a rough guide, branding starts at €3 500 and web design at €2 200. We\'ll work out an exact quote after our first meeting.' },
+  { q: 'How long does a project take?', a: 'A branding project typically takes 6–10 weeks, web design 4–8 weeks. It depends on scope and how quickly you can give feedback. We always set deadlines upfront and stick to them.' },
+  { q: 'Do you work with smaller companies or startups?', a: 'Yes. We work with companies at all stages — from startups building a brand from scratch to established businesses looking for a rebrand. What matters is the project and mutual fit, not company size.' },
+  { q: 'How does the collaboration work?', a: 'We start with a kick-off meeting to understand your business and goals. Then comes a discovery phase, concept design, presentation and iteration based on your feedback. Final assets are delivered in agreed formats.' },
+  { q: 'Do you also deliver websites, or just design?', a: 'Our core is design — strategy, visual identity and UX/UI. For websites we work with trusted developers, so we can handle the full delivery from design to launch.' },
+  { q: 'What do you need from us at the start?', a: 'A basic brief is enough — what you do, who for, what your goals are and any visual references you like. We\'ll figure out the rest together at the kick-off.' },
+]
+
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map(item => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+}
 ---
 
 <Layout
@@ -24,6 +59,7 @@ const alternateUrl = lang === 'cs' ? '/en'    : '/'
   description={t('meta.home.desc')}
   {lang}
   {alternateUrl}
+  extraLd={[faqLd]}
 >
 
   <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
@@ -32,10 +68,38 @@ const alternateUrl = lang === 'cs' ? '/en'    : '/'
     <!-- Hlavní headline -->
     <div class="hero__headline-wrap container">
       <h1 class="hero__headline" id="js-headline" set:html={t('home.headline')}></h1>
+
+      <!-- Service chips — scattered stickers -->
+      <div class="hero__chips" id="js-hero-chips" aria-hidden="true">
+        {([
+          { label: lang === 'en' ? 'Branding'       : 'Branding',        tag: 'Branding',        icon: '<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>', style: 'top: 0%;  left: 30%; rotate: -3deg;',  solid: true  },
+          { label: lang === 'en' ? 'Naming'         : 'Naming',           tag: 'Naming',          icon: '<polyline points="4 7 4 4 20 4 20 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="9" y1="20" x2="15" y2="20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="4" x2="12" y2="20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',  style: 'top: 6%;  left: 62%; rotate: 4deg;',  solid: false },
+          { label: lang === 'en' ? 'Web design'     : 'Webdesign',        tag: 'Webdesign',       icon: '<rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',  style: 'top: 36%; left: 2%;  rotate: -4deg;', solid: false },
+          { label: lang === 'en' ? 'Motion design'  : 'Animace',          tag: 'Animace',         icon: '<polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>', style: 'top: 40%; left: 55%; rotate: 3deg;',  solid: true  },
+          { label: lang === 'en' ? 'Packaging'      : 'Obalový design',   tag: 'Obalový design',  icon: '<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke="currentColor" stroke-width="1.5"/>', style: 'top: 72%; left: 4%;  rotate: 5deg;',  solid: true  },
+          { label: lang === 'en' ? 'Graphic design' : 'Grafický design',  tag: 'Grafický design', icon: '<path d="M12 19l7-7 3 3-7 7-3-3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="6.5" r="1.5" fill="currentColor"/>', style: 'top: 70%; left: 48%; rotate: -3deg;', solid: false },
+        ] as const).map(chip => (
+          <a
+            href={`${workUrl}?tag=${encodeURIComponent(chip.tag)}`}
+            class={`hero__chip${chip.solid ? ' hero__chip--solid' : ''}`}
+            style={chip.style}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" set:html={chip.icon} />
+            {chip.label}
+          </a>
+        ))}
+      </div>
     </div>
 
-    <!-- Video kontejner — clip-path se rozevře při scrollu -->
-    <div class="hero__reel-wrap" id="js-reel-wrap">
+    <!-- Custom cursor -->
+  <div class="hero__cursor" id="js-hero-cursor" aria-hidden="true">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <!-- Video kontejner — clip-path se rozevře při scrollu -->
+    <a href={workUrl} class="hero__reel-wrap" id="js-reel-wrap" aria-label={lang === 'cs' ? 'Zobrazit práce' : 'View work'}>
       <div class="hero__reel" id="js-reel">
         {heroMedia.length > 0 ? heroMedia.map((slide: any, i: number) => (
           <div class={`hero__slide${i === 0 ? ' is-active' : ''}`} data-index={i} data-type={slide._type}>
@@ -63,7 +127,7 @@ const alternateUrl = lang === 'cs' ? '/en'    : '/'
         )}
         <div class="hero__reel-overlay"></div>
       </div>
-    </div>
+    </a>
 
     <!-- Spodní desc + CTA -->
     <div class="hero__bot container" id="js-hero-bot">
@@ -92,47 +156,37 @@ const alternateUrl = lang === 'cs' ? '/en'    : '/'
 
       <div class="container">
       <div class="projects__list">
-        {allProjects.map((cs: any, i: number) => {
-          const title   = lang === 'en' ? (cs.titleEn   || cs.title)   : cs.title
-          const tagline = lang === 'en' ? (cs.taglineEn || cs.tagline) : cs.tagline
-          const href    = `${lang === 'cs' ? '/work' : '/en/work'}/${cs.slug}`
-          const isLarge = i === 0 || i === 3  // 1. a 4. projekt jsou wide
-          return (
-            <div class={`project-item ${isLarge ? 'project-item--wide' : ''}`} data-index={i}>
-              <a href={href} class="project-item__link">
-                <div class="project-item__media">
-                  {cs.coverImage
-                    ? <SanityImage
-                        image={cs.coverImage}
-                        alt={cs.coverImage?.alt ?? title}
-                        width={isLarge ? 1400 : 900}
-                        height={isLarge ? 800 : 650}
-                        widths={isLarge ? [700, 1100, 1400] : [450, 700, 900]}
-                        sizes={isLarge ? '(max-width: 768px) 100vw, 70vw' : '(max-width: 768px) 100vw, 40vw'}
-                        class="project-item__img"
-                      />
-                    : <div class="project-item__placeholder" />
-                  }
-                </div>
-                <div class="project-item__info">
-                  <h2 class="project-item__title">{title}</h2>
-                  {tagline && <p class="project-item__tagline">{tagline}</p>}
-                </div>
-              </a>
-              {cs.services?.length > 0 && (
-                <div class="project-item__tags">
-                  {cs.services.slice(0, 3).map((s: string) => (
-                    <a
-                      href={`${workUrl}?tag=${encodeURIComponent(s)}`}
-                      class="project-item__tag"
-                      onclick="event.stopPropagation()"
-                    >{s}</a>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+        {projects.map((cs: any) => (
+          <div class={cs.isLarge ? "project-item project-item--wide" : "project-item"}>
+            <a href={cs.href} class="project-item__link">
+              <div class="project-item__media">
+                {cs.coverImage
+                  ? <SanityImage
+                      image={cs.coverImage}
+                      alt={cs.coverImage?.alt ?? cs.title}
+                      width={cs.isLarge ? 1400 : 900}
+                      height={cs.isLarge ? 800 : 650}
+                      widths={cs.isLarge ? [700, 1100, 1400] : [450, 700, 900]}
+                      sizes={cs.isLarge ? '(max-width: 768px) 100vw, 70vw' : '(max-width: 768px) 100vw, 40vw'}
+                      class="project-item__img"
+                    />
+                  : <div class="project-item__placeholder" />
+                }
+              </div>
+              <div class="project-item__info">
+                <h2 class="project-item__title">{cs.title}</h2>
+                {cs.tagline && <p class="project-item__tagline">{cs.tagline}</p>}
+              </div>
+            </a>
+            {cs.services?.length > 0 && (
+              <div class="project-item__tags">
+                {cs.services.slice(0, 3).map((s: string) => (
+                  <a href={`${workUrl}?tag=${encodeURIComponent(s)}`} class="project-item__tag">{s}</a>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       <div class="projects__footer">
@@ -256,18 +310,45 @@ const alternateUrl = lang === 'cs' ? '/en'    : '/'
     </section>
   )}
 
+  <!-- ─── FAQ ─────────────────────────────────────────────────────────── -->
+  <section class="faq container" id="js-faq">
+    <div class="faq__header">
+      <span class="faq__label">{lang === 'cs' ? 'Časté dotazy' : 'FAQ'}</span>
+      <h2 class="faq__title">{lang === 'cs' ? 'Co vás zajímá?' : 'Your questions, answered'}</h2>
+    </div>
+
+    <div class="faq__list" id="js-faq-list">
+      {faqItems.map((item, i) => (
+        <div class="faq__item" data-faq-item>
+          <button class="faq__question" aria-expanded="false" data-faq-btn>
+            <span class="faq__q-num">0{i + 1}</span>
+            <span class="faq__q-text">{item.q}</span>
+            <span class="faq__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M5 10h10M10 5v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </button>
+          <div class="faq__answer" data-faq-answer>
+            <p class="faq__answer-text">{item.a}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
   <!-- ─── CTA brutal ──────────────────────────────────────────────────── -->
   <section class="cta-brutal" id="contact">
     <div class="container">
       <div class="cta-brutal__card" id="js-cta-blob">
-        <!-- Shape: 6 tilted pills ordered left→right for stagger -->
-        <svg class="cta-brutal__svg" viewBox="0 0 1410 471" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-          <rect class="cta-pill" width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 187.624 0)" fill="var(--clr-accent)"/>
-          <rect class="cta-pill" width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 394.817 0)" fill="var(--clr-accent)"/>
-          <rect class="cta-pill" width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 602.011 0)" fill="var(--clr-accent)"/>
-          <rect class="cta-pill" width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 809.205 0)" fill="var(--clr-accent)"/>
-          <rect class="cta-pill" width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1016.4 0)" fill="var(--clr-accent)"/>
-          <rect class="cta-pill" width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1223.59 0)" fill="var(--clr-accent)"/>
+        <!-- Shape: desktop only, 6 tilted pills -->
+        <svg class="cta-brutal__svg js-cta-svg" viewBox="0 0 1410 471" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+          <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 187.624 0)" fill="var(--clr-accent)"/></g>
+          <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 394.817 0)" fill="var(--clr-accent)"/></g>
+          <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 602.011 0)" fill="var(--clr-accent)"/></g>
+          <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 809.205 0)" fill="var(--clr-accent)"/></g>
+          <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1016.4 0)" fill="var(--clr-accent)"/></g>
+          <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1223.59 0)" fill="var(--clr-accent)"/></g>
         </svg>
         <!-- Content overlay -->
         <div class="cta-brutal__content">
@@ -306,6 +387,47 @@ const alternateUrl = lang === 'cs' ? '/en'    : '/'
     })
   }
 
+  // ── Hero custom cursor ────────────────────────────────────────────────
+  const heroCursor = document.getElementById('js-hero-cursor')
+  const reelTrigger = document.getElementById('js-reel-wrap')
+  const heroSection = document.getElementById('js-hero')
+
+  if (heroCursor && reelTrigger && heroSection && !window.matchMedia('(hover: none)').matches) {
+    const moveX = gsap.quickTo(heroCursor, 'x', { duration: 0.5, ease: 'power3.out' })
+    const moveY = gsap.quickTo(heroCursor, 'y', { duration: 0.5, ease: 'power3.out' })
+
+    // Track mouse globally inside hero so cursor position stays correct
+    heroSection.addEventListener('mousemove', (e) => {
+      const rect = heroSection.getBoundingClientRect()
+      moveX(e.clientX - rect.left)
+      moveY(e.clientY - rect.top)
+    })
+
+    // Show/hide only when over the reel area
+    reelTrigger.addEventListener('mouseenter', () => {
+      gsap.to(heroCursor, { scale: 1, opacity: 1, duration: 0.3, ease: 'power2.out' })
+    })
+    reelTrigger.addEventListener('mouseleave', () => {
+      gsap.to(heroCursor, { scale: 0, opacity: 0, duration: 0.2, ease: 'power2.in' })
+    })
+  }
+
+  // ── Hero chips entrance ───────────────────────────────────────────────
+  const chips = document.querySelectorAll<HTMLElement>('.hero__chip')
+  if (chips.length) {
+    gsap.from(chips, {
+      opacity: 0,
+      scale: 0.6,
+      y: (i) => [30, -20, 25, -30, 20, -15][i] ?? 20,
+      x: (i) => [20, -15, 30, -20, 15, -25][i] ?? 15,
+      duration: 0.7,
+      ease: 'back.out(1.8)',
+      stagger: { amount: 0.5, from: 'random' },
+      delay: 1.0,
+    })
+
+  }
+
 gsap.from('#js-hero-bot', {
     y: 20, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.8,
   })
@@ -342,31 +464,26 @@ gsap.from('#js-hero-bot', {
     scheduleNext()
   }
 
-  // ── Reel clip-path scroll animace ─────────────────────────────────────
-  // Začíná jako malý zakulacený obdélník uprostřed,
-  // při scrollu se rozevírá na celou šířku
+  // ── Reel entrance + scroll expand ─────────────────────────────────────
   const reelWrap = document.getElementById('js-reel-wrap')
   const reel     = document.getElementById('js-reel')
 
   if (reelWrap && reel) {
-    // Počáteční stav — malé okno uprostřed
-    gsap.set(reel, {
-      clipPath: 'inset(8% 18% 8% 18% round 24px)',
-    })
-
-    // Intro animace — reel se vyjeví
-    gsap.to(reel, {
-      clipPath: 'inset(4% 10% 4% 10% round 16px)',
-      duration: 1.4, ease: 'power4.out', delay: 0.4,
-    })
-
     const isMobile = window.matchMedia('(max-width: 48em)').matches
 
     if (isMobile) {
-      // Mobil: statický rám, žádný pin
-      gsap.set(reel, { clipPath: 'inset(0% 0% 0% 0% round 12px)' })
+      // Mobil: jen scale entrance, žádný pin
+      gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
+      gsap.to(reelWrap, { scale: 1, duration: 1.4, ease: 'power4.out', delay: 0.4 })
     } else {
-      // Desktop: pin + clip-path scroll animace
+      // Desktop: scale entrance, pak pin + clip-path scroll expand
+      gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
+      gsap.set(reel, { clipPath: 'inset(4% 10% 4% 10% round 16px)' })
+
+      // Entrance: scale 0.9 → 1
+      gsap.to(reelWrap, { scale: 1, duration: 1.4, ease: 'power4.out', delay: 0.4 })
+
+      // Scroll: clip-path se rozevře na celou plochu
       ScrollTrigger.create({
         trigger: reelWrap,
         start: 'top top',
@@ -452,32 +569,38 @@ gsap.from('#js-hero-bot', {
   }
 
   // ── CTA brutal ────────────────────────────────────────────────────────
-  const ctaCard = document.getElementById('js-cta-blob')
-  const ctaPills = ctaCard?.querySelectorAll<SVGRectElement>('.cta-pill')
+  // Hide SVG on mobile before any animation runs
+  const isMobileCta = window.matchMedia('(max-width: 48em)').matches
+  if (isMobileCta) {
+    document.querySelector('.js-cta-svg')?.remove()
+  }
 
-  if (ctaCard && ctaPills?.length) {
-    // Scroll into view: shapes scale up 10% (0.9 → 1.0), pivot center
+  const ctaSvg  = document.querySelector<SVGSVGElement>('.cta-brutal__svg')
+  const ctaPills = ctaSvg?.querySelectorAll<SVGGElement>('.cta-pill')
+
+  if (ctaSvg && ctaPills?.length) {
+    // Scroll into view: each group scales up from 0.9 → 1 around its own centre
     gsap.from(ctaPills, {
       scale: 0.9,
       transformOrigin: '50% 50%',
-      duration: 1.1,
+      duration: 1.0,
       ease: 'expo.out',
-      stagger: { amount: 0.25, from: 'start' },
-      scrollTrigger: { trigger: ctaCard, start: 'top 88%' },
+      stagger: { amount: 0.3, from: 'start' },
+      scrollTrigger: { trigger: ctaSvg, start: 'top 88%' },
     })
 
-    // Hover: tilt +10° stagger left→right, pivot bottom edge
-    ctaCard.addEventListener('mouseenter', () => {
+    // Hover only fires when cursor is over the SVG shapes (not the white gaps)
+    ctaSvg.addEventListener('mouseenter', () => {
       gsap.to(ctaPills, {
         rotation: 10,
         transformOrigin: '50% 100%',
-        duration: 0.45,
+        duration: 0.4,
         stagger: { amount: 0.18, from: 'start' },
         ease: 'power2.out',
         overwrite: 'auto',
       })
     })
-    ctaCard.addEventListener('mouseleave', () => {
+    ctaSvg.addEventListener('mouseleave', () => {
       gsap.to(ctaPills, {
         rotation: 0,
         transformOrigin: '50% 100%',
@@ -488,15 +611,83 @@ gsap.from('#js-hero-bot', {
       })
     })
   }
+
+  // ── FAQ accordion ─────────────────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('[data-faq-item]').forEach((item) => {
+    const btn    = item.querySelector<HTMLElement>('[data-faq-btn]')!
+    const answer = item.querySelector<HTMLElement>('[data-faq-answer]')!
+    const icon   = btn.querySelector<SVGPathElement>('svg path:last-child')
+
+    // Set initial height to 0
+    gsap.set(answer, { height: 0, overflow: 'hidden' })
+
+    btn.addEventListener('click', () => {
+      const isOpen = btn.getAttribute('aria-expanded') === 'true'
+
+      // Close all others
+      document.querySelectorAll<HTMLElement>('[data-faq-item]').forEach((other) => {
+        if (other === item) return
+        const ob  = other.querySelector<HTMLElement>('[data-faq-btn]')!
+        const oa  = other.querySelector<HTMLElement>('[data-faq-answer]')!
+        ob.setAttribute('aria-expanded', 'false')
+        other.classList.remove('is-open')
+        gsap.to(oa, { height: 0, duration: 0.35, ease: 'power3.inOut' })
+      })
+
+      // Toggle current
+      if (isOpen) {
+        btn.setAttribute('aria-expanded', 'false')
+        item.classList.remove('is-open')
+        gsap.to(answer, { height: 0, duration: 0.35, ease: 'power3.inOut' })
+      } else {
+        btn.setAttribute('aria-expanded', 'true')
+        item.classList.add('is-open')
+        gsap.to(answer, { height: 'auto', duration: 0.45, ease: 'power3.inOut' })
+      }
+    })
+  })
+
+  // FAQ scroll entrance
+  gsap.from('[data-faq-item]', {
+    y: 30, opacity: 0, duration: 0.6, ease: 'power3.out',
+    stagger: 0.07,
+    scrollTrigger: { trigger: '#js-faq', start: 'top 80%' },
+  })
 </script>
 
 <style>
+/* ── Hero custom cursor ──────────────────────────────────────────────── */
+.hero__cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 100;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  will-change: transform;
+}
+
+@media (hover: none) { .hero__cursor { display: none; } }
+
 /* ── Hero ────────────────────────────────────────────────────────────── */
 .hero {
   position: relative;
   display: flex;
   flex-direction: column;
   background: var(--clr-bg);
+}
+
+@media (hover: hover) {
+  .hero__reel-wrap { cursor: none; }
 }
 
 .hero__top {
@@ -523,27 +714,89 @@ gsap.from('#js-hero-bot', {
 .hero__headline {
   font-family: var(--font-display);
   font-size: clamp(4rem, 11vw, 12rem);
-  font-weight: 400;
+  font-weight: 800;
   line-height: 0.9;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   color: var(--clr-text);
   max-width: 14ch;
 }
 
+/* ── Hero service chips ──────────────────────────────────────────────── */
+.hero__headline-wrap {
+  position: relative;
+  overflow: visible;
+}
+
+.hero__chips {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero__chip {
+  position: absolute;
+  pointer-events: all;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.45em 1em 0.45em 0.75em;
+  border-radius: 999px;
+  font-size: clamp(0.65rem, 0.9vw, 0.8rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1.5px solid var(--clr-accent);
+  color: var(--clr-accent);
+  background: transparent;
+  backdrop-filter: blur(4px);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.2s, color 0.2s;
+  will-change: transform;
+}
+
+.hero__chip--solid {
+  background: var(--clr-accent);
+  color: #fff;
+}
+
+.hero__chip:hover {
+  background: var(--clr-accent);
+  color: #fff;
+}
+
+/* On mobile: hide scattered chips, show as simple row below headline */
+@media (max-width: 48em) {
+  .hero__chips {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: var(--sp-lg);
+    pointer-events: all;
+  }
+  .hero__chip {
+    position: static;
+    rotate: none !important;
+    font-size: 0.65rem;
+  }
+}
+
 /* Reel kontejner — sticky při scrollu */
 .hero__reel-wrap {
+  display: block;
   width: 100%;
   /* Proportional scaling: 16/9 on mobile, capped at 50vh on desktop */
   aspect-ratio: 16 / 9;
   max-height: 50vh;
   position: relative;
   overflow: hidden;
+  text-decoration: none;
 }
 
 .hero__reel {
   position: absolute;
   inset: 0;
-  will-change: clip-path;
+  will-change: transform;
 }
 
 .hero__slide {
@@ -1097,7 +1350,7 @@ gsap.from('#js-hero-bot', {
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-xl);
-  padding-inline: clamp(2rem, 7vw, 5rem);
+  padding-inline: clamp(3.5rem, 10vw, 8rem);
 }
 
 .cta-brutal__text {
@@ -1135,15 +1388,35 @@ gsap.from('#js-hero-bot', {
 }
 
 @media (max-width: 48em) {
+  /* Simple pill on mobile — no complex SVG segments */
+  .cta-brutal__svg {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .cta-brutal__card {
+    background: var(--clr-accent);
+    border-radius: 999px;
+    padding-block: clamp(2.5rem, 8vw, 3.5rem);
+    min-height: unset;
+  }
+
   .cta-brutal__content {
+    position: static;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: center;
-    padding-inline: clamp(1.5rem, 6vw, 2.5rem);
-    gap: var(--sp-md);
+    gap: var(--sp-lg);
+    padding-inline: clamp(2rem, 8vw, 3rem);
   }
+
   .cta-brutal__text {
-    font-size: clamp(1rem, 5vw, 1.5rem);
+    font-size: clamp(1.2rem, 6vw, 1.8rem);
+  }
+
+  .cta-brutal__btn {
+    background: #fff;
+    color: #111;
   }
 }
 
@@ -1179,4 +1452,125 @@ gsap.from('#js-hero-bot', {
 }
 .contact__email:hover { opacity: 1; }
 .contact__email:hover::after { width: 100%; }
+
+/* ── FAQ ──────────────────────────────────────────────────────────────── */
+.faq {
+  padding-block: clamp(5rem, 10vw, 9rem);
+}
+
+.faq__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: clamp(3rem, 6vw, 5rem);
+}
+
+.faq__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--clr-accent);
+}
+
+.faq__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--clr-ink);
+  margin: 0;
+}
+
+.faq__list {
+  border-top: 1px solid var(--clr-border);
+}
+
+.faq__item {
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.faq__question {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--clr-ink);
+  transition: color 0.2s;
+}
+
+.faq__question:hover { color: var(--clr-accent); }
+
+.faq__q-num {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--clr-muted, #999);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.faq__q-text {
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.faq__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--clr-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.faq__item.is-open .faq__icon {
+  background: var(--clr-accent);
+  border-color: var(--clr-accent);
+  color: #fff;
+}
+
+/* Rotate + → × when open */
+.faq__item.is-open .faq__icon svg {
+  transform: rotate(45deg);
+  transition: transform 0.3s ease;
+}
+.faq__icon svg {
+  transition: transform 0.3s ease;
+}
+
+.faq__answer {
+  overflow: hidden;
+}
+
+.faq__answer-text {
+  padding-block: 0.2rem 1.6rem;
+  padding-inline-start: 3.5rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--clr-muted, #666);
+  max-width: 65ch;
+  margin: 0;
+}
+
+@media (max-width: 48em) {
+  .faq__question {
+    grid-template-columns: 2rem 1fr auto;
+    gap: 0.75rem;
+    padding-block: 1.1rem;
+  }
+  .faq__answer-text {
+    padding-inline-start: 2.75rem;
+  }
+}
 </style>

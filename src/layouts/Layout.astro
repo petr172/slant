@@ -27,7 +27,7 @@ const {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site)
 const alternateLang = lang === 'cs' ? 'en' : 'cs'
 
-const defaultOgImage = 'https://slant.cz/og-default.svg'
+const defaultOgImage = 'https://slant.cz/og-default.png'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -147,6 +147,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   <Analytics />
 </head>
 <body>
+  <a href="#main-content" class="skip-link">{lang === 'cs' ? 'Přeskočit na obsah' : 'Skip to content'}</a>
   <header class="island-nav-wrap">
     <nav class="island-nav" aria-label={lang === 'cs' ? 'Hlavní navigace' : 'Main navigation'}>
       <!-- Logo -->

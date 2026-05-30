@@ -3,10 +3,12 @@ import sitemap from '@astrojs/sitemap'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import compress from 'astro-compress'
+import vercel from '@astrojs/vercel'
 
 export default defineConfig({
   site: 'https://slant.cz',
   output: 'static',
+  adapter: vercel(),
 
   // Prefetch všech interních odkazů při hover
   prefetch: {
@@ -21,7 +23,6 @@ export default defineConfig({
         defaultLocale: 'cs',
         locales: { cs: 'cs-CZ', en: 'en-US' },
       },
-      filter: (page) => !page.includes('/blog'),
     }),
     compress({
       CSS: true,

@@ -18,10 +18,14 @@ const t = {
     emailPlaceholder: 'váš@email.cz',
     messagePlaceholder: 'Stručně popište projekt...',
     send: 'Odeslat',
+    sending: 'Odesílám…',
     back: '← Zpět',
     thanks: 'Díky! Ozveme se brzy.',
     close: 'Zavřít',
     closeLabel: 'Zavřít',
+    errName: 'Napište prosím své jméno.',
+    errEmail: 'Zadejte platný e-mail.',
+    errSend: 'Něco se pokazilo. Zkuste to prosím znovu nebo napište na ahoj@slant.cz.',
   },
   en: {
     step1Heading1: "What's your name?",
@@ -33,12 +37,17 @@ const t = {
     emailPlaceholder: 'your@email.com',
     messagePlaceholder: 'Briefly describe your project...',
     send: 'Send',
+    sending: 'Sending…',
     back: '← Back',
     thanks: "Thanks! We'll be in touch.",
     close: 'Close',
     closeLabel: 'Close',
+    errName: 'Please enter your name.',
+    errEmail: 'Enter a valid email.',
+    errSend: 'Something went wrong. Please try again or email ahoj@slant.cz.',
   },
 }[lang]
+
 ---
 
 <div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
@@ -60,8 +69,11 @@ const t = {
         id="modal-name"
         name="name"
         placeholder={t.namePlaceholder}
-        autocomplete="given-name"
+        autocomplete="name"
+        required
+        aria-describedby="modal-name-err"
       />
+      <p class="modal__error" id="modal-name-err" hidden>{t.errName}</p>
 
       <h2 class="modal__heading modal__heading--sm">{t.step1Heading2}</h2>
       <div class="modal__chips" role="group" aria-label={t.step1Heading2}>
@@ -76,6 +88,9 @@ const t = {
       <button class="modal__btn modal__btn--primary" id="modal-next">{t.next}</button>
     </div>
 
+    <!-- Honeypot — skrytý před lidmi, vyplní jen boti -->
+    <input type="checkbox" name="botcheck" id="modal-botcheck" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:0;height:0;opacity:0" aria-hidden="true" />
+
     <!-- Step 2 -->
     <div class="modal__step" data-step="2" hidden>
       <h2 class="modal__heading" id="modal-title-2">{t.step2Heading}</h2>
@@ -86,7 +101,10 @@ const t = {
         name="email"
         placeholder={t.emailPlaceholder}
         autocomplete="email"
+        required
+        aria-describedby="modal-email-err"
       />
+      <p class="modal__error" id="modal-email-err" hidden>{t.errEmail}</p>
       <textarea
         class="modal__textarea"
         id="modal-message"
@@ -95,9 +113,11 @@ const t = {
         rows="4"
       ></textarea>
 
+      <p class="modal__error" id="modal-send-err" hidden>{t.errSend}</p>
+
       <div class="modal__actions">
         <button type="button" class="modal__back" id="modal-back">{t.back}</button>
-        <button type="button" class="modal__btn modal__btn--primary" id="modal-submit">{t.send}</button>
+        <button type="button" class="modal__btn modal__btn--primary" id="modal-submit" data-label-send={t.send} data-label-sending={t.sending}>{t.send}</button>
       </div>
     </div>
 
@@ -215,30 +235,93 @@ const t = {
     })
   }
 
+  const nameInput  = document.getElementById('modal-name') as HTMLInputElement | null
+  const emailInput = document.getElementById('modal-email') as HTMLInputElement | null
+  const msgInput   = document.getElementById('modal-message') as HTMLTextAreaElement | null
+  const botcheck   = document.getElementById('modal-botcheck') as HTMLInputElement | null
+  const nameErr    = document.getElementById('modal-name-err') as HTMLElement | null
+  const emailErr   = document.getElementById('modal-email-err') as HTMLElement | null
+  const sendErr    = document.getElementById('modal-send-err') as HTMLElement | null
+
+  function showErr(el: HTMLElement | null, input: HTMLElement | null, show: boolean) {
+    el?.toggleAttribute('hidden', !show)
+    input?.setAttribute('aria-invalid', show ? 'true' : 'false')
+    input?.classList.toggle('is-error', show)
+  }
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
   nextBtn?.addEventListener('click', () => {
+    if (!nameInput?.value.trim()) {
+      showErr(nameErr, nameInput, true)
+      nameInput?.focus()
+      return
+    }
+    showErr(nameErr, nameInput, false)
     currentStep = 2
     showStep(2)
-    requestAnimationFrame(() => {
-      const email = dialog?.querySelector<HTMLElement>('#modal-email')
-      email?.focus()
-    })
+    requestAnimationFrame(() => emailInput?.focus())
+  })
+
+  nameInput?.addEventListener('input', () => {
+    if (nameInput.value.trim()) showErr(nameErr, nameInput, false)
+  })
+  emailInput?.addEventListener('input', () => {
+    if (EMAIL_RE.test(emailInput.value.trim())) showErr(emailErr, emailInput, false)
   })
 
   backBtn?.addEventListener('click', () => {
     currentStep = 1
     showStep(1)
-    requestAnimationFrame(() => {
-      const name = dialog?.querySelector<HTMLElement>('#modal-name')
-      name?.focus()
-    })
+    requestAnimationFrame(() => nameInput?.focus())
   })
 
-  submitBtn?.addEventListener('click', (e) => {
+  submitBtn?.addEventListener('click', async (e) => {
     e.preventDefault()
-    showStep('thanks')
-    requestAnimationFrame(() => {
-      doneBtn?.focus()
-    })
+    showErr(sendErr, null, false)
+
+    if (!EMAIL_RE.test(emailInput?.value.trim() ?? '')) {
+      showErr(emailErr, emailInput, true)
+      emailInput?.focus()
+      return
+    }
+    showErr(emailErr, emailInput, false)
+
+    const services = Array.from(
+      modal.querySelectorAll<HTMLInputElement>('input[name="service"]:checked')
+    ).map(c => c.value)
+
+    const labelSend    = submitBtn.dataset.labelSend ?? submitBtn.textContent ?? 'Odeslat'
+    const labelSending = submitBtn.dataset.labelSending ?? '…'
+    submitBtn.disabled = true
+    submitBtn.textContent = labelSending
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: nameInput?.value.trim(),
+          email: emailInput?.value.trim(),
+          services,
+          message: msgInput?.value.trim() || '',
+          lang: document.documentElement.lang?.startsWith('en') ? 'en' : 'cs',
+          botcheck: botcheck?.checked ?? false,
+        }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.success) throw new Error(data.message || 'Submit failed')
+
+      showStep('thanks')
+      requestAnimationFrame(() => doneBtn?.focus())
+    } catch (err) {
+      console.error('[contact form]', err)
+      showErr(sendErr, null, true)
+    } finally {
+      submitBtn.disabled = false
+      submitBtn.textContent = labelSend
+    }
   })
 
   doneBtn?.addEventListener('click', closeModal)
@@ -358,6 +441,18 @@ const t = {
   min-height: 7rem;
   border-radius: 0.75rem;
 }
+
+.modal__input.is-error,
+.modal__textarea.is-error {
+  border-color: #e5484d;
+}
+
+.modal__error {
+  margin: -0.6rem 0 0;
+  font-size: 0.8125rem;
+  color: #e5484d;
+}
+.modal__btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Chips ───────────────────────────────────────────────────────────────── */
 .modal__chips {

@@ -15,6 +15,8 @@ export default defineType({
     ]}),
     defineField({ name: 'publishedAt', title: 'Datum vydání',      type: 'datetime' }),
     defineField({ name: 'category',    title: 'Kategorie',         type: 'string', options: { list: ['Branding', 'UX Design', 'Strategy', 'Behind the scenes', 'Studio'] } }),
+    defineField({ name: 'body',        title: 'Obsah (CS)',           type: 'array', of: [{ type: 'block' }, { type: 'image', options: { hotspot: true }, fields: [defineField({ name: 'alt', type: 'string', title: 'Alt text' }), defineField({ name: 'caption', type: 'string', title: 'Popisek' })] }] }),
+    defineField({ name: 'bodyEn',      title: 'Obsah (EN)',           type: 'array', of: [{ type: 'block' }, { type: 'image', options: { hotspot: true }, fields: [defineField({ name: 'alt', type: 'string', title: 'Alt text' }), defineField({ name: 'caption', type: 'string', title: 'Popisek' })] }] }),
     defineField({ name: 'featured',   title: 'Zobrazit na homepage', type: 'boolean', initialValue: false }),
   ],
   preview: {

@@ -1,0 +1,17 @@
+---
+import BlogDetailPage from '../../components/pages/BlogDetailPage.astro'
+import { client } from '../../lib/sanity'
+import { ALL_BLOG_SLUGS_QUERY, BLOG_POST_BY_SLUG_QUERY, ALL_BLOG_NAV_QUERY } from '../../lib/queries'
+
+export async function getStaticPaths() {
+  const slugs = await client.fetch(ALL_BLOG_SLUGS_QUERY)
+  return slugs.filter((i: any) => !!i.slug).map((i: any) => ({ params: { slug: i.slug } }))
+}
+
+const { slug } = Astro.params
+const [post, allNav] = await Promise.all([
+  client.fetch(BLOG_POST_BY_SLUG_QUERY, { slug }),
+  client.fetch(ALL_BLOG_NAV_QUERY),
+])
+---
+<BlogDetailPage lang="cs" {slug} {post} {allNav} />

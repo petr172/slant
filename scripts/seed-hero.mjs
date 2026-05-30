@@ -20,38 +20,13 @@ const doc = {
   _id: 'siteSettings',
   _type: 'siteSettings',
   heroMedia: [
-    {
-      _type: 'heroVideo',
-      _key: 'slide-video-1',
-      url: 'https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4',
-    },
-    {
-      _type: 'heroExternalImage',
-      _key: 'slide-img-1',
-      url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1920&q=85&fit=crop',
-      alt: 'Abstract design',
-    },
-    {
-      _type: 'heroExternalImage',
-      _key: 'slide-img-2',
-      url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&q=85&fit=crop',
-      alt: 'Creative workspace',
-    },
-    {
-      _type: 'heroExternalImage',
-      _key: 'slide-img-3',
-      url: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1920&q=85&fit=crop',
-      alt: 'Branding design',
-    },
-    {
-      _type: 'heroExternalImage',
-      _key: 'slide-img-4',
-      url: 'https://images.unsplash.com/photo-1634942537034-2531766767d1?w=1920&q=85&fit=crop',
-      alt: 'Typography detail',
-    },
+    { _type: 'heroExternalImage', _key: 'slide-ajm',      url: '/slider-ajm.png',      alt: 'AJM' },
+    { _type: 'heroExternalImage', _key: 'slide-parkshop', url: '/slider-parkshop.png', alt: 'Park & Shop' },
+    { _type: 'heroExternalImage', _key: 'slide-rostutu',  url: '/slider-rostutu.png',  alt: 'Rostutu' },
+    { _type: 'heroExternalImage', _key: 'slide-vokal',    url: '/slider-vokal.png',    alt: 'Vokal' },
   ],
 }
 
-console.log('Seeding siteSettings...')
+console.log('Seeding hero slides...')
 const result = await client.createOrReplace(doc)
 console.log('Done:', result._id)

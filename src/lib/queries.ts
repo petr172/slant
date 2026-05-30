@@ -63,6 +63,48 @@ export const SITE_SETTINGS_QUERY = `
   }
 `
 
+// ─── Blog: všechny posty pro listing ─────────────────────────────────────────
+export const ALL_BLOG_POSTS_QUERY = `
+  *[_type == "blogPost"] | order(publishedAt desc) {
+    _id,
+    title, titleEn,
+    "slug": slug.current,
+    description, descriptionEn,
+    coverImage,
+    publishedAt,
+    category,
+    featured
+  }
+`
+
+// ─── Blog: slugy pro getStaticPaths ───────────────────────────────────────────
+export const ALL_BLOG_SLUGS_QUERY = `
+  *[_type == "blogPost"] { "slug": slug.current }
+`
+
+// ─── Blog: detail postu ───────────────────────────────────────────────────────
+export const BLOG_POST_BY_SLUG_QUERY = `
+  *[_type == "blogPost" && slug.current == $slug][0] {
+    _id,
+    title, titleEn,
+    "slug": slug.current,
+    description, descriptionEn,
+    coverImage,
+    publishedAt,
+    category,
+    body, bodyEn
+  }
+`
+
+// ─── Blog: nav (prev/next) ────────────────────────────────────────────────────
+export const ALL_BLOG_NAV_QUERY = `
+  *[_type == "blogPost"] | order(publishedAt desc) {
+    "slug": slug.current,
+    title, titleEn,
+    coverImage
+  }
+`
+
 // ─── Blog: featured posts pro homepage ────────────────────────────────────────
 export const FEATURED_BLOG_POSTS_QUERY = `
   *[_type == "blogPost"] | order(publishedAt desc) [0...4] {
@@ -79,6 +121,15 @@ export const FEATURED_BLOG_POSTS_QUERY = `
 // ─── Slugy pro getStaticPaths ──────────────────────────────────────────────────
 export const ALL_SLUGS_QUERY = `
   *[_type == "caseStudy"] { "slug": slug.current }
+`
+
+// ─── Prev / Next navigace pro case study detail ───────────────────────────────
+export const ALL_CASE_STUDY_NAV_QUERY = `
+  *[_type == "caseStudy"] | order(order asc, year desc) {
+    "slug": slug.current,
+    title, titleEn,
+    coverImage
+  }
 `
 
 // ─── Detail case study ─────────────────────────────────────────────────────────

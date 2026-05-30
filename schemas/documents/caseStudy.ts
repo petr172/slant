@@ -1,16 +1,12 @@
 import { defineField, defineType } from 'sanity'
 
 const SERVICES = [
-  'Brand Identity',
-  'Logo Design',
+  'Branding',
+  'Webdesign',
+  'Obalový design',
+  'Grafický design',
+  'Animace',
   'Naming',
-  'Visual System',
-  'Packaging Design',
-  'UX/UI',
-  'Web Design',
-  'Trademark',
-  'Motion Design',
-  'Consultation',
 ]
 
 export const caseStudy = defineType({

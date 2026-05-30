@@ -82,7 +82,7 @@
     --clr-surface: #f0ede8;
     --clr-border:  rgba(26, 25, 23, 0.10);
     --clr-text:    #1a1a1a;
-    --clr-muted:   #9a9a9a;
+    --clr-muted:   #6e6e6e; /* WCAG AA ≈4.7:1 on #faf9f7 */
     --clr-accent:  #FF5522;
   }
 
@@ -113,7 +113,7 @@
     --clr-surface: #141413;
     --clr-border:  rgba(255, 255, 255, 0.07);
     --clr-text:    #e8e8e8;
-    --clr-muted:   #666666;
+    --clr-muted:   #828282; /* WCAG AA ≈4.7:1 on #0c0c0b */
     --clr-accent:  #FF5522;
   }
 }
@@ -216,6 +216,35 @@
   img, video { display: block; max-width: 100%; height: auto; }
   a { color: inherit; text-decoration: none; }
   button { cursor: pointer; border: none; background: none; }
+
+  /* Visible keyboard focus across the whole site */
+  :focus-visible {
+    outline: 2px solid var(--clr-accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  /* Don't show focus ring on mouse clicks */
+  :focus:not(:focus-visible) { outline: none; }
+
+  /* Skip to content link */
+  .skip-link {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -120%);
+    z-index: 1000;
+    padding: 0.65rem 1.25rem;
+    background: var(--clr-accent);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: 0 0 0.75rem 0.75rem;
+    transition: transform 0.2s ease;
+  }
+  .skip-link:focus-visible {
+    transform: translate(-50%, 0);
+    outline-offset: -2px;
+  }
 
   /* Lenis smooth scroll */
   html.lenis, html.lenis body { height: auto; }
@@ -336,3 +365,18 @@
 
 /* ─── GSAP hook — opacity handled by GSAP, not CSS ──────────────────────────── */
 /* [data-fade] intentionally left without opacity:0 to avoid blank page on JS error */
+
+/* ─── Reduced motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Make sure GSAP-faded content is always visible if JS skips animation */
+  [data-fade] { opacity: 1 !important; transform: none !important; }
+}

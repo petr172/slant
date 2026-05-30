@@ -11,6 +11,7 @@
   "dependencies": {
     "@astrojs/react": "^5.0.6",
     "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^8.2.11",
     "@sanity/client": "^7.22.1",
     "@sanity/image-url": "^2.1.1",
     "@sanity/presentation": "^2.0.0",
@@ -25,6 +26,7 @@
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "resend": "^6.12.4",
     "sanity": "^5.28.0",
     "sharp": "^0.34.5",
     "styled-components": "^6.4.2",

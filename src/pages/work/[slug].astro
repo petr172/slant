@@ -1,7 +1,7 @@
 ---
 import WorkDetailPage from '../../components/pages/WorkDetailPage.astro'
 import { client } from '../../lib/sanity'
-import { ALL_SLUGS_QUERY, CASE_STUDY_BY_SLUG_QUERY } from '../../lib/queries'
+import { ALL_SLUGS_QUERY, CASE_STUDY_BY_SLUG_QUERY, ALL_CASE_STUDY_NAV_QUERY } from '../../lib/queries'
 
 export async function getStaticPaths() {
   const slugs = await client.fetch<{ slug: string }[]>(ALL_SLUGS_QUERY)
@@ -9,6 +9,9 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params
-const cs = await client.fetch(CASE_STUDY_BY_SLUG_QUERY, { slug })
+const [cs, allNav] = await Promise.all([
+  client.fetch(CASE_STUDY_BY_SLUG_QUERY, { slug }),
+  client.fetch(ALL_CASE_STUDY_NAV_QUERY),
+])
 ---
-<WorkDetailPage lang="cs" {slug} {cs} />
+<WorkDetailPage lang="cs" {slug} {cs} {allNav} />

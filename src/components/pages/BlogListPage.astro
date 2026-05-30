@@ -1,0 +1,387 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import SanityImage from '../SanityImage.astro'
+import { client } from '../../lib/sanity'
+import { ALL_BLOG_POSTS_QUERY } from '../../lib/queries'
+import { useTranslations, type Lang } from '../../i18n/ui'
+
+interface Props {
+  lang: Lang
+}
+
+const { lang } = Astro.props
+const t = useTranslations(lang)
+
+const posts = await client.fetch(ALL_BLOG_POSTS_QUERY)
+
+const blogUrl = lang === 'cs' ? '/blog' : '/en/blog'
+const alternateUrl = lang === 'cs' ? '/en/blog' : '/blog'
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString(
+    lang === 'cs' ? 'cs-CZ' : 'en-GB',
+    { day: 'numeric', month: 'long', year: 'numeric' }
+  )
+}
+
+function postTitle(post: any) {
+  return lang === 'en' ? (post.titleEn || post.title) : post.title
+}
+
+function postDesc(post: any) {
+  return lang === 'en' ? (post.descriptionEn || post.description) : post.description
+}
+
+const featuredPost = posts.find((p: any) => p.featured) ?? posts[0] ?? null
+const listPosts = posts.filter((p: any) => p !== featuredPost)
+---
+
+<Layout
+  title={lang === 'cs' ? 'Blog – Ze studia | Slant' : 'Blog – From the studio | Slant'}
+  description={lang === 'cs' ? 'Články a postřehy ze studia Slant.' : 'Articles and insights from Slant studio.'}
+  {lang}
+  {alternateUrl}
+>
+  <section class="blog-listing container">
+
+    <!-- Header -->
+    <header class="blog-header">
+      <h1 class="label">{lang === 'cs' ? 'Ze studia' : 'From the studio'}</h1>
+      {posts.length > 0 && (
+        <span class="post-count">
+          {posts.length} {lang === 'cs' ? 'článků' : 'articles'}
+        </span>
+      )}
+    </header>
+
+    {posts.length === 0 ? (
+      <p class="empty-state">
+        {lang === 'cs' ? 'Brzy přibydou první články' : 'Articles coming soon'}
+      </p>
+    ) : (
+      <>
+        <!-- Featured post -->
+        {featuredPost && (
+          <a href={`${blogUrl}/${featuredPost.slug}`} class="featured-post" data-featured>
+            <div class="featured-post__image">
+              {featuredPost.coverImage && (
+                <SanityImage
+                  image={featuredPost.coverImage}
+                  alt={featuredPost.coverImage.alt ?? postTitle(featuredPost)}
+                  width={900}
+                  height={600}
+                  widths={[600, 900, 1200]}
+                  sizes="(max-width: 48em) 100vw, 60vw"
+                  class="featured-post__img"
+                />
+              )}
+            </div>
+            <div class="featured-post__content">
+              {featuredPost.category && (
+                <span class="chip">{featuredPost.category}</span>
+              )}
+              {featuredPost.publishedAt && (
+                <time class="featured-post__date" datetime={featuredPost.publishedAt}>
+                  {formatDate(featuredPost.publishedAt)}
+                </time>
+              )}
+              <h2 class="featured-post__title">{postTitle(featuredPost)}</h2>
+              {postDesc(featuredPost) && (
+                <p class="featured-post__desc">{postDesc(featuredPost)}</p>
+              )}
+              <span class="featured-post__cta">
+                {lang === 'cs' ? 'Číst článek →' : 'Read article →'}
+              </span>
+            </div>
+          </a>
+        )}
+
+        <!-- Editorial list -->
+        {listPosts.length > 0 && (
+          <ul class="blog-list" role="list">
+            {listPosts.map((post: any) => (
+              <li class="blog-list__item" data-list-item>
+                <a href={`${blogUrl}/${post.slug}`} class="blog-list__row">
+                  <time class="blog-list__date" datetime={post.publishedAt}>
+                    {post.publishedAt ? formatDate(post.publishedAt) : ''}
+                  </time>
+                  <div class="blog-list__middle">
+                    {post.category && <span class="chip">{post.category}</span>}
+                    <span class="blog-list__title">{postTitle(post)}</span>
+                  </div>
+                  {post.coverImage && (
+                    <div class="blog-list__thumb">
+                      <SanityImage
+                        image={post.coverImage}
+                        alt={post.coverImage.alt ?? postTitle(post)}
+                        width={160}
+                        height={107}
+                        widths={[160]}
+                        sizes="80px"
+                        class="blog-list__thumb-img"
+                      />
+                    </div>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
+    )}
+  </section>
+</Layout>
+
+<style>
+.blog-listing {
+  padding-block: var(--sp-2xl) var(--sp-3xl);
+}
+
+/* Header */
+.blog-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-2xl);
+}
+.label {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: var(--clr-text);
+  margin: 0;
+  text-transform: none;
+}
+.post-count {
+  font-size: 0.75rem;
+  color: var(--clr-muted);
+  letter-spacing: 0.05em;
+}
+
+/* Empty state */
+.empty-state {
+  color: var(--clr-muted);
+  font-size: 1rem;
+  padding-block: var(--sp-xl);
+}
+
+/* Chip */
+.chip {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+
+/* ── Featured post ─────────────────────────────────────────────────── */
+.featured-post {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--sp-xl);
+  align-items: center;
+  margin-bottom: var(--sp-3xl);
+  text-decoration: none;
+  color: inherit;
+}
+
+.featured-post__image {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--clr-surface);
+}
+.featured-post__image :global(picture),
+.featured-post__image :global(.featured-post__img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.featured-post__image :global(picture img),
+.featured-post__image :global(.featured-post__img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease, opacity 0.3s ease;
+}
+.featured-post:hover .featured-post__image :global(picture img),
+.featured-post:hover .featured-post__image :global(.featured-post__img) {
+  transform: scale(1.03);
+}
+
+.featured-post__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+.featured-post__date {
+  font-size: 0.75rem;
+  color: var(--clr-muted);
+  letter-spacing: 0.06em;
+  margin-top: var(--sp-xs);
+}
+.featured-post__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: var(--clr-text);
+  margin: 0;
+}
+.featured-post__desc {
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+  color: var(--clr-muted);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 48ch;
+}
+.featured-post__cta {
+  font-size: 0.85rem;
+  color: var(--clr-accent);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-top: var(--sp-xs);
+  transition: opacity 0.2s;
+}
+.featured-post:hover .featured-post__cta { opacity: 0.7; }
+
+@media (max-width: 48em) {
+  .featured-post {
+    grid-template-columns: 1fr;
+  }
+  .featured-post__title {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+  }
+}
+
+/* ── Editorial list ─────────────────────────────────────────────────── */
+.blog-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.blog-list__row {
+  display: grid;
+  grid-template-columns: 9rem 1fr auto;
+  align-items: center;
+  gap: var(--sp-md);
+  border-top: 1px solid var(--clr-border);
+  padding-block: var(--sp-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+.blog-list__row:hover { opacity: 0.8; }
+.blog-list__row:hover .blog-list__thumb-img { transform: scale(1.05); }
+
+.blog-list__date {
+  font-size: 0.75rem;
+  color: var(--clr-muted);
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.blog-list__middle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.blog-list__title {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--clr-text);
+  line-height: 1.15;
+}
+
+.blog-list__thumb {
+  width: 80px;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--clr-surface);
+  flex-shrink: 0;
+}
+.blog-list__thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+/* Last item border-bottom */
+.blog-list__item:last-child .blog-list__row {
+  border-bottom: 1px solid var(--clr-border);
+}
+
+@media (max-width: 48em) {
+  .blog-list__row {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+  .blog-list__date {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 0.7rem;
+  }
+  .blog-list__middle {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .blog-list__thumb {
+    display: none;
+  }
+}
+</style>
+
+<script>
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
+
+// Featured post animation
+const featured = document.querySelector('[data-featured]')
+if (featured) {
+  gsap.from(featured, {
+    y: 40,
+    opacity: 0,
+    duration: 0.9,
+    ease: 'power3.out',
+    scrollTrigger: {
+      trigger: featured,
+      start: 'top 85%',
+    },
+  })
+}
+
+// List rows stagger
+const items = document.querySelectorAll('[data-list-item]')
+if (items.length) {
+  gsap.from(items, {
+    y: 20,
+    opacity: 0,
+    duration: 0.6,
+    ease: 'power2.out',
+    stagger: 0.07,
+    scrollTrigger: {
+      trigger: items[0],
+      start: 'top 90%',
+    },
+  })
+}
+</script>

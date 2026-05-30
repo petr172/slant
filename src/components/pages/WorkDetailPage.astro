@@ -9,9 +9,17 @@ interface Props {
   lang: Lang
   slug: string
   cs: any
+  allNav?: { slug: string; title: string; titleEn: string }[]
 }
 
-const { lang, slug, cs } = Astro.props
+const { lang, slug, cs, allNav = [] } = Astro.props
+
+// Prev / next
+const navIdx  = allNav.findIndex(p => p.slug === slug)
+const prevCs  = navIdx > 0 ? allNav[navIdx - 1] : null
+const nextCs  = navIdx < allNav.length - 1 ? allNav[navIdx + 1] : null
+const prevTitle = prevCs ? (lang === 'en' ? (prevCs.titleEn || prevCs.title) : prevCs.title) : null
+const nextTitle = nextCs ? (lang === 'en' ? (nextCs.titleEn || nextCs.title) : nextCs.title) : null
 const t = useTranslations(lang)
 
 const title    = lang === 'en' ? (cs?.titleEn    || cs?.title)   : cs?.title
@@ -163,6 +171,58 @@ const caseStudyLd = {
           <p class="text-small" style="color: var(--clr-muted)">{credits}</p>
         </footer>
       )}
+
+      <!-- ─── Case study nav ─────────────────────────────────────────── -->
+      <nav class="cs-nav container" aria-label="Další projekty">
+
+        {prevCs ? (
+          <a href={`${workUrl}/${prevCs.slug}`} class="cs-nav__item cs-nav__item--prev">
+            {prevCs.coverImage && (
+              <div class="cs-nav__thumb">
+                <SanityImage image={prevCs.coverImage} alt={prevTitle ?? ''} width={320} height={200} widths={[320]} sizes="160px" class="cs-nav__thumb-img" />
+              </div>
+            )}
+            <div class="cs-nav__text">
+              <span class="cs-nav__label">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M16 10H4M8 14l-4-4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {lang === 'cs' ? 'Předchozí' : 'Previous'}
+              </span>
+              <span class="cs-nav__title">{prevTitle}</span>
+            </div>
+          </a>
+        ) : <span />}
+
+        <a href={workUrl} class="cs-nav__grid" aria-label={lang === 'cs' ? 'Všechny projekty' : 'All projects'}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="2" width="6" height="6" rx="1" fill="currentColor"/>
+            <rect x="12" y="2" width="6" height="6" rx="1" fill="currentColor"/>
+            <rect x="2" y="12" width="6" height="6" rx="1" fill="currentColor"/>
+            <rect x="12" y="12" width="6" height="6" rx="1" fill="currentColor"/>
+          </svg>
+        </a>
+
+        {nextCs ? (
+          <a href={`${workUrl}/${nextCs.slug}`} class="cs-nav__item cs-nav__item--next">
+            <div class="cs-nav__text cs-nav__text--right">
+              <span class="cs-nav__label">
+                {lang === 'cs' ? 'Další' : 'Next'}
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="cs-nav__title">{nextTitle}</span>
+            </div>
+            {nextCs.coverImage && (
+              <div class="cs-nav__thumb">
+                <SanityImage image={nextCs.coverImage} alt={nextTitle ?? ''} width={320} height={200} widths={[320]} sizes="160px" class="cs-nav__thumb-img" />
+              </div>
+            )}
+          </a>
+        ) : <span />}
+
+      </nav>
     </article>
   )}
 </Layout>
@@ -207,4 +267,126 @@ const caseStudyLd = {
 .cs-section__figure :global(.cs-section__img) { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
 .cs-section__caption { padding: var(--sp-xs) var(--sp-sm); color: var(--clr-muted); }
 .cs-credits { padding-block: var(--sp-xl); border-top: 1px solid var(--clr-border); }
+
+/* ── Case study nav ────────────────────────────────────────────────────── */
+.cs-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--sp-lg);
+  padding-block: var(--sp-2xl);
+  border-top: 1px solid var(--clr-border);
+  margin-top: var(--sp-xl);
+}
+
+/* Each side: thumbnail + text side by side */
+.cs-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--radius-lg);
+  transition: background 0.2s, opacity 0.2s;
+}
+.cs-nav__item:hover { background: var(--clr-surface); }
+
+.cs-nav__item--next { justify-content: flex-end; }
+
+/* Thumbnail */
+.cs-nav__thumb {
+  flex-shrink: 0;
+  width: clamp(64px, 8vw, 100px);
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--clr-surface);
+}
+.cs-nav__thumb-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 0.4s ease;
+}
+.cs-nav__item:hover .cs-nav__thumb-img { transform: scale(1.06); }
+
+/* Text block */
+.cs-nav__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.cs-nav__text--right { align-items: flex-end; }
+
+.cs-nav__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--clr-accent);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.cs-nav__title {
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 1.8vw, 1.35rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--clr-text);
+  line-height: 1.15;
+}
+
+/* Grid icon — centre */
+.cs-nav__grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--clr-border);
+  color: var(--clr-muted);
+  flex-shrink: 0;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.cs-nav__grid:hover {
+  color: var(--clr-text);
+  border-color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
+}
+
+@media (max-width: 48em) {
+  .cs-nav {
+    grid-template-columns: 1fr;
+    gap: var(--sp-sm);
+  }
+
+  /* Grid ikona nahoře, prev, next */
+  .cs-nav__grid       { order: -1; margin: 0 auto var(--sp-xs); }
+  .cs-nav__item--prev { order: 0; }
+  .cs-nav__item--next { order: 1; }
+
+  /* Tiles: always show bg */
+  .cs-nav__item {
+    background: var(--clr-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-md);
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--sp-sm);
+    width: 100%;
+  }
+  .cs-nav__item:hover { background: var(--clr-surface); }
+
+  /* Prev: text left, image right */
+  .cs-nav__item--prev { flex-direction: row; }
+
+  /* Next: image left, text right */
+  .cs-nav__item--next { flex-direction: row-reverse; }
+  .cs-nav__text--right { align-items: flex-end; }
+
+  .cs-nav__thumb { width: 64px; flex-shrink: 0; }
+  .cs-nav__title { font-size: 0.9rem; }
+  .cs-nav__label { font-size: 0.65rem; }
+}
 </style>

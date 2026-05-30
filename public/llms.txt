@@ -38,9 +38,14 @@ Slant is an independent branding and UX design studio founded in Brno, Czech Rep
 - **Autojeřáby Malina** — Rebrand of a family crane company with 30 years in heavy industry
 - **Data JMK** — UX and visual system for the South Moravian Region open data portal
 
+Full case studies: https://slant.cz/work
+
 ## Sitemap
 
-- https://slant.cz/
-- https://slant.cz/work
-- https://slant.cz/en/
-- https://slant.cz/en/work
+- https://slant.cz/ — homepage
+- https://slant.cz/work — selected work
+- https://slant.cz/blog — articles & insights
+- https://slant.cz/en/ — homepage (EN)
+- https://slant.cz/en/work — selected work (EN)
+- https://slant.cz/en/blog — articles & insights (EN)
+- https://slant.cz/sitemap-index.xml — full XML sitemap
