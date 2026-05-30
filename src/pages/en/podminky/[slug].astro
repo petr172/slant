@@ -16,6 +16,10 @@ const title = page?.titleEn || page?.title
 
 <Layout title={title ?? 'Terms'} lang="en" alternateUrl={`/podminky/${slug}`}>
   <article class="legal container">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/en">Home</a>
+      <span aria-current="page">{title}</span>
+    </nav>
     <h1 class="legal__title">{title}</h1>
     {page?.bodyEn && <div class="legal__body portable-text"><PortableText blocks={page.bodyEn} /></div>}
   </article>

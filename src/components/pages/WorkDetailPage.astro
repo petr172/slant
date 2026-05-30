@@ -29,6 +29,9 @@ const credits  = lang === 'en' ? (cs?.creditsEn  || cs?.credits) : cs?.credits
 
 const workUrl      = lang === 'cs' ? '/work'          : '/en/work'
 const alternateUrl = lang === 'cs' ? `/en/work/${slug}` : `/work/${slug}`
+const homeUrl   = lang === 'cs' ? '/' : '/en'
+const homeLabel = lang === 'cs' ? 'Domů' : 'Home'
+const workLabel = lang === 'cs' ? 'Práce' : 'Work'
 
 const ogImageUrl = cs?.coverImage
   ? urlFor(cs.coverImage).width(1200).height(630).fit('crop').format('webp').url()
@@ -39,8 +42,8 @@ const breadcrumb = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Slant', item: baseUrl },
-    { '@type': 'ListItem', position: 2, name: 'Work', item: `${baseUrl}${workUrl}` },
+    { '@type': 'ListItem', position: 1, name: homeLabel, item: `${baseUrl}${homeUrl}` },
+    { '@type': 'ListItem', position: 2, name: workLabel, item: `${baseUrl}${workUrl}` },
     { '@type': 'ListItem', position: 3, name: title, item: `${baseUrl}${workUrl}/${slug}` },
   ],
 }
@@ -72,9 +75,11 @@ const caseStudyLd = {
   ) : (
     <article class="cs" data-sanity-document={cs._id}>
       <header class="cs-hero container">
-        <div class="cs-hero__meta text-micro" data-fade>
-          <a href={workUrl} style="opacity:0.5">{t('work.backToWork')}</a>
-        </div>
+        <nav class="breadcrumbs" aria-label="Breadcrumb" data-fade>
+          <a href={homeUrl}>{homeLabel}</a>
+          <a href={workUrl}>{workLabel}</a>
+          <span aria-current="page">{title}</span>
+        </nav>
 
         <h1
           class="cs-hero__title text-display"

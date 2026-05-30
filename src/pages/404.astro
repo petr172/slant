@@ -1,0 +1,343 @@
+---
+import Layout from '../layouts/Layout.astro'
+---
+
+<Layout title="404" description="Stránka nenalezena — Slant" lang="cs">
+  <section class="nf" id="js-nf">
+    <!-- gradient orb following cursor -->
+    <div class="nf__orb" id="js-nf-orb" aria-hidden="true"></div>
+
+    <!-- floating decorative stickers -->
+    <div class="nf__stickers" aria-hidden="true">
+      <span class="nf__sticker" style="top:14%; left:12%;" data-depth="0.05">¯\_(ツ)_/¯</span>
+      <span class="nf__sticker nf__sticker--accent" style="top:22%; right:14%;" data-depth="0.09">?</span>
+      <span class="nf__sticker" style="bottom:24%; left:18%;" data-depth="0.07">404</span>
+      <span class="nf__sticker" style="bottom:18%; right:16%;" data-depth="0.04">↯</span>
+    </div>
+
+    <!-- giant decorative number -->
+    <div class="nf__digits" id="js-nf-digits" aria-hidden="true">
+      <span class="nf__digit" data-depth="-0.6" data-text="4">4</span>
+      <span class="nf__digit nf__digit--zero" data-depth="0.9" data-text="0">0</span>
+      <span class="nf__digit" data-depth="-0.4" data-text="4">4</span>
+    </div>
+
+    <!-- content -->
+    <div class="nf__content container">
+      <h1 class="nf__title" data-en="Lost in the process">Ztraceno v procesu</h1>
+      <p class="nf__lede" data-en="This page doesn’t exist — or it never made the final cut. Let’s get you back on track.">
+        Tahle stránka neexistuje — nebo se nedostala do finálního výběru. Vrátíme vás zpátky.
+      </p>
+      <div class="nf__actions">
+        <a href="/" class="nf__btn nf__btn--primary" id="js-nf-home" data-en="Back home">Zpět na úvod</a>
+        <a href="/work" class="nf__btn nf__btn--ghost" id="js-nf-work" data-en="View our work">Zobrazit práce →</a>
+      </div>
+    </div>
+
+    <!-- outline marquee -->
+    <div class="nf__marquee" aria-hidden="true">
+      <div class="nf__marquee-track" id="js-nf-marquee">
+        {Array.from({ length: 2 }).map(() => (
+          <span class="nf__marquee-group">
+            <span>404</span><span class="nf__dot">•</span>
+            <span>Page not found</span><span class="nf__dot">•</span>
+            <span>Stránka nenalezena</span><span class="nf__dot">•</span>
+            <span>Lost</span><span class="nf__dot">•</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  // ── Lokalizace dle URL (statická 404 se servíruje pro /en/* i / ) ──────────
+  const isEn = window.location.pathname.startsWith('/en')
+  if (isEn) {
+    document.documentElement.lang = 'en'
+    document.querySelectorAll<HTMLElement>('[data-en]').forEach((el) => {
+      el.textContent = el.dataset.en ?? el.textContent
+    })
+    const home = document.getElementById('js-nf-home') as HTMLAnchorElement | null
+    const work = document.getElementById('js-nf-work') as HTMLAnchorElement | null
+    if (home) home.href = '/en'
+    if (work) work.href = '/en/work'
+  }
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+
+  if (!reduced && fine) {
+    ;(async () => {
+      const { gsap } = await import('gsap')
+
+      const section = document.getElementById('js-nf') as HTMLElement
+      const orb     = document.getElementById('js-nf-orb') as HTMLElement
+      const digits  = Array.from(document.querySelectorAll<HTMLElement>('.nf__digit'))
+      const floaters = Array.from(document.querySelectorAll<HTMLElement>('[data-depth]'))
+
+      // Orb follows cursor (smoothed)
+      const orbX = gsap.quickTo(orb, 'x', { duration: 0.8, ease: 'power3.out' })
+      const orbY = gsap.quickTo(orb, 'y', { duration: 0.8, ease: 'power3.out' })
+
+      // Per-element parallax setters
+      const setters = floaters.map((el) => ({
+        el,
+        depth: parseFloat(el.dataset.depth ?? '0'),
+        x: gsap.quickTo(el, 'x', { duration: 1, ease: 'power3.out' }),
+        y: gsap.quickTo(el, 'y', { duration: 1, ease: 'power3.out' }),
+      }))
+
+      section.addEventListener('mousemove', (e) => {
+        const r = section.getBoundingClientRect()
+        const cx = e.clientX - r.left
+        const cy = e.clientY - r.top
+        orbX(cx)
+        orbY(cy)
+
+        const nx = (cx / r.width - 0.5) * 2   // -1 → 1
+        const ny = (cy / r.height - 0.5) * 2
+        setters.forEach((s) => {
+          s.x(nx * s.depth * 60)
+          s.y(ny * s.depth * 60)
+        })
+      })
+
+      // Entrance
+      gsap.fromTo(
+        digits,
+        { yPercent: 120, rotate: (i) => (i % 2 ? 8 : -8), opacity: 0 },
+        { yPercent: 0, rotate: 0, opacity: 1, duration: 1.1, ease: 'power4.out', stagger: 0.08 }
+      )
+      gsap.fromTo(
+        '.nf__content > *',
+        { y: 24, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08, delay: 0.35 }
+      )
+
+      // Glitch on hover per digit
+      digits.forEach((d) => {
+        d.addEventListener('mouseenter', () => {
+          d.classList.add('is-glitch')
+          gsap.fromTo(d, { x: 0 }, {
+            x: 0, duration: 0.4, ease: 'power1.inOut',
+            keyframes: { x: [0, -6, 5, -3, 0] },
+            onComplete: () => d.classList.remove('is-glitch'),
+          })
+        })
+      })
+    })()
+  } else {
+    // No-motion fallback: ensure content visible
+    document.querySelectorAll<HTMLElement>('.nf__digit, .nf__content > *').forEach((el) => {
+      el.style.opacity = '1'
+    })
+  }
+</script>
+
+<style>
+  .nf {
+    position: relative;
+    min-height: calc(100svh - 5rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* ── Gradient orb ─────────────────────────────────────────────────────── */
+  .nf__orb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 38rem;
+    height: 38rem;
+    margin: -19rem 0 0 -19rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--clr-accent) 0%, transparent 60%);
+    opacity: 0.22;
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: -1;
+    will-change: transform;
+  }
+  .dark .nf__orb { opacity: 0.28; }
+
+  /* ── Giant digits ─────────────────────────────────────────────────────── */
+  .nf__digits {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.5rem, 2vw, 2rem);
+    line-height: 0.8;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .nf__digit {
+    position: relative;
+    font-family: var(--font-display);
+    font-size: clamp(8rem, 30vw, 22rem);
+    font-weight: 400;
+    letter-spacing: -0.05em;
+    color: var(--clr-text);
+    pointer-events: auto;
+    will-change: transform;
+    transition: color 0.3s;
+  }
+  .nf__digit--zero { color: var(--clr-accent); }
+
+  .nf__digit:hover { color: var(--clr-accent); }
+  .nf__digit--zero:hover { color: var(--clr-text); }
+
+  /* RGB glitch split */
+  .nf__digit::before,
+  .nf__digit::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .nf__digit.is-glitch::before {
+    opacity: 0.8;
+    color: #00e5ff;
+    transform: translate(-4px, 2px);
+    mix-blend-mode: screen;
+  }
+  .nf__digit.is-glitch::after {
+    opacity: 0.8;
+    color: var(--clr-accent);
+    transform: translate(4px, -2px);
+    mix-blend-mode: screen;
+  }
+
+  /* ── Floating stickers ────────────────────────────────────────────────── */
+  .nf__stickers { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .nf__sticker {
+    position: absolute;
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 2.5vw, 1.75rem);
+    font-weight: 500;
+    color: var(--clr-muted);
+    opacity: 0.5;
+    will-change: transform;
+  }
+  .nf__sticker--accent {
+    color: var(--clr-accent);
+    opacity: 0.8;
+    font-size: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  /* ── Content ──────────────────────────────────────────────────────────── */
+  .nf__content {
+    text-align: center;
+    margin-top: clamp(1.5rem, 4vw, 3rem);
+    max-width: 34rem;
+  }
+  .nf__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 5vw, 2.75rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--clr-text);
+    margin: 0 0 0.75rem;
+  }
+  .nf__lede {
+    font-size: clamp(0.95rem, 2vw, 1.0625rem);
+    line-height: 1.6;
+    color: var(--clr-muted);
+    margin: 0 auto 2rem;
+    max-width: 28rem;
+  }
+
+  .nf__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .nf__btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.7em 1.6em;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: opacity 0.2s, background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+  }
+  .nf__btn--primary {
+    background: var(--clr-accent);
+    color: #fff;
+    border: 1px solid var(--clr-accent);
+  }
+  .nf__btn--primary:hover { opacity: 0.88; transform: translateY(-2px); }
+  .nf__btn--ghost {
+    background: transparent;
+    color: var(--clr-text);
+    border: 1px solid var(--clr-border);
+  }
+  .nf__btn--ghost:hover {
+    border-color: var(--clr-text);
+    background: color-mix(in srgb, var(--clr-text) 5%, transparent);
+    transform: translateY(-2px);
+  }
+
+  /* ── Marquee ──────────────────────────────────────────────────────────── */
+  .nf__marquee {
+    position: absolute;
+    bottom: clamp(1.5rem, 5vh, 4rem);
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  }
+  .nf__marquee-track {
+    display: flex;
+    width: max-content;
+    animation: nf-scroll 28s linear infinite;
+  }
+  .nf__marquee-group {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .nf__marquee-group > span {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2.75rem);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--clr-muted);
+    text-stroke: 1px var(--clr-muted);
+    white-space: nowrap;
+    opacity: 0.5;
+  }
+  .nf__marquee-group .nf__dot {
+    -webkit-text-stroke: 0;
+    color: var(--clr-accent);
+    opacity: 0.9;
+  }
+
+  @keyframes nf-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nf__marquee-track { animation: none; }
+    .nf__orb { display: none; }
+  }
+
+  @media (max-width: 48em) {
+    .nf { min-height: calc(100svh - 2rem); }
+    .nf__sticker { display: none; }
+  }
+</style>

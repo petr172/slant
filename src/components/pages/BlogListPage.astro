@@ -17,6 +17,19 @@ const posts = await client.fetch(ALL_BLOG_POSTS_QUERY)
 const blogUrl = lang === 'cs' ? '/blog' : '/en/blog'
 const alternateUrl = lang === 'cs' ? '/en/blog' : '/blog'
 
+const homeUrl = lang === 'cs' ? '/' : '/en'
+const homeLabel = lang === 'cs' ? 'Domů' : 'Home'
+const blogLabel = 'Blog'
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: homeLabel, item: `https://slant.cz${homeUrl}` },
+    { '@type': 'ListItem', position: 2, name: blogLabel, item: `https://slant.cz${blogUrl}` },
+  ],
+}
+
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString(
     lang === 'cs' ? 'cs-CZ' : 'en-GB',
@@ -41,14 +54,20 @@ const listPosts = posts.filter((p: any) => p !== featuredPost)
   description={lang === 'cs' ? 'Články a postřehy ze studia Slant.' : 'Articles and insights from Slant studio.'}
   {lang}
   {alternateUrl}
+  extraLd={[breadcrumbLd]}
 >
   <section class="blog-listing container">
 
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href={homeUrl}>{homeLabel}</a>
+      <span aria-current="page">{blogLabel}</span>
+    </nav>
+
     <!-- Header -->
-    <header class="blog-header">
-      <h1 class="label">{lang === 'cs' ? 'Ze studia' : 'From the studio'}</h1>
+    <header class="page-header">
+      <h1 class="page-header__title">{lang === 'cs' ? 'Ze studia' : 'From the studio'}</h1>
       {posts.length > 0 && (
-        <span class="post-count">
+        <span class="page-header__meta">
           {posts.length} {lang === 'cs' ? 'článků' : 'articles'}
         </span>
       )}
@@ -135,28 +154,6 @@ const listPosts = posts.filter((p: any) => p !== featuredPost)
 <style>
 .blog-listing {
   padding-block: var(--sp-2xl) var(--sp-3xl);
-}
-
-/* Header */
-.blog-header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-md);
-  margin-bottom: var(--sp-2xl);
-}
-.label {
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3vw, 2.5rem);
-  font-weight: 400;
-  letter-spacing: -0.03em;
-  color: var(--clr-text);
-  margin: 0;
-  text-transform: none;
-}
-.post-count {
-  font-size: 0.75rem;
-  color: var(--clr-muted);
-  letter-spacing: 0.05em;
 }
 
 /* Empty state */

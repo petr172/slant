@@ -233,39 +233,28 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
     <div class="container">
       <div class="site-footer__island">
 
-        <!-- Top row: logo + nav -->
+        <!-- Top row: logo left · nav + social right -->
         <div class="site-footer__top">
           <a href={logoHref} class="site-footer__logo" aria-label="Slant — home">
-            <img src="/logo.svg" alt="Slant" class="site-footer__logo-img" width="64" height="20" />
+            <img src="/logo.svg" alt="Slant" class="site-footer__logo-img" width="200" height="62" />
           </a>
-          <nav class="site-footer__nav" aria-label="Footer navigation">
-            <a href={navWork}>{lang === 'cs' ? 'Práce' : 'Work'}</a>
-            <a href={lang === 'cs' ? '/blog' : '/en/blog'}>Blog</a>
-            <a href="#" data-open-modal onclick="window.openModal?.(); return false">{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
-          </nav>
-          <div class="site-footer__social">
-            <a href="https://instagram.com/slant.cz" target="_blank" rel="noopener" aria-label="Instagram">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                <circle cx="12" cy="12" r="4"/>
-                <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/>
-              </svg>
-            </a>
-            <a href="https://behance.net/weareslant" target="_blank" rel="noopener" aria-label="Behance">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8.228 9.37c.558-.302.928-.876.928-1.558C9.156 6.525 8.05 5.8 6.677 5.8H2v12.4h4.9c1.498 0 2.75-.82 2.75-2.25 0-.98-.535-1.81-1.422-2.18.64-.318 1-.912 1-.86zm-4.578-2.1h2.627c.627 0 1.045.37 1.045.94 0 .61-.44.98-1.13.98H3.65V7.27zm2.9 6.8H3.65v-2.3h2.944c.78 0 1.247.42 1.247 1.14 0 .74-.49 1.16-1.32 1.16zm8.627-6.37c-2.432 0-4.104 1.722-4.104 4.18 0 2.46 1.647 4.12 4.13 4.12 1.96 0 3.302-.96 3.84-2.55h-1.75c-.28.6-.98.98-1.998.98-1.2 0-2.02-.76-2.17-2.01h6.01c.02-.2.03-.4.03-.58 0-2.46-1.57-4.14-3.988-4.14zm-2.01 3.24c.2-1.08.96-1.76 2-1.76s1.8.7 1.95 1.76H13.14zm4.86-4.94h-5.56V7.3h5.56v.7z"/>
-              </svg>
-            </a>
+          <div class="site-footer__links">
+            <nav class="site-footer__nav" aria-label="Footer navigation">
+              <a href={navWork}>{lang === 'cs' ? 'Práce' : 'Work'}</a>
+              <a href={lang === 'cs' ? '/blog' : '/en/blog'}>Blog</a>
+              <a href="#" data-open-modal onclick="window.openModal?.(); return false">{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
+            </nav>
+            <div class="site-footer__social">
+              <a href="https://instagram.com/slant.cz" target="_blank" rel="noopener" aria-label="Instagram">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <circle cx="12" cy="12" r="4"/>
+                  <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/>
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
-
-        <!-- Back to top -->
-        <button id="back-to-top" class="site-footer__btt" aria-label="Zpět nahoru">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 19V5M5 12l7-7 7 7"/>
-          </svg>
-          <span>{lang === 'cs' ? 'Zpět nahoru' : 'Back to top'}</span>
-        </button>
 
         <!-- Divider -->
         <div class="site-footer__divider"></div>
@@ -273,12 +262,23 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
         <!-- Bottom row: info + legal -->
         <div class="site-footer__bottom">
           <div class="site-footer__info">
-            <span>Slant s.r.o. · IČO 092 50 239</span>
-            <span>Zborovská 940/2a, 616 00 Brno</span>
+            <button type="button" class="copy-chip" data-copy="Slant s.r.o." data-copied={lang === 'cs' ? 'Zkopírováno' : 'Copied'}>
+              <span>Slant s.r.o.</span>
+            </button>
+            <button type="button" class="copy-chip" data-copy="09250239" data-copied={lang === 'cs' ? 'Zkopírováno' : 'Copied'}>
+              <span>IČO 092 50 239</span>
+            </button>
+            <button type="button" class="copy-chip" data-copy="Zborovská 940/2a, 616 00 Brno" data-copied={lang === 'cs' ? 'Zkopírováno' : 'Copied'}>
+              <span>Zborovská 940/2a, 616 00 Brno</span>
+            </button>
           </div>
           <div class="site-footer__contact">
-            <a href="mailto:ahoj@slant.cz">ahoj@slant.cz</a>
-            <a href="tel:+420774252025">+420 774 252 025</a>
+            <button type="button" class="copy-chip" data-copy="ahoj@slant.cz" data-copied={lang === 'cs' ? 'Zkopírováno' : 'Copied'}>
+              <span>ahoj@slant.cz</span>
+            </button>
+            <button type="button" class="copy-chip" data-copy="+420 774 252 025" data-copied={lang === 'cs' ? 'Zkopírováno' : 'Copied'}>
+              <span>+420 774 252 025</span>
+            </button>
           </div>
           <div class="site-footer__legal">
             <a href={lang === 'cs' ? '/podminky/vseobecne-obchodni-podminky' : '/en/podminky/vseobecne-obchodni-podminky'}>
@@ -375,20 +375,38 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
       document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) closeMenu() })
     })()
 
-    // Back to top — fade in when footer enters viewport
-    const btt = document.getElementById('back-to-top')
-    if (btt) {
-      const observer = new IntersectionObserver(
-        ([entry]) => btt.classList.toggle('is-visible', entry.isIntersecting),
-        { threshold: 0.1 }
+    // Footer logo — grow 20% when footer scrolls into view
+    const footerLogo = document.querySelector('.site-footer__logo')
+    if (footerLogo && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const logoObserver = new IntersectionObserver(
+        ([entry]) => footerLogo.classList.toggle('is-grown', entry.isIntersecting),
+        { threshold: 0.6 }
       )
-      const footer = document.querySelector('.site-footer__island')
-      if (footer) observer.observe(footer)
-
-      btt.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      })
+      logoObserver.observe(footerLogo)
     }
+
+    // Copy-to-clipboard chips (footer) — tooltip feedback
+    document.querySelectorAll<HTMLButtonElement>('.copy-chip').forEach(chip => {
+      let timer: number | undefined
+      chip.addEventListener('click', async () => {
+        const text = chip.dataset.copy ?? chip.textContent?.trim() ?? ''
+        try {
+          await navigator.clipboard.writeText(text)
+        } catch {
+          const ta = document.createElement('textarea')
+          ta.value = text
+          ta.style.position = 'fixed'
+          ta.style.opacity = '0'
+          document.body.appendChild(ta)
+          ta.select()
+          try { document.execCommand('copy') } catch {}
+          ta.remove()
+        }
+        chip.classList.add('is-copied')
+        window.clearTimeout(timer)
+        timer = window.setTimeout(() => chip.classList.remove('is-copied'), 1600)
+      })
+    })
   </script>
 
   <FloatBadge />
@@ -698,65 +716,64 @@ main { padding-top: 5rem; }
 }
 
 .site-footer__island {
-  border: 1px solid var(--clr-border);
   border-radius: 1.5rem;
-  padding: var(--sp-lg) var(--sp-xl);
-  background: color-mix(in srgb, var(--clr-surface) 60%, transparent);
+  padding: clamp(var(--sp-xl), 5vw, var(--sp-3xl)) clamp(var(--sp-lg), 4vw, var(--sp-2xl));
+  background: var(--clr-text);
+  color: var(--clr-bg);
 }
-
-/* Back to top */
-.site-footer__btt {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--clr-muted);
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.5s var(--ease-out-expo), transform 0.5s var(--ease-out-expo), color 0.2s;
-  pointer-events: none;
-}
-.site-footer__btt.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: all;
-}
-.site-footer__btt:hover { color: var(--clr-text); }
-.site-footer__btt svg { transition: transform 0.3s var(--ease-out-expo); }
-.site-footer__btt:hover svg { transform: translateY(-3px); }
+/* Logo flips to read on the dark island */
+.site-footer__island .site-footer__logo-img { filter: invert(1); }
+.dark .site-footer__island .site-footer__logo-img { filter: none; }
 
 /* Top row */
 .site-footer__top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--sp-lg);
   margin-bottom: var(--sp-lg);
 }
 
-.site-footer__logo { display: flex; align-items: center; }
+.site-footer__logo {
+  display: inline-flex;
+  align-items: center;
+}
+.site-footer__logo .site-footer__logo-img {
+  width: clamp(9rem, 18vw, 16rem);
+  height: auto;
+  transform: scale(1);
+  transform-origin: left center;
+  transition: transform 0.7s var(--ease-out-expo);
+  will-change: transform;
+}
+.site-footer__logo.is-grown .site-footer__logo-img {
+  transform: scale(1.2);
+}
+
+/* Right cluster: nav + social */
+.site-footer__links {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-lg);
+}
 
 .site-footer__nav {
   display: flex;
   align-items: center;
   gap: var(--sp-md);
-  margin-left: var(--sp-lg);
 }
 .site-footer__nav a {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--clr-muted);
+  color: color-mix(in srgb, var(--clr-bg) 65%, transparent);
   transition: color 0.2s;
 }
-.site-footer__nav a:hover { color: var(--clr-text); }
+.site-footer__nav a:hover { color: var(--clr-bg); }
 
 .site-footer__social {
   display: flex;
   align-items: center;
   gap: var(--sp-sm);
-  margin-left: auto;
 }
 .site-footer__social a {
   display: flex;
@@ -765,19 +782,20 @@ main { padding-top: 5rem; }
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
-  border: 1px solid var(--clr-border);
-  color: var(--clr-muted);
-  transition: color 0.2s, border-color 0.2s;
+  border: 1px solid color-mix(in srgb, var(--clr-bg) 25%, transparent);
+  color: color-mix(in srgb, var(--clr-bg) 65%, transparent);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 .site-footer__social a:hover {
   color: var(--clr-text);
-  border-color: var(--clr-text);
+  background: var(--clr-bg);
+  border-color: var(--clr-bg);
 }
 
 /* Divider */
 .site-footer__divider {
   height: 1px;
-  background: var(--clr-border);
+  background: color-mix(in srgb, var(--clr-bg) 18%, transparent);
   margin-bottom: var(--sp-lg);
 }
 
@@ -796,30 +814,76 @@ main { padding-top: 5rem; }
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.75rem;
-  color: var(--clr-muted);
+  color: color-mix(in srgb, var(--clr-bg) 60%, transparent);
   line-height: 1.5;
 }
 
 .site-footer__legal { margin-left: auto; align-items: flex-end; }
 .site-footer__legal a {
-  color: var(--clr-muted);
+  color: color-mix(in srgb, var(--clr-bg) 60%, transparent);
   transition: color 0.2s;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.site-footer__legal a:hover { color: var(--clr-text); }
+.site-footer__legal a:hover { color: var(--clr-bg); }
 
-.site-footer__contact a {
-  color: var(--clr-muted);
+/* ── Copy-to-clipboard chips ──────────────────────────────────────────────── */
+.copy-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.4rem;
+  padding: 0.15rem 0;
+  font: inherit;
+  color: color-mix(in srgb, var(--clr-bg) 60%, transparent);
+  cursor: pointer;
+  text-align: left;
   transition: color 0.2s;
 }
-.site-footer__contact a:hover { color: var(--clr-text); }
+.copy-chip::after {
+  content: "";
+  width: 0;
+  height: 1px;
+  margin-top: 1px;
+  background: currentColor;
+  transition: width 0.25s var(--ease-out-expo);
+}
+.copy-chip:hover {
+  color: var(--clr-bg);
+}
+.copy-chip:hover::after { width: 0.9rem; }
+
+/* Tooltip feedback */
+.copy-chip::before {
+  content: attr(data-copied);
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--clr-accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.copy-chip.is-copied::before {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 @media (max-width: 48em) {
-  .site-footer__island { border-radius: 1rem; padding: var(--sp-md); }
+  .site-footer__island { border-radius: 1rem; }
   .site-footer__top { flex-wrap: wrap; }
   .site-footer__social { margin-left: 0; }
-  .site-footer__bottom { flex-direction: column; gap: var(--sp-md); }
+  .site-footer__bottom { flex-direction: column; gap: var(--sp-lg); }
   .site-footer__legal { margin-left: 0; align-items: flex-start; }
 }
 </style>

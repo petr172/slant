@@ -12,6 +12,20 @@ const t = useTranslations(lang)
 const caseStudies = await client.fetch(ALL_CASE_STUDIES_QUERY)
 const alternateUrl = lang === 'cs' ? '/en/work' : '/work'
 
+const homeUrl = lang === 'cs' ? '/' : '/en'
+const workUrl = lang === 'cs' ? '/work' : '/en/work'
+const homeLabel = lang === 'cs' ? 'Domů' : 'Home'
+const workLabel = lang === 'cs' ? 'Práce' : 'Work'
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: homeLabel, item: `https://slant.cz${homeUrl}` },
+    { '@type': 'ListItem', position: 2, name: workLabel, item: `https://slant.cz${workUrl}` },
+  ],
+}
+
 // Collect all unique tags
 const allTags: string[] = [...new Set(
   caseStudies.flatMap((cs: any) => cs.services ?? [])
@@ -23,11 +37,17 @@ const allTags: string[] = [...new Set(
   description={t('meta.work.desc')}
   {lang}
   {alternateUrl}
+  extraLd={[breadcrumbLd]}
 >
   <section class="work-listing container">
-    <header class="work-listing__header" data-fade>
-      <h1 class="text-display">Work</h1>
-      <p class="work-listing__count text-label" style="color: var(--clr-muted)">
+    <nav class="breadcrumbs" aria-label="Breadcrumb" data-fade>
+      <a href={homeUrl}>{homeLabel}</a>
+      <span aria-current="page">{workLabel}</span>
+    </nav>
+
+    <header class="page-header" data-fade>
+      <h1 class="page-header__title">Work</h1>
+      <p class="page-header__meta">
         <span id="count">{caseStudies?.length ?? 0}</span> {t('work.projects')}
       </p>
     </header>
@@ -114,15 +134,6 @@ const allTags: string[] = [...new Set(
 
 <style>
 .work-listing { padding-block: var(--sp-2xl) var(--sp-3xl); }
-
-.work-listing__header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: var(--sp-lg);
-  padding-bottom: var(--sp-lg);
-  border-bottom: 1px solid var(--clr-border);
-}
 
 /* Tag filters */
 .work-listing__filters {
