@@ -48,8 +48,31 @@ export const SITE_SETTINGS_QUERY = `
       image { asset->, alt, hotspot, crop },
       alt,
       url
+    },
+    processSteps[] {
+      title, titleEn,
+      description, descriptionEn
+    },
+    clientLogos[] {
+      _key,
+      name,
+      logoUrl,
+      url
     }
 
+  }
+`
+
+// ─── Blog: featured posts pro homepage ────────────────────────────────────────
+export const FEATURED_BLOG_POSTS_QUERY = `
+  *[_type == "blogPost"] | order(publishedAt desc) [0...4] {
+    _id,
+    title, titleEn,
+    "slug": slug.current,
+    description, descriptionEn,
+    coverImage,
+    publishedAt,
+    category
   }
 `
 

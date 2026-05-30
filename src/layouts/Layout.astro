@@ -2,6 +2,7 @@
 import AnimationInit from '../components/AnimationInit.astro'
 import Analytics from '../components/Analytics.astro'
 import FloatBadge from '../components/FloatBadge.astro'
+import ContactModal from '../components/ContactModal.astro'
 import '../styles/global.css'
 import type { Lang } from '../i18n/ui'
 
@@ -153,15 +154,13 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
         <img src="/logo.svg" alt="Slant" class="island-nav__logo-img" width="64" height="20" />
       </a>
 
-      <!-- Links -->
-      <ul class="island-nav__links">
-        <li><a href={navWork}>{lang === 'cs' ? 'Práce' : 'Work'}</a></li>
-        <li><a href={lang === 'cs' ? '/blog' : '/en/blog'}>{lang === 'cs' ? 'Blog' : 'Blog'}</a></li>
-        <li><a href={navContact}>{lang === 'cs' ? 'Kontakt' : 'Contact'}</a></li>
-      </ul>
-
-      <!-- Right side: theme + lang + hamburger -->
+      <!-- Right side: links + theme + lang + contact + hamburger -->
       <div class="island-nav__actions">
+        <ul class="island-nav__links">
+          <li><a href={navWork}>{lang === 'cs' ? 'Práce' : 'Work'}</a></li>
+          <li><a href={lang === 'cs' ? '/blog' : '/en/blog'}>{lang === 'cs' ? 'Blog' : 'Blog'}</a></li>
+        </ul>
+
         <button id="theme-toggle" aria-label="Toggle theme" class="island-nav__theme-btn">
           <span class="theme-icon theme-icon--sun" aria-hidden="true">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -189,6 +188,10 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
           </a>
         )}
 
+        <a href="#" class="island-nav__contact" data-open-modal onclick="window.openModal?.(); return false">
+          {lang === 'cs' ? 'Kontakt' : 'Contact'}
+        </a>
+
         <!-- Hamburger — mobile only -->
         <button id="menu-toggle" class="island-nav__hamburger" aria-label="Otevřít menu" aria-expanded="false">
           <span class="hamburger__line hamburger__line--top"></span>
@@ -204,7 +207,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
       <nav class="mobile-menu__nav">
         <a href={navWork}        class="mobile-menu__item">{lang === 'cs' ? 'Práce'   : 'Work'}</a>
         <a href={lang === 'cs' ? '/blog' : '/en/blog'} class="mobile-menu__item">Blog</a>
-        <a href={navContact}     class="mobile-menu__item">{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
+        <a href="#" class="mobile-menu__item" data-open-modal onclick="window.openModal?.(); return false">{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
         {alternateUrl && (
           <a href={alternateUrl} class="mobile-menu__item mobile-menu__item--lang">
             {lang === 'cs' ? 'EN' : 'CZ'}
@@ -237,7 +240,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
           <nav class="site-footer__nav" aria-label="Footer navigation">
             <a href={navWork}>{lang === 'cs' ? 'Práce' : 'Work'}</a>
             <a href={lang === 'cs' ? '/blog' : '/en/blog'}>Blog</a>
-            <a href={navContact}>{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
+            <a href="#" data-open-modal onclick="window.openModal?.(); return false">{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
           </nav>
           <div class="site-footer__social">
             <a href="https://instagram.com/slant.cz" target="_blank" rel="noopener" aria-label="Instagram">
@@ -388,6 +391,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   </script>
 
   <FloatBadge />
+  <ContactModal lang={lang} />
 </body>
 </html>
 
@@ -479,6 +483,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   align-items: center;
   gap: 0.25rem;
   margin-left: auto;
+  margin-left: auto;
 }
 
 .island-nav__theme-btn {
@@ -514,6 +519,25 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
 .island-nav__lang:hover {
   border-color: var(--clr-text);
   background: color-mix(in srgb, var(--clr-text) 6%, transparent);
+}
+
+.island-nav__contact {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4em 1em;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: var(--clr-accent);
+  color: #fff;
+  transition: opacity 0.2s;
+}
+.island-nav__contact:hover { opacity: 0.85; }
+
+/* Hide contact btn on mobile (available in hamburger menu) */
+@media (max-width: 48em) {
+  .island-nav__contact { display: none; }
 }
 
 /* Show sun in dark mode, moon in light mode */

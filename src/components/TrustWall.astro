@@ -1,0 +1,209 @@
+---
+import { readFileSync } from 'fs'
+import { join } from 'path'
+
+interface Logo {
+  _key: string
+  name: string
+  logoUrl: string
+  url?: string
+}
+interface Props {
+  logos: Logo[]
+  lang?: string
+}
+const { logos, lang = 'cs' } = Astro.props
+
+const SLOTS = 6
+const initial = logos.slice(0, SLOTS)
+
+// Read SVG content from public folder for inline rendering
+function getSvgContent(logoUrl: string): string {
+  try {
+    const filePath = join(process.cwd(), 'public', logoUrl.replace(/^\//, ''))
+    const content = readFileSync(filePath, 'utf8')
+    // Strip XML declaration and add class for CSS targeting
+    return content
+      .replace(/<\?xml[^>]*\?>/g, '')
+      .replace(/<!DOCTYPE[^>]*>/g, '')
+      .replace(/<svg/, '<svg class="trust-wall__svg" aria-hidden="true"')
+      .trim()
+  } catch {
+    return ''
+  }
+}
+---
+
+{logos?.length > 0 && (
+  <section class="trust-wall">
+    <p class="trust-wall__heading">
+      {lang === 'cs' ? 'Děkujeme za důvěru' : 'Trusted by great brands'}
+    </p>
+
+    <ul class="trust-wall__list" id="js-trust-wall"
+        data-logos={JSON.stringify(logos)}
+        data-slots={SLOTS}>
+      {initial.map((logo, i) => (
+        <li class="trust-wall__item" data-index={i}>
+          <div class="trust-wall__card">
+            <div class="trust-wall__inner">
+              <Fragment set:html={getSvgContent(logo.logoUrl)} />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<script>
+  const list  = document.getElementById('js-trust-wall')
+  if (list) {
+    const logos: { name: string; logoUrl: string; url?: string }[] =
+      JSON.parse(list.dataset.logos ?? '[]')
+    const SLOTS = Number(list.dataset.slots ?? 6)
+
+    if (logos.length <= SLOTS) {
+      // nothing to rotate — only one set
+    } else {
+      let offset = 0   // how many logos we've cycled past
+
+      function swapAll() {
+        offset = (offset + SLOTS) % logos.length
+        const items = list!.querySelectorAll<HTMLElement>('.trust-wall__item')
+
+        const fetched: Record<string, string> = {}
+
+        async function getInlineSvg(url: string): Promise<string> {
+          if (fetched[url]) return fetched[url]
+          try {
+            const res = await fetch(url)
+            const text = await res.text()
+            fetched[url] = text
+              .replace(/<\?xml[^>]*\?>/g, '')
+              .replace(/<!DOCTYPE[^>]*>/g, '')
+              .replace(/<svg/, '<svg class="trust-wall__svg" aria-hidden="true"')
+              .trim()
+          } catch { fetched[url] = '' }
+          return fetched[url]
+        }
+
+        items.forEach((item, i) => {
+          const inner = item.querySelector<HTMLElement>('.trust-wall__inner')
+          if (!inner) return
+
+          const stagger = i * 100
+
+          setTimeout(async () => {
+            // slide out up
+            inner.style.transition = 'transform 0.35s cubic-bezier(0.4,0,1,1), opacity 0.3s ease'
+            inner.style.transform  = 'translateY(-110%)'
+            inner.style.opacity    = '0'
+
+            const next = logos[(offset + i) % logos.length]
+            const svgHtml = await getInlineSvg(next.logoUrl)
+
+            setTimeout(() => {
+              // swap SVG content
+              inner.innerHTML = svgHtml
+
+              // snap to bottom
+              inner.style.transition = 'none'
+              inner.style.transform  = 'translateY(110%)'
+
+              requestAnimationFrame(() => requestAnimationFrame(() => {
+                inner.style.transition = 'transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease'
+                inner.style.transform  = 'translateY(0)'
+                inner.style.opacity    = '1'
+              }))
+            }, 370)
+          }, stagger)
+        })
+      }
+
+      // first swap after 5s, then every 5s
+      setInterval(swapAll, 5000)
+    }
+  }
+</script>
+
+<style>
+.trust-wall {
+  padding-block: var(--sp-xl);
+  padding-inline: var(--gutter);
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+}
+
+.trust-wall__heading {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  margin-bottom: var(--sp-md);
+}
+
+.trust-wall__list {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--sp-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 48em) {
+  .trust-wall__list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 30em) {
+  .trust-wall__list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.trust-wall__card {
+  background: var(--clr-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 2 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trust-wall__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--sp-md);
+  will-change: transform, opacity;
+}
+
+.trust-wall__svg {
+  display: block;
+  height: 28px;
+  width: auto;
+  max-width: 80%;
+  /* Force all paths/shapes to currentColor */
+  fill: currentColor;
+  color: var(--clr-text);
+  opacity: 0.35;
+  transition: opacity 0.2s;
+}
+
+/* SVGs may use stroke instead of fill */
+.trust-wall__svg * {
+  fill: currentColor;
+  stroke: none;
+}
+
+@media (max-width: 48em) {
+  .trust-wall__svg { height: 20px; }
+}
+</style>

@@ -54,6 +54,19 @@ export default defineConfig({
             S.divider(),
 
             S.listItem()
+              .title('Blog')
+              .icon(() => '✍️')
+              .schemaType('blogPost')
+              .child(
+                S.documentList()
+                  .title('Blog posts')
+                  .filter('_type == "blogPost"')
+                  .defaultOrdering([{ field: 'publishedAt', direction: 'desc' }])
+              ),
+
+            S.divider(),
+
+            S.listItem()
               .title('Homepage featured')
               .icon(() => '⭐')
               .schemaType('caseStudy')

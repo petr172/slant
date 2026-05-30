@@ -1,0 +1,496 @@
+---
+import type { Lang } from '../i18n/ui'
+
+interface Props {
+  lang?: Lang
+}
+
+const { lang = 'cs' } = Astro.props
+
+const t = {
+  cs: {
+    step1Heading1: 'Jak vám říkáme?',
+    namePlaceholder: 'Vaše jméno',
+    step1Heading2: 'Na čem pracujeme?',
+    chips: ['Branding', 'Webdesign', 'Packaging', 'Jiné'],
+    next: 'Pokračovat',
+    step2Heading: 'Jak vás kontaktujeme?',
+    emailPlaceholder: 'váš@email.cz',
+    messagePlaceholder: 'Stručně popište projekt...',
+    send: 'Odeslat',
+    back: '← Zpět',
+    thanks: 'Díky! Ozveme se brzy.',
+    close: 'Zavřít',
+    closeLabel: 'Zavřít',
+  },
+  en: {
+    step1Heading1: "What's your name?",
+    namePlaceholder: 'Your name',
+    step1Heading2: 'What are we working on?',
+    chips: ['Branding', 'Web design', 'Packaging', 'Other'],
+    next: 'Continue',
+    step2Heading: 'How do we reach you?',
+    emailPlaceholder: 'your@email.com',
+    messagePlaceholder: 'Briefly describe your project...',
+    send: 'Send',
+    back: '← Back',
+    thanks: "Thanks! We'll be in touch.",
+    close: 'Close',
+    closeLabel: 'Close',
+  },
+}[lang]
+---
+
+<div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+  <div class="modal__backdrop"></div>
+  <div class="modal__dialog">
+    <button class="modal__close" aria-label={t.closeLabel}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+        <line x1="1" y1="1" x2="13" y2="13"/>
+        <line x1="13" y1="1" x2="1" y2="13"/>
+      </svg>
+    </button>
+
+    <!-- Step 1 -->
+    <div class="modal__step" data-step="1">
+      <h2 class="modal__heading" id="modal-title">{t.step1Heading1}</h2>
+      <input
+        class="modal__input"
+        type="text"
+        id="modal-name"
+        name="name"
+        placeholder={t.namePlaceholder}
+        autocomplete="given-name"
+      />
+
+      <h2 class="modal__heading modal__heading--sm">{t.step1Heading2}</h2>
+      <div class="modal__chips" role="group" aria-label={t.step1Heading2}>
+        {t.chips.map((chip, i) => (
+          <label class="modal__chip">
+            <input type="checkbox" name="service" value={chip} />
+            <span>{chip}</span>
+          </label>
+        ))}
+      </div>
+
+      <button class="modal__btn modal__btn--primary" id="modal-next">{t.next}</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="modal__step" data-step="2" hidden>
+      <h2 class="modal__heading" id="modal-title-2">{t.step2Heading}</h2>
+      <input
+        class="modal__input"
+        type="email"
+        id="modal-email"
+        name="email"
+        placeholder={t.emailPlaceholder}
+        autocomplete="email"
+      />
+      <textarea
+        class="modal__textarea"
+        id="modal-message"
+        name="message"
+        placeholder={t.messagePlaceholder}
+        rows="4"
+      ></textarea>
+
+      <div class="modal__actions">
+        <button type="button" class="modal__back" id="modal-back">{t.back}</button>
+        <button type="button" class="modal__btn modal__btn--primary" id="modal-submit">{t.send}</button>
+      </div>
+    </div>
+
+    <!-- Thank you state -->
+    <div class="modal__step modal__step--thanks" data-step="thanks" hidden>
+      <div class="modal__thanks-icon">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="var(--clr-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="24" cy="24" r="22"/>
+          <path d="M14 24l7 7 13-14"/>
+        </svg>
+      </div>
+      <p class="modal__thanks-text">{t.thanks}</p>
+      <button class="modal__btn modal__btn--outline" id="modal-done">{t.close}</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { gsap } from 'gsap'
+
+  const modal   = document.getElementById('contact-modal') as HTMLElement
+  const backdrop = modal?.querySelector('.modal__backdrop') as HTMLElement
+  const dialog  = modal?.querySelector('.modal__dialog') as HTMLElement
+  const closeBtn = modal?.querySelector('.modal__close') as HTMLButtonElement
+  const nextBtn  = document.getElementById('modal-next') as HTMLButtonElement
+  const backBtn  = document.getElementById('modal-back') as HTMLButtonElement
+  const submitBtn = document.getElementById('modal-submit') as HTMLButtonElement
+  const doneBtn  = document.getElementById('modal-done') as HTMLButtonElement
+
+  const steps = modal?.querySelectorAll<HTMLElement>('.modal__step')
+
+  let currentStep = 1
+
+  // ── Focus trap ────────────────────────────────────────────────────────────
+  function getFocusable(): HTMLElement[] {
+    return Array.from(
+      dialog?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])'
+      ) ?? []
+    )
+  }
+
+  function trapFocus(e: KeyboardEvent) {
+    if (e.key !== 'Tab') return
+    const focusable = getFocusable()
+    const first = focusable[0]
+    const last  = focusable[focusable.length - 1]
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+    } else {
+      if (document.activeElement === last)  { e.preventDefault(); first?.focus() }
+    }
+  }
+
+  // ── Open / close ──────────────────────────────────────────────────────────
+  function openModal() {
+    if (!modal) return
+    modal.removeAttribute('hidden')
+    document.body.style.overflow = 'hidden'
+
+    // Reset to step 1
+    showStep(1, false)
+    currentStep = 1
+
+    gsap.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' })
+    gsap.fromTo(dialog,
+      { opacity: 0, y: 30, scale: 0.97 },
+      { opacity: 1, y: 0,  scale: 1,    duration: 0.45, ease: 'power3.out', delay: 0.05 }
+    )
+
+    // Focus first input
+    requestAnimationFrame(() => {
+      const first = getFocusable()[0]
+      first?.focus()
+    })
+
+    document.addEventListener('keydown', handleKey)
+  }
+
+  function closeModal() {
+    if (!modal) return
+    document.body.style.overflow = ''
+    document.removeEventListener('keydown', handleKey)
+
+    gsap.to(dialog,   { opacity: 0, y: 16, scale: 0.97, duration: 0.3, ease: 'power2.in' })
+    gsap.to(backdrop, { opacity: 0, duration: 0.3, ease: 'power2.in',
+      onComplete: () => modal.setAttribute('hidden', '') })
+  }
+
+  function handleKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') closeModal()
+    trapFocus(e)
+  }
+
+  // Expose to window
+  ;(window as any).openModal  = openModal
+  ;(window as any).closeModal = closeModal
+
+  // ── Step logic ────────────────────────────────────────────────────────────
+  function showStep(n: number | 'thanks', animate = true) {
+    steps?.forEach(el => {
+      const stepAttr = el.dataset.step
+      const isTarget = stepAttr === String(n)
+      if (isTarget) {
+        el.removeAttribute('hidden')
+        if (animate) {
+          gsap.fromTo(el,
+            { opacity: 0, x: 20 },
+            { opacity: 1, x: 0, duration: 0.35, ease: 'power3.out' }
+          )
+        }
+      } else {
+        el.setAttribute('hidden', '')
+      }
+    })
+  }
+
+  nextBtn?.addEventListener('click', () => {
+    currentStep = 2
+    showStep(2)
+    requestAnimationFrame(() => {
+      const email = dialog?.querySelector<HTMLElement>('#modal-email')
+      email?.focus()
+    })
+  })
+
+  backBtn?.addEventListener('click', () => {
+    currentStep = 1
+    showStep(1)
+    requestAnimationFrame(() => {
+      const name = dialog?.querySelector<HTMLElement>('#modal-name')
+      name?.focus()
+    })
+  })
+
+  submitBtn?.addEventListener('click', (e) => {
+    e.preventDefault()
+    showStep('thanks')
+    requestAnimationFrame(() => {
+      doneBtn?.focus()
+    })
+  })
+
+  doneBtn?.addEventListener('click', closeModal)
+  closeBtn?.addEventListener('click', closeModal)
+  backdrop?.addEventListener('click', closeModal)
+
+  // Wire data-open-modal triggers on this page
+  document.querySelectorAll('[data-open-modal]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault()
+      openModal()
+    })
+  })
+</script>
+
+<style>
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal[hidden] { display: none; }
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Dialog ──────────────────────────────────────────────────────────────── */
+.modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 520px;
+  background: var(--clr-bg);
+  border: 1px solid var(--clr-border);
+  border-radius: 1.5rem;
+  padding: 2.5rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Close ───────────────────────────────────────────────────────────────── */
+.modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-muted);
+  transition: color 0.2s, background 0.2s;
+}
+.modal__close:hover {
+  color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 6%, transparent);
+}
+
+/* ── Headings ────────────────────────────────────────────────────────────── */
+.modal__heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--clr-text);
+  margin: 0;
+}
+
+.modal__heading--sm {
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  margin-top: 0.25rem;
+}
+
+/* ── Inputs ──────────────────────────────────────────────────────────────── */
+.modal__input,
+.modal__textarea {
+  width: 100%;
+  border: 1px solid var(--clr-border);
+  border-radius: 0.75rem;
+  padding: 0.75em 1em;
+  background: transparent;
+  color: var(--clr-text);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  resize: vertical;
+}
+
+.modal__input::placeholder,
+.modal__textarea::placeholder {
+  color: var(--clr-muted);
+}
+
+.modal__input:focus,
+.modal__textarea:focus {
+  border-color: var(--clr-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-accent) 15%, transparent);
+}
+
+.modal__textarea {
+  min-height: 7rem;
+  border-radius: 0.75rem;
+}
+
+/* ── Chips ───────────────────────────────────────────────────────────────── */
+.modal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.modal__chip {
+  cursor: pointer;
+}
+
+.modal__chip input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.modal__chip span {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4em 1em;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-muted);
+  background: transparent;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  user-select: none;
+}
+
+.modal__chip:hover span {
+  border-color: var(--clr-text);
+  color: var(--clr-text);
+}
+
+.modal__chip input:checked + span {
+  border-color: var(--clr-accent);
+  background: color-mix(in srgb, var(--clr-accent) 10%, transparent);
+  color: var(--clr-accent);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.modal__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.75em 2em;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.modal__btn--primary {
+  background: var(--clr-accent);
+  color: #fff;
+  border: 1px solid var(--clr-accent);
+  align-self: flex-end;
+}
+.modal__btn--primary:hover { opacity: 0.85; }
+
+.modal__btn--outline {
+  background: transparent;
+  color: var(--clr-text);
+  border: 1px solid var(--clr-border);
+  align-self: center;
+}
+.modal__btn--outline:hover {
+  border-color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
+}
+
+/* ── Actions row ─────────────────────────────────────────────────────────── */
+.modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.modal__back {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-muted);
+  padding: 0.4em 0;
+  transition: color 0.2s;
+}
+.modal__back:hover { color: var(--clr-text); }
+
+/* ── Thank you ───────────────────────────────────────────────────────────── */
+.modal__step--thanks {
+  align-items: center;
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.modal__thanks-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.modal__thanks-text {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: var(--clr-text);
+  margin: 0 0 1.5rem;
+}
+
+/* ── Step visibility ─────────────────────────────────────────────────────── */
+.modal__step {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.modal__step[hidden] { display: none; }
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 36em) {
+  .modal__dialog {
+    padding: 2rem 1.25rem 1.5rem;
+    border-radius: 1.25rem;
+    max-height: 90svh;
+    overflow-y: auto;
+  }
+}
+</style>
