@@ -1,0 +1,210 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import PortableText from '../PortableText.astro'
+import SanityImage from '../SanityImage.astro'
+import { urlFor } from '../../lib/imageUrl'
+import { useTranslations, type Lang } from '../../i18n/ui'
+
+interface Props {
+  lang: Lang
+  slug: string
+  cs: any
+}
+
+const { lang, slug, cs } = Astro.props
+const t = useTranslations(lang)
+
+const title    = lang === 'en' ? (cs?.titleEn    || cs?.title)   : cs?.title
+const tagline  = lang === 'en' ? (cs?.taglineEn  || cs?.tagline) : cs?.tagline
+const seoDesc  = lang === 'en' ? (cs?.seoDescriptionEn || cs?.seoDescription || tagline) : (cs?.seoDescription || tagline)
+const credits  = lang === 'en' ? (cs?.creditsEn  || cs?.credits) : cs?.credits
+
+const workUrl      = lang === 'cs' ? '/work'          : '/en/work'
+const alternateUrl = lang === 'cs' ? `/en/work/${slug}` : `/work/${slug}`
+
+const ogImageUrl = cs?.coverImage
+  ? urlFor(cs.coverImage).width(1200).height(630).fit('crop').format('webp').url()
+  : undefined
+
+const baseUrl = 'https://slant.cz'
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Slant', item: baseUrl },
+    { '@type': 'ListItem', position: 2, name: 'Work', item: `${baseUrl}${workUrl}` },
+    { '@type': 'ListItem', position: 3, name: title, item: `${baseUrl}${workUrl}/${slug}` },
+  ],
+}
+
+const caseStudyLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: title,
+  description: seoDesc,
+  creator: { '@type': 'Organization', name: 'Slant s.r.o.', url: baseUrl },
+  ...(cs?.year && { dateCreated: String(cs.year) }),
+  ...(ogImageUrl && { image: ogImageUrl }),
+  ...(cs?.services?.length && { keywords: cs.services.join(', ') }),
+}
+---
+
+<Layout
+  title={title ?? '404'}
+  description={seoDesc}
+  ogImage={ogImageUrl}
+  extraLd={[breadcrumb, caseStudyLd]}
+  {lang}
+  {alternateUrl}
+>
+  {!cs ? (
+    <div class="container" style="padding-block: var(--sp-3xl); color: var(--clr-muted)">
+      {t('work.notFound')}
+    </div>
+  ) : (
+    <article class="cs" data-sanity-document={cs._id}>
+      <header class="cs-hero container">
+        <div class="cs-hero__meta text-micro" data-fade>
+          <a href={workUrl} style="opacity:0.5">{t('work.backToWork')}</a>
+        </div>
+
+        <h1
+          class="cs-hero__title text-display"
+          data-fade
+          data-sanity={lang === 'en' ? 'titleEn' : 'title'}
+        >{title}</h1>
+
+        {tagline && (
+          <p
+            class="cs-hero__tagline"
+            data-fade
+            data-sanity={lang === 'en' ? 'taglineEn' : 'tagline'}
+          >{tagline}</p>
+        )}
+
+        {cs.services?.length > 0 && (
+          <ul class="cs-hero__tags" data-fade>
+            {cs.services.map((s: string) => <li class="cs-hero__tag">{s}</li>)}
+          </ul>
+        )}
+
+        <dl class="cs-hero__info" data-fade>
+          {cs.client   && <><dt>{t('cs.client')}</dt>  <dd>{cs.client}</dd></>}
+          {cs.year     && <><dt>{t('cs.year')}</dt>    <dd>{cs.year}</dd></>}
+          {cs.industry && <><dt>{t('cs.industry')}</dt><dd>{cs.industry}</dd></>}
+          {cs.liveUrl  && (
+            <><dt>{t('cs.live')}</dt>
+            <dd><a href={cs.liveUrl} target="_blank" rel="noopener" class="cs-hero__live">{t('work.viewSite')}</a></dd></>
+          )}
+        </dl>
+      </header>
+
+      <div class="cs-media" data-fade>
+        {cs.heroVideo ? (
+          <video src={cs.heroVideo} autoplay loop muted playsinline class="cs-media__video" />
+        ) : cs.coverImage ? (
+          <SanityImage
+            image={cs.coverImage}
+            alt={cs.coverImage.alt ?? title}
+            width={1800}
+            height={1012}
+            widths={[800, 1200, 1800]}
+            sizes="100vw"
+            quality={90}
+            loading="eager"
+            class="cs-media__image"
+          />
+        ) : null}
+      </div>
+
+      {cs.sections?.length > 0 && (
+        <div class="cs-sections container">
+          {cs.sections.map((section: any) => {
+            const heading = lang === 'en' ? (section.headingEn || section.heading) : section.heading
+            const body    = lang === 'en' && section.bodyEn?.length ? section.bodyEn : section.body
+            return (
+              <section class="cs-section">
+                {heading && <h2 class="cs-section__heading" data-fade>{heading}</h2>}
+                {body?.length > 0 && (
+                  <div class="cs-section__body" data-fade>
+                    <PortableText blocks={body} />
+                  </div>
+                )}
+                {section.images?.length > 0 && (
+                  <div class="cs-section__images" data-count={section.images.length} data-fade>
+                    {section.images.map((img: any) => {
+                      const single = section.images.length === 1
+                      return (
+                        <figure class="cs-section__figure">
+                          <SanityImage
+                            image={img}
+                            alt={img.alt ?? ''}
+                            width={single ? 1800 : 1000}
+                            height={single ? 1013 : 667}
+                            widths={single ? [800, 1200, 1800] : [400, 700, 1000]}
+                            sizes={single ? '100vw' : '(max-width: 768px) 100vw, 50vw'}
+                            quality={88}
+                            class="cs-section__img"
+                          />
+                          {img.caption && <figcaption class="cs-section__caption text-small">{img.caption}</figcaption>}
+                        </figure>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      )}
+
+      {credits && (
+        <footer class="cs-credits container" data-fade>
+          <p class="text-small" style="color: var(--clr-muted)">{credits}</p>
+        </footer>
+      )}
+    </article>
+  )}
+</Layout>
+
+<style>
+.cs-hero { padding-block: var(--sp-2xl); }
+.cs-hero__meta { margin-bottom: var(--sp-lg); }
+.cs-hero__title { max-width: 14ch; margin-bottom: var(--sp-md); }
+.cs-hero__tagline { font-size: clamp(1.1rem, 2vw, 1.5rem); color: var(--clr-muted); max-width: 40ch; line-height: 1.4; margin-bottom: var(--sp-lg); }
+.cs-hero__tags { display: flex; flex-wrap: wrap; gap: var(--sp-xs); list-style: none; margin-bottom: var(--sp-lg); }
+.cs-hero__tag { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.3em 0.75em; border: 1px solid var(--clr-border); border-radius: 999px; color: var(--clr-muted); }
+.cs-hero__info { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1.5rem; font-size: 0.875rem; max-width: 28rem; }
+.cs-hero__info dt { color: var(--clr-muted); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; padding-top: 0.1em; }
+.cs-hero__live { opacity: 0.7; border-bottom: 1px solid currentColor; transition: opacity 0.2s; }
+.cs-hero__live:hover { opacity: 1; }
+.cs-media { width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: var(--clr-surface); }
+.cs-media__video,
+.cs-media :global(picture),
+.cs-media :global(.cs-media__image) { width: 100%; height: 100%; display: block; }
+.cs-media :global(picture img),
+.cs-media :global(.cs-media__image) { object-fit: cover; width: 100%; height: 100%; }
+.cs-sections { padding-block: var(--sp-3xl); display: flex; flex-direction: column; gap: var(--sp-3xl); }
+.cs-section { display: grid; grid-template-columns: 1fr 2fr; gap: var(--sp-lg) var(--sp-xl); padding-top: var(--sp-xl); border-top: 1px solid var(--clr-border); }
+@media (max-width: 56em) { .cs-section { grid-template-columns: 1fr; gap: var(--sp-md); } }
+.cs-section__heading { font-family: var(--font-sans); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--clr-muted); font-weight: 400; padding-top: 0.2em; }
+.cs-section__body { font-size: clamp(1rem, 1.3vw, 1.125rem); line-height: 1.7; color: var(--clr-text); }
+.cs-section__body:first-child { grid-column: 1 / -1; }
+.cs-section__images { grid-column: 1 / -1; display: grid; gap: var(--sp-sm); }
+.cs-section__images[data-count="1"] { grid-template-columns: 1fr; }
+.cs-section__images[data-count="2"] { grid-template-columns: 1fr 1fr; }
+.cs-section__images[data-count="3"] { grid-template-columns: 1fr 1fr 1fr; }
+.cs-section__images[data-count="4"] { grid-template-columns: 1fr 1fr; }
+@media (max-width: 48em) {
+  .cs-section__images[data-count="2"],
+  .cs-section__images[data-count="3"],
+  .cs-section__images[data-count="4"] { grid-template-columns: 1fr; }
+}
+.cs-section__figure { overflow: hidden; border-radius: var(--radius-md); background: var(--clr-surface); }
+.cs-section__figure :global(picture),
+.cs-section__figure :global(.cs-section__img) { display: block; width: 100%; height: 100%; }
+.cs-section__figure :global(picture img),
+.cs-section__figure :global(.cs-section__img) { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+.cs-section__caption { padding: var(--sp-xs) var(--sp-sm); color: var(--clr-muted); }
+.cs-credits { padding-block: var(--sp-xl); border-top: 1px solid var(--clr-border); }
+</style>

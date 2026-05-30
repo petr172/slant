@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="cs" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slant — Styleguide</title>
+  <style>
+    /* ── Ronzino ─────────────────────────────────────────────────────────── */
+    @font-face { font-family:'Ronzino'; src:url('/fonts/Ronzino-Regular.woff2') format('woff2'); font-weight:400; font-style:normal; font-display:swap; }
+    @font-face { font-family:'Ronzino'; src:url('/fonts/Ronzino-Oblique.woff2') format('woff2'); font-weight:400; font-style:italic; font-display:swap; }
+    @font-face { font-family:'Ronzino'; src:url('/fonts/Ronzino-Medium.woff2') format('woff2'); font-weight:500; font-style:normal; font-display:swap; }
+    @font-face { font-family:'Ronzino'; src:url('/fonts/Ronzino-MediumOblique.woff2') format('woff2'); font-weight:500; font-style:italic; font-display:swap; }
+    @font-face { font-family:'Ronzino'; src:url('/fonts/Ronzino-Bold.woff2') format('woff2'); font-weight:700; font-style:normal; font-display:swap; }
+    @font-face { font-family:'Ronzino'; src:url('/fonts/Ronzino-BoldOblique.woff2') format('woff2'); font-weight:700; font-style:italic; font-display:swap; }
+
+    /* ── Tokens ──────────────────────────────────────────────────────────── */
+    :root {
+      --grey-100: #e8e8e8;
+      --grey-200: #c4c4c4;
+      --grey-300: #9a9a9a;
+      --grey-400: #666666;
+      --grey-500: #3d3d3d;
+      --grey-900: #1a1a1a;
+
+      --clr-bg:      #faf9f7;
+      --clr-surface: #f0ede8;
+      --clr-border:  rgba(26,25,23,.10);
+      --clr-text:    #1a1a1a;
+      --clr-muted:   #9a9a9a;
+      --clr-accent:  #e84020;
+
+      --font: 'Ronzino', system-ui, sans-serif;
+      --radius: 0.5rem;
+      --ease: cubic-bezier(0.16,1,0.3,1);
+    }
+    .dark {
+      --clr-bg:      #0c0c0b;
+      --clr-surface: #141413;
+      --clr-border:  rgba(255,255,255,.07);
+      --clr-text:    #e8e8e8;
+      --clr-muted:   #666666;
+    }
+
+    /* ── Reset ───────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; background: var(--clr-bg); color: var(--clr-text); }
+    body { font-family: var(--font); font-weight: 400; line-height: 1.65; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Layout ──────────────────────────────────────────────────────────── */
+    .sg-wrap    { max-width: 960px; margin: 0 auto; padding: 3rem 2rem 8rem; }
+    .sg-section { margin-bottom: 4rem; }
+    .sg-title   { font-size: .625rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--clr-muted); margin-bottom: 1.5rem; padding-bottom: .5rem; border-bottom: 1px solid var(--clr-border); }
+    .sg-row     { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+    .sg-col     { display: flex; flex-direction: column; gap: .75rem; }
+    .sg-label   { font-size: .625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--clr-muted); margin-top: .25rem; }
+    .sg-divider { height: 1px; background: var(--clr-border); margin: 2rem 0; }
+
+    /* ── Theme toggle ────────────────────────────────────────────────────── */
+    .sg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+    .sg-wordmark { font-size: 1.5rem; font-weight: 700; letter-spacing: -.04em; }
+    .sg-theme-btn {
+      padding: .4em 1em; border-radius: 999px; border: 1px solid var(--clr-border);
+      font: inherit; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--clr-text); cursor: pointer; background: transparent; transition: background .2s;
+    }
+    .sg-theme-btn:hover { background: color-mix(in srgb, var(--clr-text) 8%, transparent); }
+
+    /* ══ TYPOGRAPHY ════════════════════════════════════════════════════════ */
+    .t-d1   { font-size: clamp(3rem,9vw,8rem);  font-weight: 400; line-height: 1;    letter-spacing: -.04em; }
+    .t-d2   { font-size: clamp(2rem,6vw,5rem);  font-weight: 400; line-height: 1.05; letter-spacing: -.03em; }
+    .t-h1   { font-size: 2rem;   font-weight: 400; line-height: 2.5rem; }
+    .t-h2   { font-size: 1.5rem; font-weight: 400; line-height: 2rem;   }
+    .t-h3   { font-size: 1.25rem;font-weight: 400; line-height: 1.75rem;}
+    .t-h4   { font-size: 1rem;   font-weight: 600; line-height: 1.5rem; }
+    .t-h5   { font-size: .875rem;font-weight: 600; line-height: 1.25rem;}
+    .t-p    { font-size: 1rem;   font-weight: 400; line-height: 1.5rem; max-width: 60ch; }
+    .t-psm  { font-size: .875rem;font-weight: 400; line-height: 1.25rem;max-width: 60ch; }
+    .t-eye  { font-size: .75rem; font-weight: 600; line-height: 1rem;   letter-spacing: .06em; text-transform: uppercase; color: var(--clr-muted); }
+    .t-cap  { font-size: .75rem; font-weight: 400; line-height: 1rem;   color: var(--clr-muted); }
+    .t-btn  { font-size: .875rem;font-weight: 600; line-height: 1.25rem;}
+    .t-link { border-bottom: 1px solid currentColor; opacity: .6; transition: opacity .2s; }
+    .t-link:hover { opacity: 1; }
+
+    /* ══ BUTTONS ═══════════════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      font-family: var(--font); font-weight: 600; font-size: .875rem; line-height: 1;
+      letter-spacing: .01em; border-radius: 999px; cursor: pointer;
+      border: 1px solid transparent; transition: background .2s, color .2s, border-color .2s, transform .15s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(.97); }
+
+    /* Sizes */
+    .btn-sm { padding: .45em 1em;    font-size: .75rem; }
+    .btn-md { padding: .6em  1.25em; font-size: .875rem; }
+    .btn-lg { padding: .75em 1.75em; font-size: 1rem; }
+
+    /* Variants */
+    .btn-primary   { background: var(--clr-text);   color: var(--clr-bg); }
+    .btn-primary:hover { background: var(--clr-muted); }
+
+    .btn-secondary { background: transparent; border-color: var(--clr-border); color: var(--clr-text); }
+    .btn-secondary:hover { border-color: var(--clr-text); }
+
+    .btn-accent    { background: var(--clr-accent); color: #fff; }
+    .btn-accent:hover { filter: brightness(1.1); }
+
+    .btn-ghost     { background: transparent; color: var(--clr-muted); }
+    .btn-ghost:hover { color: var(--clr-text); background: color-mix(in srgb, var(--clr-text) 6%, transparent); }
+
+    .btn-danger    { background: transparent; border-color: #e84020; color: #e84020; }
+    .btn-danger:hover { background: #e84020; color: #fff; }
+
+    .btn-icon      { width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 999px; border: 1px solid var(--clr-border); color: var(--clr-muted); }
+    .btn-icon:hover { border-color: var(--clr-text); color: var(--clr-text); }
+
+    .btn:disabled  { opacity: .35; cursor: not-allowed; pointer-events: none; }
+
+    /* ══ INPUTS ════════════════════════════════════════════════════════════ */
+    .input-wrap { display: flex; flex-direction: column; gap: .375rem; }
+    .input-label { font-size: .75rem; font-weight: 600; letter-spacing: .04em; }
+    .input-hint  { font-size: .75rem; color: var(--clr-muted); }
+
+    .input {
+      font-family: var(--font); font-size: .9375rem; font-weight: 400;
+      color: var(--clr-text); background: var(--clr-surface);
+      border: 1px solid var(--clr-border); border-radius: var(--radius);
+      padding: .625em 1em; width: 100%; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input::placeholder { color: var(--clr-muted); }
+    .input:focus { border-color: var(--clr-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-text) 12%, transparent); }
+    .input-error .input { border-color: #e84020; }
+    .input-error .input-hint { color: #e84020; }
+    .input:disabled { opacity: .4; cursor: not-allowed; }
+
+    .textarea { resize: vertical; min-height: 7rem; }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after { content:'↓'; position:absolute; right:.875rem; top:50%; transform:translateY(-50%); color:var(--clr-muted); pointer-events:none; font-size:.75rem; }
+    select.input { appearance: none; cursor: pointer; padding-right: 2.5em; }
+
+    /* Checkbox / Radio */
+    .check-label { display: flex; align-items: center; gap: .625rem; cursor: pointer; font-size: .9375rem; }
+    .check-label input[type=checkbox],
+    .check-label input[type=radio] {
+      appearance: none; width: 1.125rem; height: 1.125rem; border: 1px solid var(--clr-border);
+      border-radius: .25rem; background: var(--clr-surface); cursor: pointer; flex-shrink: 0;
+      transition: background .15s, border-color .15s; position: relative;
+    }
+    .check-label input[type=radio] { border-radius: 50%; }
+    .check-label input[type=checkbox]:checked { background: var(--clr-text); border-color: var(--clr-text); }
+    .check-label input[type=checkbox]:checked::after { content:''; position:absolute; left:.3rem; top:.1rem; width:.3rem; height:.55rem; border: 2px solid var(--clr-bg); border-top: none; border-left: none; transform: rotate(45deg); }
+    .check-label input[type=radio]:checked { background: var(--clr-text); border-color: var(--clr-text); }
+    .check-label input[type=radio]:checked::after { content:''; position:absolute; inset:.2rem; border-radius:50%; background: var(--clr-bg); }
+
+    /* Toggle */
+    .toggle-wrap { display: flex; align-items: center; gap: .75rem; cursor: pointer; }
+    .toggle { position:relative; width:2.75rem; height:1.5rem; }
+    .toggle input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track {
+      position:absolute; inset:0; border-radius:999px;
+      background: var(--clr-surface); border: 1px solid var(--clr-border);
+      transition: background .2s, border-color .2s;
+    }
+    .toggle-thumb {
+      position:absolute; top:.2rem; left:.2rem; width:1.1rem; height:1.1rem;
+      border-radius:50%; background: var(--clr-muted);
+      transition: transform .2s var(--ease), background .2s;
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--clr-text); border-color: var(--clr-text); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(1.25rem); background: var(--clr-bg); }
+
+    /* ══ CARDS ══════════════════════════════════════════════════════════════ */
+    .card {
+      background: var(--clr-surface); border: 1px solid var(--clr-border);
+      border-radius: calc(var(--radius) * 2); overflow: hidden;
+    }
+    .card-body { padding: 1.25rem; }
+    .card-img   { width:100%; aspect-ratio:16/9; background: var(--grey-500); display:block; }
+    .card-title { font-size: 1.125rem; font-weight: 500; letter-spacing: -.02em; margin-bottom: .375rem; }
+    .card-text  { font-size: .875rem; color: var(--clr-muted); line-height: 1.5; }
+
+    /* ══ BADGES ══════════════════════════════════════════════════════════════ */
+    .badge { display:inline-flex; align-items:center; gap:.35rem; padding:.25em .65em; border-radius:999px; font-size:.7rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; }
+    .badge-default  { background: color-mix(in srgb, var(--clr-text) 8%, transparent); color: var(--clr-text); }
+    .badge-accent   { background: color-mix(in srgb, var(--clr-accent) 15%, transparent); color: var(--clr-accent); }
+    .badge-success  { background: #16a34a22; color: #16a34a; }
+    .badge-warning  { background: #ca8a0422; color: #ca8a04; }
+    .badge-error    { background: #e8402022; color: #e84020; }
+    .badge-dot::before { content:''; display:block; width:.4rem; height:.4rem; border-radius:50%; background:currentColor; }
+
+    /* ══ COLORS ════════════════════════════════════════════════════════════ */
+    .swatch-row { display: flex; flex-wrap: wrap; gap: .75rem; }
+    .swatch { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+    .swatch-color { width: 4rem; height: 4rem; border-radius: var(--radius); border: 1px solid var(--clr-border); }
+    .swatch-name  { font-size: .625rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--clr-muted); }
+  </style>
+</head>
+<body>
+<div class="sg-wrap">
+
+  <!-- Header -->
+  <div class="sg-header">
+    <span class="sg-wordmark">Slant</span>
+    <button class="sg-theme-btn" onclick="document.documentElement.classList.toggle('dark')">
+      Toggle Dark / Light
+    </button>
+  </div>
+
+  <!-- ── COLORS ─────────────────────────────────────────────────────────── -->
+  <div class="sg-section">
+    <p class="sg-title">Colors</p>
+    <p class="sg-label" style="margin-bottom:.75rem">Brand</p>
+    <div class="swatch-row" style="margin-bottom:1.5rem">
+      <div class="swatch"><div class="swatch-color" style="background:#1a1a1a"></div><span class="swatch-name">Grey 900</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:#3d3d3d"></div><span class="swatch-name">Grey 500</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:#666666"></div><span class="swatch-name">Grey 400</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:#9a9a9a"></div><span class="swatch-name">Grey 300</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:#c4c4c4"></div><span class="swatch-name">Grey 200</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:#e8e8e8"></div><span class="swatch-name">Grey 100</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:#e84020"></div><span class="swatch-name">Accent</span></div>
+    </div>
+    <p class="sg-label" style="margin-bottom:.75rem">Semantic</p>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-color" style="background:var(--clr-bg)"></div><span class="swatch-name">BG</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--clr-surface)"></div><span class="swatch-name">Surface</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--clr-text)"></div><span class="swatch-name">Text</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--clr-muted)"></div><span class="swatch-name">Muted</span></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--clr-border)"></div><span class="swatch-name">Border</span></div>
+    </div>
+  </div>
+
+  <!-- ── TYPOGRAPHY ─────────────────────────────────────────────────────── -->
+  <div class="sg-section">
+    <p class="sg-title">Typography</p>
+
+    <div class="sg-col">
+      <div><div class="t-d1">Display 1</div><p class="sg-label">clamp(3rem,9vw,8rem) · 400 · ls −0.04em</p></div>
+      <div class="sg-divider"></div>
+      <div><div class="t-d2">Display 2</div><p class="sg-label">clamp(2rem,6vw,5rem) · 400 · ls −0.03em</p></div>
+      <div class="sg-divider"></div>
+      <div><div class="t-h1">Heading 1 — Title L</div><p class="sg-label">32px / 40px · 400</p></div>
+      <div><div class="t-h2">Heading 2 — Title M</div><p class="sg-label">24px / 32px · 400</p></div>
+      <div><div class="t-h3">Heading 3 — Title S</div><p class="sg-label">20px / 28px · 400</p></div>
+      <div><div class="t-h4">Heading 4 — Subtitle</div><p class="sg-label">16px / 24px · 600</p></div>
+      <div><div class="t-h5">Heading 5 — Subtitle Small</div><p class="sg-label">14px / 20px · 600</p></div>
+      <div class="sg-divider"></div>
+      <div><p class="t-p">Body — Vizuální identita je základ každé silné značky. Tvoříme systémy, které komunikují přesně to, co chcete říct.</p><p class="sg-label">16px / 24px · 400</p></div>
+      <div><p class="t-psm">Body Small — Drobný text pro poznámky, metadata a pomocné informace v rozhraní.</p><p class="sg-label">14px / 20px · 400</p></div>
+      <div class="sg-divider"></div>
+      <div><p class="t-eye">Eyebrow / Label</p><p class="sg-label">12px · 600 · uppercase · ls 0.06em</p></div>
+      <div><p class="t-cap">Caption — doplňkový text, metadata, timestamp</p><p class="sg-label">12px / 16px · 400 · muted</p></div>
+      <div><span class="t-btn">Button Text</span><p class="sg-label">14px · 600</p></div>
+      <div><a href="#" class="t-link">Textový odkaz s podtržením</a><p class="sg-label">border-bottom + opacity hover</p></div>
+      <div style="font-style:italic"><em>Italic / Oblique variant</em><p class="sg-label">Ronzino Oblique</p></div>
+    </div>
+  </div>
+
+  <!-- ── BUTTONS ────────────────────────────────────────────────────────── -->
+  <div class="sg-section">
+    <p class="sg-title">Buttons</p>
+
+    <p class="sg-label" style="margin-bottom:.5rem">Variants</p>
+    <div class="sg-row" style="margin-bottom:1.5rem">
+      <button class="btn btn-md btn-primary">Primary</button>
+      <button class="btn btn-md btn-secondary">Secondary</button>
+      <button class="btn btn-md btn-accent">Accent</button>
+      <button class="btn btn-md btn-ghost">Ghost</button>
+      <button class="btn btn-md btn-danger">Danger</button>
+    </div>
+
+    <p class="sg-label" style="margin-bottom:.5rem">Sizes</p>
+    <div class="sg-row" style="margin-bottom:1.5rem; align-items:center">
+      <button class="btn btn-sm btn-primary">Small</button>
+      <button class="btn btn-md btn-primary">Medium</button>
+      <button class="btn btn-lg btn-primary">Large</button>
+    </div>
+
+    <p class="sg-label" style="margin-bottom:.5rem">States</p>
+    <div class="sg-row" style="margin-bottom:1.5rem">
+      <button class="btn btn-md btn-primary" disabled>Disabled</button>
+      <button class="btn btn-md btn-secondary" disabled>Disabled</button>
+    </div>
+
+    <p class="sg-label" style="margin-bottom:.5rem">Icon button</p>
+    <div class="sg-row">
+      <button class="btn btn-icon" title="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <button class="btn btn-icon" title="Add">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="btn btn-icon" title="Arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── INPUTS ─────────────────────────────────────────────────────────── -->
+  <div class="sg-section">
+    <p class="sg-title">Inputs</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; max-width:640px">
+
+      <div class="input-wrap">
+        <label class="input-label">Text input</label>
+        <input class="input" type="text" placeholder="Placeholder…" />
+        <span class="input-hint">Pomocný text pod polem</span>
+      </div>
+
+      <div class="input-wrap input-error">
+        <label class="input-label">Error state</label>
+        <input class="input" type="text" value="Špatná hodnota" />
+        <span class="input-hint">Toto pole je povinné</span>
+      </div>
+
+      <div class="input-wrap">
+        <label class="input-label">Disabled</label>
+        <input class="input" type="text" placeholder="Nelze editovat" disabled />
+      </div>
+
+      <div class="input-wrap">
+        <label class="input-label">Email</label>
+        <input class="input" type="email" placeholder="ahoj@slant.cz" />
+      </div>
+
+      <div class="input-wrap" style="grid-column:1/-1">
+        <label class="input-label">Textarea</label>
+        <textarea class="input textarea" placeholder="Napiš nám o svém projektu…"></textarea>
+      </div>
+
+      <div class="input-wrap">
+        <label class="input-label">Select</label>
+        <div class="select-wrap">
+          <select class="input">
+            <option>Branding</option>
+            <option>UX/UI Design</option>
+            <option>Naming</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Checkboxes / Radios / Toggle -->
+    <div class="sg-divider" style="max-width:640px"></div>
+    <div style="display:flex; flex-wrap:wrap; gap:1.5rem; align-items:flex-start">
+
+      <div class="sg-col">
+        <p class="sg-label">Checkbox</p>
+        <label class="check-label"><input type="checkbox" checked /> Branding</label>
+        <label class="check-label"><input type="checkbox" /> UX Design</label>
+        <label class="check-label"><input type="checkbox" disabled /> Disabled</label>
+      </div>
+
+      <div class="sg-col">
+        <p class="sg-label">Radio</p>
+        <label class="check-label"><input type="radio" name="r" checked /> Možnost A</label>
+        <label class="check-label"><input type="radio" name="r" /> Možnost B</label>
+        <label class="check-label"><input type="radio" name="r" disabled /> Disabled</label>
+      </div>
+
+      <div class="sg-col">
+        <p class="sg-label">Toggle</p>
+        <label class="toggle-wrap">
+          <span class="toggle">
+            <input type="checkbox" checked onchange="this.checked" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </span>
+          Zapnuto
+        </label>
+        <label class="toggle-wrap">
+          <span class="toggle">
+            <input type="checkbox" />
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </span>
+          Vypnuto
+        </label>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── BADGES ─────────────────────────────────────────────────────────── -->
+  <div class="sg-section">
+    <p class="sg-title">Badges</p>
+    <div class="sg-row">
+      <span class="badge badge-default">Default</span>
+      <span class="badge badge-accent badge-dot">Accent</span>
+      <span class="badge badge-success badge-dot">Success</span>
+      <span class="badge badge-warning badge-dot">Warning</span>
+      <span class="badge badge-error badge-dot">Error</span>
+    </div>
+  </div>
+
+  <!-- ── CARDS ──────────────────────────────────────────────────────────── -->
+  <div class="sg-section">
+    <p class="sg-title">Cards</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:1rem; max-width:640px">
+
+      <div class="card">
+        <div class="card-img"></div>
+        <div class="card-body">
+          <p class="card-title">Název projektu</p>
+          <p class="card-text">Krátký popis projektu — co bylo cílem a co jsme vytvořili.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <p class="t-eye" style="margin-bottom:.5rem">Branding</p>
+          <p class="card-title">Text only karta</p>
+          <p class="card-text">Varianta bez obrázku, vhodná pro seznam služeb nebo informací.</p>
+          <div style="margin-top:1rem">
+            <span class="badge badge-default">2024</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Sync toggle visual on click
+  document.querySelectorAll('.toggle input').forEach(input => {
+    input.addEventListener('change', function() {
+      const thumb = this.nextElementSibling?.nextElementSibling
+      if (thumb) thumb.style.transform = this.checked ? 'translateX(1.25rem)' : ''
+    })
+  })
+</script>
+</body>
+</html>

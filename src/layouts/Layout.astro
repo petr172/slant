@@ -1,139 +1,797 @@
 ---
-// Layout.astro — základní šablona pro všechny stránky
 import AnimationInit from '../components/AnimationInit.astro'
+import Analytics from '../components/Analytics.astro'
 import '../styles/global.css'
+import type { Lang } from '../i18n/ui'
 
 interface Props {
   title: string
   description?: string
   ogImage?: string
+  lang?: Lang
+  alternateUrl?: string
+  extraLd?: object[]
 }
 
 const {
   title,
   description = 'Slant — Branding & UX Studio',
   ogImage,
+  lang = 'cs',
+  alternateUrl,
+  extraLd,
 } = Astro.props
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+const alternateLang = lang === 'cs' ? 'en' : 'cs'
+
+const defaultOgImage = 'https://slant.cz/og-default.svg'
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': ['LocalBusiness', 'ProfessionalService', 'DesignAgency'],
+  name: 'Slant s.r.o.',
+  alternateName: 'Slant',
+  description: lang === 'cs'
+    ? 'Branding & UX studio z Brna. Tvoříme vizuální identity, pojmenování a digitální zážitky pro ambiciózní značky.'
+    : 'Branding & UX studio based in Brno, Czech Republic. We create visual identities, naming, and digital experiences for ambitious brands.',
+  url: 'https://slant.cz',
+  logo: 'https://slant.cz/logo.svg',
+  image: defaultOgImage,
+  email: 'ahoj@slant.cz',
+  telephone: '+420774252025',
+  foundingDate: '2019',
+  priceRange: '$$',
+  areaServed: ['CZ', 'SK', 'EU'],
+  knowsLanguage: ['cs', 'en'],
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Zborovská 940/2a',
+    addressLocality: 'Brno',
+    postalCode: '616 00',
+    addressCountry: 'CZ',
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 49.1922,
+    longitude: 16.6113,
+  },
+  sameAs: [
+    'https://www.instagram.com/slant.cz',
+    'https://www.behance.net/weareslant',
+  ],
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: lang === 'cs' ? 'Služby' : 'Services',
+    itemListElement: [
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Branding & Visual Identity' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'UX/UI Design' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Naming' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Packaging Design' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Design System' } },
+    ],
+  },
+}
+
+const navWork    = lang === 'cs' ? '/work'     : '/en/work'
+const navContact = lang === 'cs' ? '/#contact' : '/en/#contact'
+const logoHref   = lang === 'cs' ? '/'         : '/en'
 ---
 <!doctype html>
-<html lang="cs">
+<html lang={lang} class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="generator" content={Astro.generator} />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf9f7" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0c0c0b" />
 
   <title>{title} | Slant</title>
   <meta name="description" content={description} />
+  <meta name="author" content="Slant s.r.o." />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <link rel="canonical" href={canonicalURL} />
 
+  {alternateUrl && (
+    <>
+      <link rel="alternate" hreflang={lang}         href={canonicalURL} />
+      <link rel="alternate" hreflang={alternateLang} href={new URL(alternateUrl, Astro.site)} />
+      <link rel="alternate" hreflang="x-default"    href={new URL(lang === 'cs' ? Astro.url.pathname : alternateUrl, Astro.site)} />
+    </>
+  )}
+
+  <!-- Open Graph -->
+  <meta property="og:site_name"   content="Slant" />
+  <meta property="og:locale"      content={lang === 'cs' ? 'cs_CZ' : 'en_US'} />
   <meta property="og:title"       content={`${title} | Slant`} />
   <meta property="og:description" content={description} />
   <meta property="og:url"         content={canonicalURL} />
   <meta property="og:type"        content="website" />
-  {ogImage && <meta property="og:image" content={ogImage} />}
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta property="og:image"       content={ogImage ?? defaultOgImage} />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
 
-  <!--
-    FONTY — uprav dle svého brandingu.
-    Aktuálně: DM Sans (sans) + DM Serif Display (display).
-    Nebo použij Adobe Fonts přes Creative Cloud.
-  -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;400;500&family=DM+Serif+Display:ital@0;1&display=swap"
-    rel="stylesheet"
-  />
+  <!-- Twitter / X -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:site"        content="@slantcz" />
+  <meta name="twitter:title"       content={`${title} | Slant`} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image"       content={ogImage ?? defaultOgImage} />
+
+  <!-- JSON-LD structured data -->
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  {extraLd?.map(ld => (
+    <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+  ))}
+
+  <!-- Preload critical font -->
+  <link rel="preload" href="/fonts/Ronzino-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/Ronzino-Medium.woff2"  as="font" type="font/woff2" crossorigin />
+
+  <!-- DNS prefetch for Sanity CDN -->
+  <link rel="dns-prefetch" href="https://cdn.sanity.io" />
+  <link rel="preconnect"   href="https://cdn.sanity.io" crossorigin />
+
+  <!-- Theme init — runs before paint to avoid flash -->
+  <script is:inline>
+    ;(function () {
+      const stored = localStorage.getItem('slant-theme')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const theme = stored ?? (prefersDark ? 'dark' : 'light')
+      document.documentElement.classList.toggle('dark', theme === 'dark')
+    })()
+  </script>
+
+  <Analytics />
 </head>
 <body>
-  <!-- Navigace — uprav dle svého designu -->
-  <header class="site-nav">
-    <div class="container site-nav__inner">
-      <a href="/" class="site-nav__logo" aria-label="Slant — home">Slant</a>
-      <nav class="site-nav__links" aria-label="Hlavní navigace">
-        <a href="/work">Work</a>
-        <a href="/#contact">Contact</a>
-      </nav>
-    </div>
+  <header class="island-nav-wrap">
+    <nav class="island-nav" aria-label={lang === 'cs' ? 'Hlavní navigace' : 'Main navigation'}>
+      <!-- Logo -->
+      <a href={logoHref} class="island-nav__logo" aria-label="Slant — home">
+        <img src="/logo.svg" alt="Slant" class="island-nav__logo-img" width="64" height="20" />
+      </a>
+
+      <!-- Links -->
+      <ul class="island-nav__links">
+        <li><a href={navWork}>{lang === 'cs' ? 'Práce' : 'Work'}</a></li>
+        <li><a href={lang === 'cs' ? '/blog' : '/en/blog'}>{lang === 'cs' ? 'Blog' : 'Blog'}</a></li>
+        <li><a href={navContact}>{lang === 'cs' ? 'Kontakt' : 'Contact'}</a></li>
+      </ul>
+
+      <!-- Right side: theme + lang + hamburger -->
+      <div class="island-nav__actions">
+        <button id="theme-toggle" aria-label="Toggle theme" class="island-nav__theme-btn">
+          <span class="theme-icon theme-icon--sun" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </span>
+          <span class="theme-icon theme-icon--moon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </span>
+        </button>
+
+        {alternateUrl && (
+          <a
+            href={alternateUrl}
+            class="island-nav__lang"
+            aria-label={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
+          >
+            {lang === 'cs' ? 'EN' : 'CZ'}
+          </a>
+        )}
+
+        <!-- Hamburger — mobile only -->
+        <button id="menu-toggle" class="island-nav__hamburger" aria-label="Otevřít menu" aria-expanded="false">
+          <span class="hamburger__line hamburger__line--top"></span>
+          <span class="hamburger__line hamburger__line--bot"></span>
+        </button>
+      </div>
+    </nav>
   </header>
+
+  <!-- Mobile fullscreen overlay -->
+  <div id="mobile-menu" class="mobile-menu" aria-hidden="true">
+    <div class="mobile-menu__inner">
+      <nav class="mobile-menu__nav">
+        <a href={navWork}        class="mobile-menu__item">{lang === 'cs' ? 'Práce'   : 'Work'}</a>
+        <a href={lang === 'cs' ? '/blog' : '/en/blog'} class="mobile-menu__item">Blog</a>
+        <a href={navContact}     class="mobile-menu__item">{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
+        {alternateUrl && (
+          <a href={alternateUrl} class="mobile-menu__item mobile-menu__item--lang">
+            {lang === 'cs' ? 'EN' : 'CZ'}
+          </a>
+        )}
+      </nav>
+      <div class="mobile-menu__footer">
+        <a href="mailto:ahoj@slant.cz">ahoj@slant.cz</a>
+        <div class="mobile-menu__social">
+          <a href="https://instagram.com/slant.cz" target="_blank" rel="noopener">Instagram</a>
+          <a href="https://behance.net/weareslant" target="_blank" rel="noopener">Behance</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <main id="main-content">
     <slot />
   </main>
 
   <footer class="site-footer">
-    <div class="container site-footer__inner">
-      <span class="text-micro" style="color: var(--clr-muted)">
-        © Slant {new Date().getFullYear()}
-      </span>
-      <span class="text-micro" style="color: var(--clr-muted)">
-        Branding & UX Studio
-      </span>
+    <div class="container">
+      <div class="site-footer__island">
+
+        <!-- Top row: logo + nav -->
+        <div class="site-footer__top">
+          <a href={logoHref} class="site-footer__logo" aria-label="Slant — home">
+            <img src="/logo.svg" alt="Slant" class="site-footer__logo-img" width="64" height="20" />
+          </a>
+          <nav class="site-footer__nav" aria-label="Footer navigation">
+            <a href={navWork}>{lang === 'cs' ? 'Práce' : 'Work'}</a>
+            <a href={lang === 'cs' ? '/blog' : '/en/blog'}>Blog</a>
+            <a href={navContact}>{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
+          </nav>
+          <div class="site-footer__social">
+            <a href="https://instagram.com/slant.cz" target="_blank" rel="noopener" aria-label="Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/>
+              </svg>
+            </a>
+            <a href="https://behance.net/weareslant" target="_blank" rel="noopener" aria-label="Behance">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8.228 9.37c.558-.302.928-.876.928-1.558C9.156 6.525 8.05 5.8 6.677 5.8H2v12.4h4.9c1.498 0 2.75-.82 2.75-2.25 0-.98-.535-1.81-1.422-2.18.64-.318 1-.912 1-.86zm-4.578-2.1h2.627c.627 0 1.045.37 1.045.94 0 .61-.44.98-1.13.98H3.65V7.27zm2.9 6.8H3.65v-2.3h2.944c.78 0 1.247.42 1.247 1.14 0 .74-.49 1.16-1.32 1.16zm8.627-6.37c-2.432 0-4.104 1.722-4.104 4.18 0 2.46 1.647 4.12 4.13 4.12 1.96 0 3.302-.96 3.84-2.55h-1.75c-.28.6-.98.98-1.998.98-1.2 0-2.02-.76-2.17-2.01h6.01c.02-.2.03-.4.03-.58 0-2.46-1.57-4.14-3.988-4.14zm-2.01 3.24c.2-1.08.96-1.76 2-1.76s1.8.7 1.95 1.76H13.14zm4.86-4.94h-5.56V7.3h5.56v.7z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Back to top -->
+        <button id="back-to-top" class="site-footer__btt" aria-label="Zpět nahoru">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+          </svg>
+          <span>{lang === 'cs' ? 'Zpět nahoru' : 'Back to top'}</span>
+        </button>
+
+        <!-- Divider -->
+        <div class="site-footer__divider"></div>
+
+        <!-- Bottom row: info + legal -->
+        <div class="site-footer__bottom">
+          <div class="site-footer__info">
+            <span>Slant s.r.o. · IČO 092 50 239</span>
+            <span>Zborovská 940/2a, 616 00 Brno</span>
+          </div>
+          <div class="site-footer__contact">
+            <a href="mailto:ahoj@slant.cz">ahoj@slant.cz</a>
+            <a href="tel:+420774252025">+420 774 252 025</a>
+          </div>
+          <div class="site-footer__legal">
+            <a href={lang === 'cs' ? '/podminky/vseobecne-obchodni-podminky' : '/en/podminky/vseobecne-obchodni-podminky'}>
+              {lang === 'cs' ? 'Obchodní podmínky' : 'Terms & Conditions'}
+            </a>
+            <span>© Slant s.r.o. {new Date().getFullYear()}</span>
+          </div>
+        </div>
+
+      </div>
     </div>
   </footer>
 
-  <!-- GSAP + Lenis init -->
   <AnimationInit />
+
+  <!-- Sanity Visual Editing — loads only inside Presentation iframe -->
+  <script>
+    if (window.self !== window.top) {
+      import('@sanity/visual-editing').then(({ enableVisualEditing }) => enableVisualEditing())
+    }
+  </script>
+
+  <script>
+    // ── Nav scroll shrink ─────────────────────────────────────────────────
+    const navWrap = document.querySelector('.island-nav-wrap') as HTMLElement | null
+    const nav     = document.querySelector('.island-nav')     as HTMLElement | null
+    const THRESHOLD = 40
+
+    function updateNav() {
+      const scrolled = window.scrollY > THRESHOLD
+      navWrap?.classList.toggle('is-scrolled', scrolled)
+      nav?.classList.toggle('is-scrolled', scrolled)
+    }
+
+    updateNav()
+    window.addEventListener('scroll', updateNav, { passive: true })
+
+    const btn = document.getElementById('theme-toggle')
+    btn?.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark')
+      localStorage.setItem('slant-theme', isDark ? 'dark' : 'light')
+    })
+
+    // Mobile menu
+    ;(async () => {
+      const { gsap } = await import('gsap')
+
+      const toggle   = document.getElementById('menu-toggle')
+      const menu     = document.getElementById('mobile-menu')
+      const inner    = menu?.querySelector('.mobile-menu__inner')
+      const items    = menu?.querySelectorAll('.mobile-menu__item')
+      const footer   = menu?.querySelector('.mobile-menu__footer')
+      let isOpen     = false
+      let tl: gsap.core.Timeline | null = null
+
+      function openMenu() {
+        isOpen = true
+        toggle?.classList.add('is-open')
+        menu?.classList.add('is-open')
+        menu?.setAttribute('aria-hidden', 'false')
+        toggle?.setAttribute('aria-expanded', 'true')
+        document.body.style.overflow = 'hidden'
+
+        tl?.kill()
+        tl = gsap.timeline()
+        tl.to(inner, { y: '0%', duration: 0.55, ease: 'power4.out' })
+          .to(items,  { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: 'power3.out' }, '-=0.3')
+          .to(footer, { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' }, '-=0.2')
+      }
+
+      function closeMenu() {
+        isOpen = false
+        toggle?.classList.remove('is-open')
+        toggle?.setAttribute('aria-expanded', 'false')
+        document.body.style.overflow = ''
+
+        tl?.kill()
+        tl = gsap.timeline({
+          onComplete: () => {
+            menu?.classList.remove('is-open')
+            menu?.setAttribute('aria-hidden', 'true')
+          }
+        })
+        tl.to([items, footer], { y: 10, opacity: 0, duration: 0.2, ease: 'power2.in' })
+          .to(inner, { y: '100%', duration: 0.4, ease: 'power4.in' }, '-=0.1')
+      }
+
+      toggle?.addEventListener('click', () => isOpen ? closeMenu() : openMenu())
+
+      // Close on nav link click
+      items?.forEach(item => item.addEventListener('click', closeMenu))
+
+      // Close on Escape
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) closeMenu() })
+    })()
+
+    // Back to top — fade in when footer enters viewport
+    const btt = document.getElementById('back-to-top')
+    if (btt) {
+      const observer = new IntersectionObserver(
+        ([entry]) => btt.classList.toggle('is-visible', entry.isIntersecting),
+        { threshold: 0.1 }
+      )
+      const footer = document.querySelector('.site-footer__island')
+      if (footer) observer.observe(footer)
+
+      btt.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      })
+    }
+  </script>
 </body>
 </html>
 
 <style>
-/* ─── Navigace ──────────────────────────────────────────────────────────── */
-.site-nav {
+/* ── Island nav ──────────────────────────────────────────────────────────── */
+.island-nav-wrap {
   position: fixed;
   inset: 0 0 auto;
   z-index: 100;
-  padding-block: var(--sp-sm);
-  border-bottom: 1px solid var(--clr-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  background: color-mix(in srgb, var(--clr-bg) 75%, transparent);
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  pointer-events: none;
 }
 
-.site-nav__inner {
+.island-nav {
+  pointer-events: all;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.site-nav__logo {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-.site-nav__links {
-  display: flex;
   gap: var(--sp-lg);
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
+  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+  border: 1px solid var(--clr-border);
+  background: color-mix(in srgb, var(--clr-bg) 80%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 2px 24px rgba(0,0,0,0.06);
+  /* default: wide */
+  width: 100%;
+  max-width: var(--max-w, 80rem);
+  border-radius: 999px;
+  padding: 0.75rem 0.75rem 0.75rem 2rem;
+  transition:
+    max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s;
+}
+
+.island-nav.is-scrolled {
+  max-width: 34rem;
+  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+}
+
+.island-nav:hover,
+.island-nav.is-scrolled:hover {
+  box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+}
+
+.island-nav__logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.island-nav__logo-img,
+.site-footer__logo-img {
+  display: block;
+  filter: invert(0);
+  transition: filter 0.2s;
+}
+.dark .island-nav__logo-img,
+.dark .site-footer__logo-img { filter: invert(1); }
+
+.island-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.island-nav__links a {
+  display: block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--clr-muted);
+  transition: color 0.2s, background 0.2s;
+}
+.island-nav__links a:hover {
+  color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 6%, transparent);
+}
+
+.island-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.island-nav__theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  color: var(--clr-muted);
+  transition: color 0.2s, background 0.2s;
+}
+.island-nav__theme-btn:hover {
+  color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 6%, transparent);
+}
+
+.island-nav__lang {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--clr-text);
+  transition: border-color 0.2s, background 0.2s;
+}
+.island-nav__lang:hover {
+  border-color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 6%, transparent);
 }
 
-.site-nav__links a {
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
+/* Show sun in dark mode, moon in light mode */
+.dark  .theme-icon--sun  { display: flex; }
+.dark  .theme-icon--moon { display: none; }
+       .theme-icon--sun  { display: none; }
+       .theme-icon--moon { display: flex; }
+
+main { padding-top: 5rem; }
+
+@media (max-width: 48em) {
+  main { padding-top: 1rem; padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
 }
 
-.site-nav__links a:hover { opacity: 1; }
-
-/* ─── Main content — offset kvůli fixed nav ─────────────────────────────── */
-main { padding-top: 4rem; }
-
-/* ─── Footer ────────────────────────────────────────────────────────────── */
-.site-footer {
-  margin-top: var(--sp-3xl);
-  padding-block: var(--sp-xl);
-  border-top: 1px solid var(--clr-border);
+/* ── Hamburger ───────────────────────────────────────────────────────────── */
+.island-nav__hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  color: var(--clr-text);
+  transition: background 0.2s;
+}
+.island-nav__hamburger:hover {
+  background: color-mix(in srgb, var(--clr-text) 6%, transparent);
 }
 
-.site-footer__inner {
+.hamburger__line {
+  display: block;
+  width: 16px;
+  height: 1.5px;
+  background: currentColor;
+  border-radius: 2px;
+  transform-origin: center;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity   0.25s ease;
+}
+
+/* X state */
+.island-nav__hamburger.is-open .hamburger__line--top {
+  transform: translateY(3.25px) rotate(45deg);
+}
+.island-nav__hamburger.is-open .hamburger__line--bot {
+  transform: translateY(-3.25px) rotate(-45deg);
+}
+
+/* ── Mobile menu overlay ─────────────────────────────────────────────────── */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.mobile-menu__inner {
+  position: absolute;
+  bottom: 0;
+  left: 0.75rem;
+  right: 0.75rem;
+  padding: var(--sp-xl) var(--sp-lg) calc(var(--sp-xl) + env(safe-area-inset-bottom));
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: color-mix(in srgb, var(--clr-bg) 92%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--clr-border);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xl);
+  transform: translateY(100%);
+}
+
+.mobile-menu.is-open {
+  pointer-events: all;
+}
+
+.mobile-menu__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mobile-menu__item {
+  font-size: clamp(2rem, 8vw, 3rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--clr-text);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: color 0.2s;
+}
+.mobile-menu__item:hover { color: var(--clr-muted); }
+
+.mobile-menu__item--lang {
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--clr-muted);
+  margin-top: var(--sp-sm);
+}
+
+.mobile-menu__footer {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
+  font-size: 0.8125rem;
+  color: var(--clr-muted);
+  opacity: 0;
+  transform: translateY(10px);
+}
+.mobile-menu__footer a { transition: color 0.2s; }
+.mobile-menu__footer a:hover { color: var(--clr-text); }
+
+.mobile-menu__social {
+  display: flex;
+  gap: var(--sp-md);
+}
+
+/* ── Responsive breakpoint ───────────────────────────────────────────────── */
+@media (max-width: 48em) {
+  .island-nav__links     { display: none; }
+  .island-nav__hamburger { display: flex; }
+  .mobile-menu           { display: block; }
+
+  /* Celý island nav přesunout dolů + full width */
+  .island-nav-wrap {
+    top: auto;
+    bottom: 0;
+    padding: 0 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+    align-items: flex-end;
+  }
+
+  .island-nav,
+  .island-nav.is-scrolled {
+    max-width: 100%;
+    border-radius: 999px;
+    transition: none;
+  }
+
+  /* Překryv menu musí být nad navem */
+  .mobile-menu__inner {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    border-radius: 1.5rem;
+    border-bottom: 1px solid var(--clr-border);
+  }
+}
+
+.site-footer {
+  padding: var(--sp-lg) 0 var(--sp-xl);
+}
+
+.site-footer__island {
+  border: 1px solid var(--clr-border);
+  border-radius: 1.5rem;
+  padding: var(--sp-lg) var(--sp-xl);
+  background: color-mix(in srgb, var(--clr-surface) 60%, transparent);
+}
+
+/* Back to top */
+.site-footer__btt {
+  display: flex;
   align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--clr-muted);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s var(--ease-out-expo), transform 0.5s var(--ease-out-expo), color 0.2s;
+  pointer-events: none;
+}
+.site-footer__btt.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+.site-footer__btt:hover { color: var(--clr-text); }
+.site-footer__btt svg { transition: transform 0.3s var(--ease-out-expo); }
+.site-footer__btt:hover svg { transform: translateY(-3px); }
+
+/* Top row */
+.site-footer__top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-lg);
+  margin-bottom: var(--sp-lg);
+}
+
+.site-footer__logo { display: flex; align-items: center; }
+
+.site-footer__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  margin-left: var(--sp-lg);
+}
+.site-footer__nav a {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-muted);
+  transition: color 0.2s;
+}
+.site-footer__nav a:hover { color: var(--clr-text); }
+
+.site-footer__social {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-left: auto;
+}
+.site-footer__social a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  color: var(--clr-muted);
+  transition: color 0.2s, border-color 0.2s;
+}
+.site-footer__social a:hover {
+  color: var(--clr-text);
+  border-color: var(--clr-text);
+}
+
+/* Divider */
+.site-footer__divider {
+  height: 1px;
+  background: var(--clr-border);
+  margin-bottom: var(--sp-lg);
+}
+
+/* Bottom row */
+.site-footer__bottom {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-xl);
+  flex-wrap: wrap;
+}
+
+.site-footer__info,
+.site-footer__contact,
+.site-footer__legal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--clr-muted);
+  line-height: 1.5;
+}
+
+.site-footer__legal { margin-left: auto; align-items: flex-end; }
+.site-footer__legal a {
+  color: var(--clr-muted);
+  transition: color 0.2s;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.site-footer__legal a:hover { color: var(--clr-text); }
+
+.site-footer__contact a {
+  color: var(--clr-muted);
+  transition: color 0.2s;
+}
+.site-footer__contact a:hover { color: var(--clr-text); }
+
+@media (max-width: 48em) {
+  .site-footer__island { border-radius: 1rem; padding: var(--sp-md); }
+  .site-footer__top { flex-wrap: wrap; }
+  .site-footer__social { margin-left: 0; }
+  .site-footer__bottom { flex-direction: column; gap: var(--sp-md); }
+  .site-footer__legal { margin-left: 0; align-items: flex-start; }
 }
 </style>

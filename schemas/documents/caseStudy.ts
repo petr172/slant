@@ -1,6 +1,5 @@
 import { defineField, defineType } from 'sanity'
 
-// Upravitelný seznam služeb — přidej/odeber dle svého portfolia
 const SERVICES = [
   'Brand Identity',
   'Logo Design',
@@ -19,11 +18,11 @@ export const caseStudy = defineType({
   title: 'Case Study',
   type: 'document',
 
-  // Záložky v Sanity Studiu pro přehlednost
   groups: [
     { name: 'identity', title: '📋 Projekt' },
     { name: 'media',    title: '🖼 Média' },
     { name: 'content',  title: '✍️ Obsah' },
+    { name: 'translations', title: '🌐 English' },
     { name: 'seo',      title: '🔍 SEO' },
   ],
 
@@ -145,10 +144,43 @@ export const caseStudy = defineType({
       rows: 2,
     }),
 
+    // ─── ANGLICKÉ PŘEKLADY ─────────────────────────────────────────────────────
+    defineField({
+      name: 'titleEn',
+      title: 'Project name (EN)',
+      type: 'string',
+      group: 'translations',
+      description: 'English version of the project name. Leave empty to use Czech.',
+      validation: (r) => r.max(80),
+    }),
+    defineField({
+      name: 'taglineEn',
+      title: 'Tagline (EN)',
+      type: 'string',
+      group: 'translations',
+      validation: (r) => r.max(120),
+    }),
+    defineField({
+      name: 'creditsEn',
+      title: 'Credits / team (EN)',
+      type: 'text',
+      group: 'translations',
+      rows: 2,
+    }),
+    defineField({
+      name: 'seoDescriptionEn',
+      title: 'SEO description (EN)',
+      type: 'text',
+      group: 'translations',
+      rows: 3,
+      validation: (r) => r.max(160),
+      description: 'Max 160 chars — shown in search results for English version',
+    }),
+
     // ─── SEO ───────────────────────────────────────────────────────────────────
     defineField({
       name: 'seoDescription',
-      title: 'SEO popis',
+      title: 'SEO popis (CS)',
       type: 'text',
       group: 'seo',
       rows: 3,

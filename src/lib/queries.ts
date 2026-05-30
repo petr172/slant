@@ -2,9 +2,9 @@
 export const ALL_CASE_STUDIES_QUERY = `
   *[_type == "caseStudy"] | order(order asc, year desc) {
     _id,
-    title,
+    title, titleEn,
     "slug": slug.current,
-    tagline,
+    tagline, taglineEn,
     year,
     services,
     industry,
@@ -17,12 +17,39 @@ export const ALL_CASE_STUDIES_QUERY = `
 export const FEATURED_CASE_STUDIES_QUERY = `
   *[_type == "caseStudy" && featured == true] | order(order asc) [0...6] {
     _id,
-    title,
+    title, titleEn,
     "slug": slug.current,
-    tagline,
+    tagline, taglineEn,
     year,
     services,
     coverImage
+  }
+`
+
+// ─── Legal pages ───────────────────────────────────────────────────────────────
+export const LEGAL_PAGE_BY_SLUG_QUERY = `
+  *[_type == "legalPage" && slug.current == $slug][0] {
+    _id, title, titleEn,
+    "slug": slug.current,
+    body, bodyEn
+  }
+`
+
+export const ALL_LEGAL_SLUGS_QUERY = `
+  *[_type == "legalPage"] { "slug": slug.current }
+`
+
+// ─── Site Settings (singleton) ────────────────────────────────────────────────
+export const SITE_SETTINGS_QUERY = `
+  *[_type == "siteSettings"][0] {
+    heroMedia[] {
+      _type,
+      _key,
+      image { asset->, alt, hotspot, crop },
+      alt,
+      url
+    }
+
   }
 `
 
@@ -35,8 +62,8 @@ export const ALL_SLUGS_QUERY = `
 export const CASE_STUDY_BY_SLUG_QUERY = `
   *[_type == "caseStudy" && slug.current == $slug][0] {
     _id,
-    title,
-    tagline,
+    title, titleEn,
+    tagline, taglineEn,
     client,
     year,
     industry,
@@ -45,14 +72,14 @@ export const CASE_STUDY_BY_SLUG_QUERY = `
     heroVideo,
     coverImage,
     sections[] {
-      heading,
-      body,
+      heading, headingEn,
+      body, bodyEn,
       images[] {
         ...,
         asset->
       }
     },
-    credits,
-    seoDescription
+    credits, creditsEn,
+    seoDescription, seoDescriptionEn
   }
 `

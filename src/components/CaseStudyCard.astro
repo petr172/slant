@@ -1,9 +1,5 @@
 ---
-// CaseStudyCard.astro
-// Karta case study pro listing stránku.
-// Vizuální design je na tobě — tady je jen struktura s CSS proměnnými.
-
-import { urlFor } from '../lib/imageUrl'
+import SanityImage from './SanityImage.astro'
 
 interface Props {
   title: string
@@ -13,20 +9,26 @@ interface Props {
   services?: string[]
   coverImage?: any
   featured?: boolean
+  lang?: 'cs' | 'en'
 }
 
-const { title, slug, tagline, year, services, coverImage } = Astro.props
-
-const imgUrl = coverImage
-  ? urlFor(coverImage).width(900).height(600).fit('crop').format('webp').quality(85).url()
-  : null
+const { title, slug, tagline, year, services, coverImage, lang = 'cs' } = Astro.props
+const workBase = lang === 'en' ? '/en/work' : '/work'
 ---
 
 <article class="case-card" data-fade>
-  <a href={`/work/${slug}`} class="case-card__link">
+  <a href={`${workBase}/${slug}`} class="case-card__link">
     <div class="case-card__media">
-      {imgUrl
-        ? <img src={imgUrl} alt={coverImage?.alt ?? title} loading="lazy" width="900" height="600" />
+      {coverImage
+        ? <SanityImage
+            image={coverImage}
+            alt={coverImage?.alt ?? title}
+            width={900}
+            height={600}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            widths={[400, 700, 900]}
+            class="case-card__img"
+          />
         : <div class="case-card__placeholder" aria-hidden="true" />
       }
     </div>
@@ -47,11 +49,7 @@ const imgUrl = coverImage
 
 <style>
 .case-card { position: relative; }
-
-.case-card__link {
-  display: block;
-  group: hover;
-}
+.case-card__link { display: block; }
 
 .case-card__media {
   position: relative;
@@ -62,26 +60,19 @@ const imgUrl = coverImage
   margin-bottom: var(--sp-sm);
 }
 
-.case-card__media img {
+.case-card__media picture,
+.case-card__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   transition: transform 0.6s var(--ease-out-expo);
 }
 
-.case-card__link:hover .case-card__media img {
-  transform: scale(1.04);
-}
+.case-card__link:hover .case-card__img { transform: scale(1.04); }
 
-.case-card__placeholder {
-  width: 100%;
-  height: 100%;
-  background: var(--clr-surface);
-}
-
-.case-card__info {
-  padding-block: var(--sp-xs);
-}
+.case-card__placeholder { width: 100%; height: 100%; background: var(--clr-surface); }
+.case-card__info { padding-block: var(--sp-xs); }
 
 .case-card__title {
   font-family: var(--font-sans);
@@ -107,18 +98,8 @@ const imgUrl = coverImage
 }
 
 .case-card__services {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  list-style: none;
+  display: flex; flex-wrap: wrap; gap: 0.25rem; list-style: none;
 }
-
-.case-card__services li::before {
-  content: '·';
-  margin-right: 0.25rem;
-}
-.case-card__services li:first-child::before {
-  content: '';
-  margin-right: 0;
-}
+.case-card__services li::before { content: '·'; margin-right: 0.25rem; }
+.case-card__services li:first-child::before { content: ''; margin-right: 0; }
 </style>

@@ -1,0 +1,50 @@
+[
+  {
+    "_type": "caseStudy",
+    "_id": "caseStudy-jatvar",
+    "title": "Jatvar",
+    "titleEn": "Jatvar",
+    "slug": { "_type": "slug", "current": "jatvar" },
+    "tagline": "Identita pro moderní řeznictví s důrazem na řemeslo",
+    "taglineEn": "Brand identity for a modern butcher shop with a focus on craft",
+    "year": 2025,
+    "services": ["Branding", "Visual Identity", "Packaging"],
+    "industry": "Food & Beverage",
+    "featured": true,
+    "order": 10,
+    "seoDescription": "Vizuální identita pro řeznictví Jatvar — moderní přístup k tradičnímu řemeslu.",
+    "seoDescriptionEn": "Visual identity for Jatvar butcher shop — a modern take on a traditional craft."
+  },
+  {
+    "_type": "caseStudy",
+    "_id": "caseStudy-autojeraby-malina",
+    "title": "Autojeřáby Malina",
+    "titleEn": "Malina Cranes",
+    "slug": { "_type": "slug", "current": "autojeraby-malina" },
+    "tagline": "Rebrand rodinné firmy s 30letou historií v těžkém průmyslu",
+    "taglineEn": "Rebrand of a family business with 30 years in heavy industry",
+    "year": 2024,
+    "services": ["Branding", "Web Design", "Vehicle Wrap"],
+    "industry": "Construction",
+    "featured": true,
+    "order": 20,
+    "seoDescription": "Rebrand Autojeřáby Malina — nová identita pro rodinnou firmu s tradicí.",
+    "seoDescriptionEn": "Rebrand for Malina Cranes — new identity for a family business with tradition."
+  },
+  {
+    "_type": "caseStudy",
+    "_id": "caseStudy-data-jmk",
+    "title": "Data JMK",
+    "titleEn": "Data JMK",
+    "slug": { "_type": "slug", "current": "data-jmk" },
+    "tagline": "Datový portál Jihomoravského kraje — UX a vizuální systém",
+    "taglineEn": "Data portal for South Moravian Region — UX and visual system",
+    "year": 2024,
+    "services": ["UX Design", "UI Design", "Design System"],
+    "industry": "Public Sector",
+    "featured": true,
+    "order": 30,
+    "seoDescription": "UX a vizuální systém pro datový portál Jihomoravského kraje.",
+    "seoDescriptionEn": "UX and visual system for the South Moravian Region data portal."
+  }
+]

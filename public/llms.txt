@@ -1,0 +1,46 @@
+# Slant s.r.o.
+
+> Branding & UX studio based in Brno, Czech Republic. We create visual identities, naming strategies, and digital experiences for ambitious brands.
+
+## About
+
+Slant is an independent branding and UX design studio founded in Brno, Czech Republic. We work with companies across Central Europe and beyond, helping them build distinctive visual identities and meaningful digital products.
+
+**Founded:** 2019
+**Location:** Zborovská 940/2a, 616 00 Brno, Czech Republic
+**Company ID (IČO):** 092 50 239
+**Languages:** Czech, English
+
+## Services
+
+- **Branding & Visual Identity** — logo design, brand guidelines, visual systems
+- **Naming** — brand naming, taglines, verbal identity
+- **UX/UI Design** — user experience design, interface design, prototyping
+- **Packaging Design** — product packaging and print design
+- **Design Systems** — scalable component libraries and design tokens
+- **Web Design** — marketing websites and digital experiences
+
+## Contact
+
+- Email: ahoj@slant.cz
+- Phone: +420 774 252 025
+- Website: https://slant.cz
+
+## Social
+
+- Instagram: https://instagram.com/slant.cz
+- Behance: https://behance.net/weareslant
+
+## Selected Work
+
+- **Velký Špalíček** — Rebranding of a Brno landmark retail center (Brand Identity, Logo Design, Visual System)
+- **Jatvar** — Brand identity for a modern butcher shop with focus on craft
+- **Autojeřáby Malina** — Rebrand of a family crane company with 30 years in heavy industry
+- **Data JMK** — UX and visual system for the South Moravian Region open data portal
+
+## Sitemap
+
+- https://slant.cz/
+- https://slant.cz/work
+- https://slant.cz/en/
+- https://slant.cz/en/work

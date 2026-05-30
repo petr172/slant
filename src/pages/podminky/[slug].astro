@@ -1,0 +1,35 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import PortableText from '../../components/PortableText.astro'
+import { client } from '../../lib/sanity'
+import { ALL_LEGAL_SLUGS_QUERY, LEGAL_PAGE_BY_SLUG_QUERY } from '../../lib/queries'
+
+export async function getStaticPaths() {
+  const slugs = await client.fetch(ALL_LEGAL_SLUGS_QUERY)
+  return slugs.map((s: { slug: string }) => ({ params: { slug: s.slug } }))
+}
+
+const { slug } = Astro.params
+const page = await client.fetch(LEGAL_PAGE_BY_SLUG_QUERY, { slug })
+---
+
+<Layout title={page?.title ?? 'Podmínky'} lang="cs" alternateUrl={`/en/podminky/${slug}`}>
+  <article class="legal container">
+    <h1 class="legal__title">{page?.title}</h1>
+    {page?.body && <div class="legal__body portable-text"><PortableText blocks={page.body} /></div>}
+  </article>
+</Layout>
+
+<style>
+.legal { padding-block: var(--sp-2xl) var(--sp-3xl); max-width: 52rem; }
+.legal__title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: var(--sp-xl);
+  padding-bottom: var(--sp-lg);
+  border-bottom: 1px solid var(--clr-border);
+}
+.legal__body { font-size: 1rem; line-height: 1.75; color: var(--clr-text); }
+</style>

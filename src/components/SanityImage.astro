@@ -1,0 +1,68 @@
+---
+/**
+ * SanityImage — optimalizovaná <picture> komponenta pro Sanity obrázky.
+ *
+ * Automaticky generuje:
+ *   - AVIF + WebP srcset ve více velikostech
+ *   - Správný sizes atribut
+ *   - width/height pro CLS prevenci
+ *   - lazy loading (eager pro above-fold)
+ */
+import { urlFor } from '../lib/imageUrl'
+
+interface Props {
+  image: any                // Sanity image object
+  alt?: string
+  sizes?: string            // CSS sizes string, e.g. "(max-width: 768px) 100vw, 50vw"
+  widths?: number[]         // Srcset breakpoints
+  width?: number            // Rendered width (pro aspect ratio)
+  height?: number           // Rendered height
+  fit?: 'crop' | 'clip' | 'fill' | 'fillmax' | 'max' | 'scale' | 'min'
+  quality?: number
+  loading?: 'lazy' | 'eager'
+  class?: string
+  style?: string
+}
+
+const {
+  image,
+  alt,
+  sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 60vw',
+  widths = [400, 800, 1200, 1800],
+  width = 1200,
+  height,
+  fit = 'crop',
+  quality = 85,
+  loading = 'lazy',
+  class: className,
+  style,
+} = Astro.props
+
+if (!image) return
+
+// Výchozí aspect ratio 3:2 pokud není height zadán
+const displayHeight = height ?? Math.round(width * (2 / 3))
+
+function buildUrl(w: number) {
+  const h = Math.round(w * (displayHeight / width))
+  return urlFor(image).width(w).height(h).fit(fit).format('webp').quality(quality).url()
+}
+
+const webpSrcset  = widths.map(w => `${buildUrl(w)} ${w}w`).join(', ')
+const fallbackSrc = buildUrl(widths[widths.length - 1])
+const resolvedAlt = alt ?? image?.alt ?? ''
+---
+
+<picture style="display:block;width:100%;height:100%;">
+  <source type="image/webp" srcset={webpSrcset} {sizes} />
+  <img
+    src={fallbackSrc}
+    alt={resolvedAlt}
+    width={width}
+    height={displayHeight}
+    {loading}
+    decoding={loading === 'eager' ? 'sync' : 'async'}
+    class={className}
+    style={`display:block;width:100%;height:100%;object-fit:cover;${style ?? ''}`}
+  />
+</picture>

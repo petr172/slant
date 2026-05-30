@@ -1,0 +1,161 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import CaseStudyCard from '../CaseStudyCard.astro'
+import { client } from '../../lib/sanity'
+import { ALL_CASE_STUDIES_QUERY } from '../../lib/queries'
+import { useTranslations, type Lang } from '../../i18n/ui'
+
+interface Props { lang: Lang }
+
+const { lang } = Astro.props
+const t = useTranslations(lang)
+const caseStudies = await client.fetch(ALL_CASE_STUDIES_QUERY)
+const alternateUrl = lang === 'cs' ? '/en/work' : '/work'
+
+// Collect all unique tags
+const allTags: string[] = [...new Set(
+  caseStudies.flatMap((cs: any) => cs.services ?? [])
+)].sort() as string[]
+---
+
+<Layout
+  title={t('meta.work.title')}
+  description={t('meta.work.desc')}
+  {lang}
+  {alternateUrl}
+>
+  <section class="work-listing container">
+    <header class="work-listing__header" data-fade>
+      <h1 class="text-display">Work</h1>
+      <p class="work-listing__count text-label" style="color: var(--clr-muted)">
+        <span id="count">{caseStudies?.length ?? 0}</span> {t('work.projects')}
+      </p>
+    </header>
+
+    <!-- Tag filters -->
+    {allTags.length > 0 && (
+      <div class="work-listing__filters" id="tag-filters">
+        <button class="tag-btn tag-btn--all is-active" data-tag="">
+          {lang === 'cs' ? 'Vše' : 'All'}
+        </button>
+        {allTags.map(tag => (
+          <button class="tag-btn" data-tag={tag}>{tag}</button>
+        ))}
+      </div>
+    )}
+
+    {caseStudies?.length > 0 ? (
+      <div class="work-listing__grid" id="work-grid">
+        {caseStudies.map((cs: any) => (
+          <div
+            class="work-listing__card"
+            data-services={JSON.stringify(cs.services ?? [])}
+          >
+            <CaseStudyCard
+              title={lang === 'en' ? (cs.titleEn || cs.title) : cs.title}
+              slug={cs.slug}
+              tagline={lang === 'en' ? (cs.taglineEn || cs.tagline) : cs.tagline}
+              year={cs.year}
+              services={cs.services}
+              coverImage={cs.coverImage}
+              featured={cs.featured}
+              {lang}
+            />
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p class="work-listing__empty text-body" style="color: var(--clr-muted)">
+        {t('work.empty')}
+      </p>
+    )}
+  </section>
+</Layout>
+
+<script>
+  const params   = new URLSearchParams(window.location.search)
+  const initTag  = params.get('tag') ?? ''
+
+  const filters  = document.getElementById('tag-filters')
+  const grid     = document.getElementById('work-grid')
+  const countEl  = document.getElementById('count')
+  const cards    = grid?.querySelectorAll<HTMLElement>('.work-listing__card')
+  const btns     = filters?.querySelectorAll<HTMLButtonElement>('.tag-btn')
+
+  function applyFilter(tag: string) {
+    if (!cards || !btns || !countEl) return
+    let visible = 0
+
+    btns.forEach(b => b.classList.toggle('is-active', b.dataset.tag === tag))
+
+    cards.forEach(card => {
+      const services: string[] = JSON.parse(card.dataset.services ?? '[]')
+      const show = !tag || services.includes(tag)
+      card.style.display = show ? '' : 'none'
+      if (show) visible++
+    })
+
+    countEl.textContent = String(visible)
+
+    // update URL without reload
+    const url = new URL(window.location.href)
+    tag ? url.searchParams.set('tag', tag) : url.searchParams.delete('tag')
+    history.replaceState({}, '', url)
+  }
+
+  // Init from URL param
+  applyFilter(initTag)
+
+  // Click handlers
+  btns?.forEach(btn => {
+    btn.addEventListener('click', () => applyFilter(btn.dataset.tag ?? ''))
+  })
+</script>
+
+<style>
+.work-listing { padding-block: var(--sp-2xl) var(--sp-3xl); }
+
+.work-listing__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: var(--sp-lg);
+  padding-bottom: var(--sp-lg);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+/* Tag filters */
+.work-listing__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--sp-xl);
+}
+
+.tag-btn {
+  padding: 0.35em 0.9em;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+.tag-btn:hover,
+.tag-btn.is-active {
+  color: var(--clr-text);
+  border-color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 6%, transparent);
+}
+
+.work-listing__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 28rem), 1fr));
+  gap: var(--sp-sm);
+}
+
+.work-listing__empty { padding-top: var(--sp-xl); }
+</style>

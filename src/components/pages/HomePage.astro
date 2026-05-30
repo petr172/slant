@@ -1,0 +1,592 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import SanityImage from '../SanityImage.astro'
+import { client } from '../../lib/sanity'
+import { ALL_CASE_STUDIES_QUERY, SITE_SETTINGS_QUERY } from '../../lib/queries'
+import { useTranslations, type Lang } from '../../i18n/ui'
+
+interface Props { lang: Lang }
+
+const { lang } = Astro.props
+const t = useTranslations(lang)
+const allProjects = await client.fetch(ALL_CASE_STUDIES_QUERY)
+const siteSettings = await client.fetch(SITE_SETTINGS_QUERY)
+const heroMedia: any[] = siteSettings?.heroMedia ?? []
+
+const workUrl      = lang === 'cs' ? '/work'  : '/en/work'
+const alternateUrl = lang === 'cs' ? '/en'    : '/'
+---
+
+<Layout
+  title={t('meta.home.title')}
+  description={t('meta.home.desc')}
+  {lang}
+  {alternateUrl}
+>
+
+  <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
+  <section class="hero" id="js-hero">
+
+    <!-- Hlavní headline -->
+    <div class="hero__headline-wrap container">
+      <h1 class="hero__headline" id="js-headline" set:html={t('home.headline')}></h1>
+    </div>
+
+    <!-- Video kontejner — clip-path se rozevře při scrollu -->
+    <div class="hero__reel-wrap" id="js-reel-wrap">
+      <div class="hero__reel" id="js-reel">
+        {heroMedia.length > 0 ? heroMedia.map((slide: any, i: number) => (
+          <div class={`hero__slide${i === 0 ? ' is-active' : ''}`} data-index={i} data-type={slide._type}>
+            {slide._type === 'heroVideo'
+              ? <video src={slide.url} autoplay muted playsinline class="hero__media" />
+              : slide._type === 'heroExternalImage'
+              ? <img src={slide.url} alt={slide.alt ?? ''} class="hero__media" loading={i === 0 ? 'eager' : 'lazy'} />
+              : <SanityImage
+                  image={slide.image}
+                  alt={slide.alt ?? ''}
+                  width={1920}
+                  height={1080}
+                  widths={[800, 1280, 1920]}
+                  sizes="100vw"
+                  class="hero__media"
+                />
+            }
+          </div>
+        )) : (
+          <div class="hero__slide is-active" data-type="heroVideo">
+            <video autoplay loop muted playsinline class="hero__media">
+              <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
+            </video>
+          </div>
+        )}
+        <div class="hero__reel-overlay"></div>
+        <p class="hero__reel-label">Showreel 2025</p>
+      </div>
+    </div>
+
+    <!-- Spodní desc + CTA -->
+    <div class="hero__bot container" id="js-hero-bot">
+      <p class="hero__desc">{t('home.desc')}</p>
+      <a href={workUrl} class="hero__cta">
+        {t('home.cta')}
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+
+  </section>
+
+  <!-- ─── Work grid ─────────────────────────────────────────────────────── -->
+  {allProjects?.length > 0 && (
+    <section class="projects" id="js-projects">
+      <div class="container">
+        <div class="projects__header">
+          <span class="label">{t('home.selected')}</span>
+          <a href={workUrl} class="projects__all">{t('work.viewAll')}</a>
+        </div>
+      </div>
+
+      <div class="container">
+      <div class="projects__list">
+        {allProjects.map((cs: any, i: number) => {
+          const title   = lang === 'en' ? (cs.titleEn   || cs.title)   : cs.title
+          const tagline = lang === 'en' ? (cs.taglineEn || cs.tagline) : cs.tagline
+          const href    = `${lang === 'cs' ? '/work' : '/en/work'}/${cs.slug}`
+          const isLarge = i === 0 || i === 3  // 1. a 4. projekt jsou wide
+          return (
+            <div class={`project-item ${isLarge ? 'project-item--wide' : ''}`} data-index={i}>
+              <a href={href} class="project-item__link">
+                <div class="project-item__media">
+                  {cs.coverImage
+                    ? <SanityImage
+                        image={cs.coverImage}
+                        alt={cs.coverImage?.alt ?? title}
+                        width={isLarge ? 1400 : 900}
+                        height={isLarge ? 800 : 650}
+                        widths={isLarge ? [700, 1100, 1400] : [450, 700, 900]}
+                        sizes={isLarge ? '(max-width: 768px) 100vw, 70vw' : '(max-width: 768px) 100vw, 40vw'}
+                        class="project-item__img"
+                      />
+                    : <div class="project-item__placeholder" />
+                  }
+                </div>
+                <div class="project-item__info">
+                  <h2 class="project-item__title">{title}</h2>
+                  {tagline && <p class="project-item__tagline">{tagline}</p>}
+                </div>
+              </a>
+              {cs.services?.length > 0 && (
+                <div class="project-item__tags">
+                  {cs.services.slice(0, 3).map((s: string) => (
+                    <a
+                      href={`${workUrl}?tag=${encodeURIComponent(s)}`}
+                      class="project-item__tag"
+                      onclick="event.stopPropagation()"
+                    >{s}</a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div class="projects__footer">
+        <a href={workUrl} class="projects__cta">
+          {lang === 'cs' ? 'Všechny projekty' : 'All projects'}
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ─── Contact ───────────────────────────────────────────────────────── -->
+  <section class="contact container" id="contact">
+    <div class="contact__inner">
+      <span class="label">{t('home.collab')}</span>
+      <h2 class="contact__headline" set:html={t('home.contact.headline')}></h2>
+      <a href="mailto:ahoj@slant.cz" class="contact__email">
+        ahoj@slant.cz
+      </a>
+    </div>
+  </section>
+
+</Layout>
+
+<script>
+  import { gsap } from 'gsap'
+  import { ScrollTrigger } from 'gsap/ScrollTrigger'
+  import { SplitText } from 'gsap/SplitText'
+
+  gsap.registerPlugin(ScrollTrigger, SplitText)
+
+  // ── Headline SplitText intro ──────────────────────────────────────────
+  const headline = document.getElementById('js-headline')
+  if (headline) {
+    const split = new SplitText(headline, { type: 'words' })
+    gsap.from(split.words, {
+      y: 100, opacity: 0, duration: 1.2,
+      stagger: 0.06, ease: 'power4.out', delay: 0.2,
+    })
+  }
+
+gsap.from('#js-hero-bot', {
+    y: 20, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.8,
+  })
+
+  // ── Hero slideshow — hard cut, video on ended, images 1s ─────────────
+  const heroSlides = document.querySelectorAll<HTMLElement>('.hero__slide')
+  if (heroSlides.length > 1) {
+    let current = 0
+
+    function next() {
+      heroSlides[current].classList.remove('is-active')
+      current = (current + 1) % heroSlides.length
+      heroSlides[current].classList.add('is-active')
+      scheduleNext()
+    }
+
+    function scheduleNext() {
+      const slide = heroSlides[current]
+      const type = slide.dataset.type
+      if (type === 'heroVideo') {
+        const video = slide.querySelector('video')
+        if (video) {
+          video.currentTime = 0
+          video.play()
+          video.addEventListener('ended', next, { once: true })
+        } else {
+          setTimeout(next, 3000)
+        }
+      } else {
+        setTimeout(next, 1000)
+      }
+    }
+
+    scheduleNext()
+  }
+
+  // ── Reel clip-path scroll animace ─────────────────────────────────────
+  // Začíná jako malý zakulacený obdélník uprostřed,
+  // při scrollu se rozevírá na celou šířku
+  const reelWrap = document.getElementById('js-reel-wrap')
+  const reel     = document.getElementById('js-reel')
+
+  if (reelWrap && reel) {
+    // Počáteční stav — malé okno uprostřed
+    gsap.set(reel, {
+      clipPath: 'inset(8% 18% 8% 18% round 24px)',
+    })
+
+    // Intro animace — reel se vyjeví
+    gsap.to(reel, {
+      clipPath: 'inset(4% 10% 4% 10% round 16px)',
+      duration: 1.4, ease: 'power4.out', delay: 0.4,
+    })
+
+    // Scroll: rozevření clip-path na fullscreen
+    ScrollTrigger.create({
+      trigger: reelWrap,
+      start: 'top top',
+      end: '+=120%',
+      pin: true,
+      pinSpacing: true,
+      scrub: 1,
+      onUpdate: (self) => {
+        const p = self.progress
+        // interpolace inset: 4%→0%, 10%→0%, radius: 16px→0px
+        const v = gsap.utils.interpolate(4, 0, p)
+        const h = gsap.utils.interpolate(10, 0, p)
+        const r = gsap.utils.interpolate(16, 0, p)
+        gsap.set(reel, {
+          clipPath: `inset(${v}% ${h}% ${v}% ${h}% round ${r}px)`,
+        })
+      },
+    })
+  }
+
+  // ── Projects stagger ──────────────────────────────────────────────────
+  const items = document.querySelectorAll('.project-item')
+  items.forEach((item) => {
+    gsap.from(item, {
+      y: 60, opacity: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: item, start: 'top 85%' },
+    })
+  })
+
+  // ── Contact headline ──────────────────────────────────────────────────
+  const ch = document.querySelector('.contact__headline')
+  if (ch) {
+    const split = new SplitText(ch, { type: 'words' })
+    gsap.from(split.words, {
+      y: 40, opacity: 0, duration: 0.9, stagger: 0.06, ease: 'power3.out',
+      scrollTrigger: { trigger: '.contact', start: 'top 82%' },
+    })
+  }
+</script>
+
+<style>
+/* ── Hero ────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--clr-bg);
+}
+
+.hero__top {
+  display: flex;
+  justify-content: space-between;
+  padding-top: calc(4rem + var(--sp-md));
+  padding-bottom: var(--sp-md);
+}
+
+.hero__label {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+
+.hero__headline-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-block: var(--sp-lg);
+}
+
+.hero__headline {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 11vw, 12rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--clr-text);
+  max-width: 14ch;
+}
+
+/* Reel kontejner — sticky při scrollu */
+.hero__reel-wrap {
+  width: 100%;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero__reel {
+  position: absolute;
+  inset: 0;
+  will-change: clip-path;
+}
+
+.hero__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+.hero__slide.is-active { opacity: 1; }
+
+.hero__media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero__slide :global(picture),
+.hero__slide :global(picture img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero__reel-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%);
+}
+
+.hero__reel-label {
+  position: absolute;
+  bottom: var(--sp-lg);
+  right: var(--sp-lg);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.hero__bot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-xl);
+  padding-block: var(--sp-xl);
+  border-top: 1px solid var(--clr-border);
+}
+
+@media (max-width: 48em) {
+  .hero__bot { flex-direction: column; align-items: flex-start; }
+}
+
+.hero__desc {
+  font-size: clamp(0.875rem, 1.2vw, 1rem);
+  color: var(--clr-muted);
+  line-height: 1.65;
+  max-width: 38ch;
+}
+
+.hero__cta {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  font-size: 0.875rem; letter-spacing: 0.03em;
+  white-space: nowrap; flex-shrink: 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--clr-border);
+  transition: border-color .25s, gap .3s;
+}
+.hero__cta:hover { border-color: var(--clr-text); gap: 1rem; }
+
+/* ── Projects ────────────────────────────────────────────────────────── */
+.projects { padding-block: var(--sp-3xl); }
+
+.projects__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--sp-xl);
+  border-bottom: 1px solid var(--clr-border);
+  margin-bottom: var(--sp-xl);
+}
+
+.label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--clr-muted); }
+
+.projects__all { font-size: 0.8rem; opacity: 0.45; transition: opacity .2s; }
+.projects__all:hover { opacity: 1; }
+
+.projects__footer {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--sp-xl);
+}
+
+.projects__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+  padding: 0.75em 1.75em;
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  transition: border-color .25s, background .25s, gap .3s;
+}
+.projects__cta:hover {
+  border-color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
+  gap: 1rem;
+}
+
+/* Alternating grid — 2 col s wide variantami */
+.projects__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-sm);
+}
+
+@media (max-width: 56em) {
+  .projects__list { grid-template-columns: 1fr; }
+}
+
+.project-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--clr-surface);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.project-item__link {
+  display: block;
+  flex: 1;
+  text-decoration: none;
+  color: inherit;
+}
+
+.project-item--wide {
+  grid-column: 1 / -1;
+}
+
+.project-item__media {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.project-item--wide .project-item__media {
+  aspect-ratio: 21 / 9;
+}
+
+@media (max-width: 56em) {
+  .project-item--wide .project-item__media { aspect-ratio: 16 / 9; }
+}
+
+.project-item__media :global(picture) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.project-item__media :global(picture img),
+.project-item__media :global(.project-item__img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.project-item:hover .project-item__media :global(picture img),
+.project-item:hover .project-item__media :global(.project-item__img) { transform: scale(1.04); }
+
+.project-item__placeholder {
+  width: 100%; height: 100%; background: var(--clr-surface);
+}
+
+.project-item__info {
+  padding: var(--sp-md) var(--sp-lg) var(--sp-sm);
+  border-top: 1px solid var(--clr-border);
+}
+
+.project-item__title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--sp-2xs);
+}
+
+.project-item__tagline {
+  font-size: 0.875rem;
+  color: var(--clr-muted);
+  line-height: 1.4;
+}
+
+.project-item__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: var(--sp-sm) var(--sp-lg) var(--sp-md);
+}
+
+.project-item__tag {
+  display: inline-block;
+  padding: 0.25em 0.65em;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  position: relative;
+  z-index: 1;
+}
+.project-item__tag:hover {
+  color: var(--clr-text);
+  border-color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
+}
+
+.project-item__meta {
+  display: flex;
+  gap: var(--sp-sm);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+
+/* ── Contact ─────────────────────────────────────────────────────────── */
+.contact { padding-block: var(--sp-3xl); }
+
+.contact__inner {
+  border-top: 1px solid var(--clr-border);
+  padding-top: var(--sp-xl);
+  display: flex; flex-direction: column; gap: var(--sp-lg);
+}
+
+.contact__headline {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 9rem);
+  font-weight: 400; line-height: 0.95; letter-spacing: -0.03em;
+}
+
+.contact__email {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 3.5rem);
+  letter-spacing: -0.02em;
+  opacity: .6;
+  transition: opacity .25s;
+  position: relative;
+  padding-bottom: 4px;
+}
+.contact__email::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0;
+  width: 0; height: 1px; background: var(--clr-text);
+  transition: width .5s var(--ease-out-expo);
+}
+.contact__email:hover { opacity: 1; }
+.contact__email:hover::after { width: 100%; }
+</style>
