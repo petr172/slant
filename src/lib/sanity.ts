@@ -1,11 +1,9 @@
 import { createClient } from '@sanity/client'
 
-const projectId = import.meta.env.PUBLIC_SANITY_PROJECT_ID
-const dataset   = import.meta.env.PUBLIC_SANITY_DATASET ?? 'production'
-
-if (!projectId) {
-  throw new Error('PUBLIC_SANITY_PROJECT_ID chybí v .env — zkopíruj .env.example a doplň hodnoty.')
-}
+// Sanity project ID i dataset jsou veřejné (vidět v každé CDN URL) → bezpečný
+// fallback, aby build nezávisel na env proměnné v CI prostředí (Cloudflare).
+const projectId = import.meta.env.PUBLIC_SANITY_PROJECT_ID || 'wgpoci6t'
+const dataset   = import.meta.env.PUBLIC_SANITY_DATASET || 'production'
 
 export const client = createClient({
   projectId,
