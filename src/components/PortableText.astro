@@ -1,7 +1,8 @@
 ---
 // PortableText.astro
-// Jednoduchý renderer pro Sanity blokový obsah.
-// Podporuje: odstavce, h3, tučné, kurzíva, odkazy.
+// Renderer pro Sanity blokový obsah.
+// Podporuje: odstavce, h2–h4, blockquote, tučné, kurzíva, odkazy a obrázky (s popiskem).
+import { urlFor } from '../lib/imageUrl'
 
 type MarkDef = { _key: string; _type: string; href?: string }
 type BlockChild = { _key: string; _type: string; text: string; marks: string[] }
@@ -11,6 +12,10 @@ type Block = {
   style?: string
   children?: BlockChild[]
   markDefs?: MarkDef[]
+  // image fields
+  asset?: { _ref?: string }
+  alt?: string
+  caption?: string
 }
 
 interface Props {
@@ -41,17 +46,58 @@ function renderChild(child: BlockChild, markDefs: MarkDef[] = []): string {
   return text
 }
 
-function renderBlock(block: Block): string {
-  if (block._type !== 'block') return ''
+function renderTextBlock(block: Block): string {
   const inner = (block.children ?? []).map(c => renderChild(c, block.markDefs)).join('')
   if (!inner.trim()) return ''
   switch (block.style) {
-    case 'h3': return `<h3>${inner}</h3>`
-    case 'h4': return `<h4>${inner}</h4>`
-    default:   return `<p>${inner}</p>`
+    case 'h2':         return `<h2>${inner}</h2>`
+    case 'h3':         return `<h3>${inner}</h3>`
+    case 'h4':         return `<h4>${inner}</h4>`
+    case 'blockquote': return `<blockquote>${inner}</blockquote>`
+    default:           return `<p>${inner}</p>`
   }
 }
 
-const html = (blocks ?? []).map(renderBlock).join('\n')
+// Natural dimensions are encoded in the asset ref: image-<id>-<w>x<h>-<ext>
+function imageDims(ref?: string): { w: number; h: number } {
+  const m = /-(\d+)x(\d+)-/.exec(ref ?? '')
+  return m ? { w: Number(m[1]), h: Number(m[2]) } : { w: 1400, h: 933 }
+}
+
+function buildImage(block: Block) {
+  const { w, h } = imageDims(block.asset?._ref)
+  const widths = [600, 1000, 1400]
+  const srcset = widths
+    .map(width => `${urlFor(block).width(width).fit('max').format('webp').quality(85).url()} ${width}w`)
+    .join(', ')
+  const src = urlFor(block).width(1400).fit('max').format('webp').quality(85).url()
+  return { src, srcset, w, h, alt: block.alt ?? '', caption: block.caption }
+}
 ---
-<div class:list={['portable-text', cls]} set:html={html} />
+<div class:list={['portable-text', cls]}>
+  {(blocks ?? []).map(block => {
+    if (block._type === 'image' && block.asset) {
+      const img = buildImage(block)
+      return (
+        <figure class="portable-text__figure">
+          <img
+            src={img.src}
+            srcset={img.srcset}
+            sizes="(max-width: 800px) 100vw, 800px"
+            width={img.w}
+            height={img.h}
+            alt={img.alt}
+            loading="lazy"
+            decoding="async"
+          />
+          {img.caption && <figcaption>{img.caption}</figcaption>}
+        </figure>
+      )
+    }
+    if (block._type === 'block') {
+      const html = renderTextBlock(block)
+      return html ? <Fragment set:html={html} /> : null
+    }
+    return null
+  })}
+</div>
