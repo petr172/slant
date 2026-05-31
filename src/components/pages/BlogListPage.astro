@@ -132,32 +132,42 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
         <!-- Editorial list -->
         {listPosts.length > 0 && (
           <ul class="blog-list" role="list">
-            {listPosts.map((post: any) => (
-              <li class="blog-list__item" data-list-item data-category={post.category ?? ''}>
-                <a href={`${blogUrl}/${post.slug}`} class="blog-list__row">
-                  <time class="blog-list__date" datetime={post.publishedAt}>
-                    {post.publishedAt ? formatDate(post.publishedAt) : ''}
-                  </time>
-                  <div class="blog-list__middle">
-                    {post.category && <span class="chip">{post.category}</span>}
-                    <span class="blog-list__title">{postTitle(post)}</span>
-                  </div>
-                  {post.coverImage && (
-                    <div class="blog-list__thumb">
+            {listPosts.map((post: any) => {
+              const postHref = `${blogUrl}/${post.slug}`
+              const chars = (lang === 'en' ? post.bodyCharsEn : post.bodyChars) || post.bodyChars || 0
+              const readMin = Math.max(1, Math.round(chars / 1100))
+              return (
+                <li class="blog-list__item" data-list-item data-category={post.category ?? ''}>
+                  <a href={postHref} class="blog-list__thumb" aria-label={postTitle(post)} tabindex="-1">
+                    {post.coverImage && (
                       <SanityImage
                         image={post.coverImage}
                         alt={post.coverImage.alt ?? postTitle(post)}
-                        width={160}
-                        height={107}
-                        widths={[160]}
-                        sizes="80px"
+                        width={440}
+                        height={293}
+                        widths={[240, 440]}
+                        sizes="(max-width: 48em) 35vw, 220px"
                         class="blog-list__thumb-img"
                       />
+                    )}
+                  </a>
+                  <div class="blog-list__body">
+                    {post.category && (
+                      <a href={`${blogUrl}?category=${encodeURIComponent(post.category)}`} class="chip blog-list__tag">{post.category}</a>
+                    )}
+                    <a href={postHref} class="blog-list__title-link">
+                      <span class="blog-list__title">{postTitle(post)}</span>
+                    </a>
+                    <div class="blog-list__foot">
+                      {post.publishedAt && (
+                        <time datetime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+                      )}
+                      <span class="blog-list__read">{readMin} {lang === 'cs' ? 'min čtení' : 'min read'}</span>
                     </div>
-                  )}
-                </a>
-              </li>
-            ))}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
       </>
@@ -316,50 +326,24 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
   padding: 0;
 }
 
-.blog-list__row {
-  display: grid;
-  grid-template-columns: 9rem 1fr auto;
-  align-items: center;
-  gap: var(--sp-md);
+.blog-list__item {
+  display: flex;
+  gap: var(--sp-lg);
+  align-items: stretch;
   border-top: 1px solid var(--clr-border);
   padding-block: var(--sp-lg);
-  text-decoration: none;
-  color: inherit;
-  transition: opacity 0.2s;
 }
-.blog-list__row:hover { opacity: 0.8; }
-.blog-list__row:hover .blog-list__thumb-img { transform: scale(1.05); }
+.blog-list__item:last-child { border-bottom: 1px solid var(--clr-border); }
 
-.blog-list__date {
-  font-size: 0.75rem;
-  color: var(--clr-muted);
-  letter-spacing: 0.06em;
-  line-height: 1.4;
-  flex-shrink: 0;
-}
-
-.blog-list__middle {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.4rem;
-}
-.blog-list__title {
-  font-family: var(--font-display);
-  font-size: clamp(1rem, 2vw, 1.5rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: var(--clr-text);
-  line-height: 1.15;
-}
-
+/* Image — left, larger */
 .blog-list__thumb {
-  width: 80px;
+  flex: 0 0 auto;
+  width: clamp(8rem, 26vw, 14rem);
   aspect-ratio: 3 / 2;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--clr-surface);
-  flex-shrink: 0;
+  display: block;
 }
 .blog-list__thumb-img {
   width: 100%;
@@ -368,29 +352,53 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
   display: block;
   transition: transform 0.4s ease;
 }
+.blog-list__thumb:hover .blog-list__thumb-img { transform: scale(1.05); }
 
-/* Last item border-bottom */
-.blog-list__item:last-child .blog-list__row {
-  border-bottom: 1px solid var(--clr-border);
+/* Content */
+.blog-list__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-xs);
 }
+.blog-list__tag {
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.blog-list__tag:hover {
+  color: #fff;
+  background: var(--clr-accent);
+  border-color: var(--clr-accent);
+}
+.blog-list__title-link { text-decoration: none; color: inherit; }
+.blog-list__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--clr-text);
+  line-height: 1.1;
+  transition: color 0.2s;
+}
+.blog-list__title-link:hover .blog-list__title { color: var(--clr-accent); }
 
-@media (max-width: 48em) {
-  .blog-list__row {
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
-  }
-  .blog-list__date {
-    grid-column: 1;
-    grid-row: 1;
-    font-size: 0.7rem;
-  }
-  .blog-list__middle {
-    grid-column: 2;
-    grid-row: 1 / 3;
-  }
-  .blog-list__thumb {
-    display: none;
-  }
+.blog-list__foot {
+  margin-top: auto;
+  padding-top: var(--sp-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--clr-muted);
+}
+.blog-list__foot .blog-list__read::before { content: '·'; margin-right: 0.5rem; }
+
+@media (max-width: 40em) {
+  .blog-list__item { gap: var(--sp-md); }
+  .blog-list__thumb { width: clamp(6rem, 32vw, 9rem); }
 }
 </style>
 

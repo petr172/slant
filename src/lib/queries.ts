@@ -73,7 +73,9 @@ export const ALL_BLOG_POSTS_QUERY = `
     coverImage,
     publishedAt,
     category,
-    featured
+    featured,
+    "bodyChars": length(pt::text(body)),
+    "bodyCharsEn": length(pt::text(bodyEn))
   }
 `
 
