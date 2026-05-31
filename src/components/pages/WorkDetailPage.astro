@@ -14,6 +14,9 @@ interface Props {
 
 const { lang, slug, cs, allNav = [] } = Astro.props
 
+// Hero video — Sanity heroVideo URL, with a local fallback for specific cases
+const heroVideo = cs?.heroVideo || (slug === 'jatvar' ? '/work/jatvar-hero.mp4' : null)
+
 // Prev / next
 const navIdx  = allNav.findIndex(p => p.slug === slug)
 const prevCs  = navIdx > 0 ? allNav[navIdx - 1] : null
@@ -113,8 +116,8 @@ const caseStudyLd = {
       </header>
 
       <div class="cs-media" data-fade>
-        {cs.heroVideo ? (
-          <video src={cs.heroVideo} autoplay loop muted playsinline class="cs-media__video" />
+        {heroVideo ? (
+          <video src={heroVideo} autoplay loop muted playsinline class="cs-media__video" />
         ) : cs.coverImage ? (
           <SanityImage
             image={cs.coverImage}
