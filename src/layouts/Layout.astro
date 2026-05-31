@@ -284,7 +284,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
             <a href={lang === 'cs' ? '/podminky/vseobecne-obchodni-podminky' : '/en/podminky/vseobecne-obchodni-podminky'}>
               {lang === 'cs' ? 'Obchodní podmínky' : 'Terms & Conditions'}
             </a>
-            <span>© Slant s.r.o. {new Date().getFullYear()}</span>
+            <span>© Slant s.r.o. <span id="footer-year">{new Date().getFullYear()}</span></span>
           </div>
         </div>
 
@@ -374,6 +374,10 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
       // Close on Escape
       document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) closeMenu() })
     })()
+
+    // Footer copyright year — always current, regardless of build date
+    const yearEl = document.getElementById('footer-year')
+    if (yearEl) yearEl.textContent = String(new Date().getFullYear())
 
     // Footer logo — grow 20% when footer scrolls into view
     const footerLogo = document.querySelector('.site-footer__logo')
@@ -729,9 +733,15 @@ main { padding-top: 5rem; }
   background: var(--clr-text);
   color: var(--clr-bg);
 }
-/* Logo flips to read on the dark island */
+/* Dark mode: elevated grey island instead of a stark-white block.
+   Locally remap the on-island fg/bg vars so all descendants follow. */
+.dark .site-footer__island {
+  --clr-text: #242422; /* island background */
+  --clr-bg:   #e8e8e8; /* on-island foreground */
+  background: #242422;
+}
+/* Logo stays white on the dark island in both themes */
 .site-footer__island .site-footer__logo-img { filter: invert(1); }
-.dark .site-footer__island .site-footer__logo-img { filter: none; }
 
 /* Top row */
 .site-footer__top {
@@ -776,7 +786,7 @@ main { padding-top: 5rem; }
   color: color-mix(in srgb, var(--clr-bg) 65%, transparent);
   transition: color 0.2s;
 }
-.site-footer__nav a:hover { color: var(--clr-bg); }
+.site-footer__nav a:hover { color: var(--clr-accent); }
 
 .site-footer__social {
   display: flex;
@@ -795,9 +805,8 @@ main { padding-top: 5rem; }
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 .site-footer__social a:hover {
-  color: var(--clr-text);
-  background: var(--clr-bg);
-  border-color: var(--clr-bg);
+  color: var(--clr-accent);
+  border-color: var(--clr-accent);
 }
 
 /* Divider */
@@ -833,7 +842,7 @@ main { padding-top: 5rem; }
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.site-footer__legal a:hover { color: var(--clr-bg); }
+.site-footer__legal a:hover { color: var(--clr-accent); }
 
 /* ── Copy-to-clipboard chips ──────────────────────────────────────────────── */
 .copy-chip {
