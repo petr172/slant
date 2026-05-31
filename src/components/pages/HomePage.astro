@@ -1183,11 +1183,13 @@ gsap.from('#js-hero-bot', {
 
 /* Horizontal scroll */
 .blog-scroll {
+  /* Constrained to the site container — same margins as other sections */
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
   overflow-x: auto;
   overflow-y: visible;
-  /* Align edges with the 90rem .container so cards line up with the
-     rest of the content while still allowing horizontal scroll */
-  padding-inline: max(var(--gutter), calc((100% - 90rem) / 2 + var(--gutter)));
   padding-bottom: var(--sp-lg);
   scrollbar-width: none;
   cursor: grab;
