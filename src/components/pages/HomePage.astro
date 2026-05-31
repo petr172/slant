@@ -24,6 +24,9 @@ const projects = allProjects.map((cs: any, i: number) => ({
   tagline:  lang === 'en' ? (cs.taglineEn || cs.tagline) : cs.tagline,
   href:     `${workUrl}/${cs.slug}`,
   isLarge:  i === 0 || i === 3,
+  // Optional hover-play video + local image fallback (Sanity fields later)
+  cardVideo:         cs.slug === 'jatvar' ? '/work/jatvar-hero.mp4' : null,
+  cardImageFallback: cs.slug === 'jatvar' ? '/work/jatvar/hero-poster.jpg' : null,
 }))
 
 // ─── FAQ — jeden zdroj pravdy pro render i JSON-LD ──────────────────────────
@@ -157,7 +160,7 @@ const faqLd = {
       <div class="container">
       <div class="projects__list">
         {projects.map((cs: any) => (
-          <div class={cs.isLarge ? "project-item project-item--wide" : "project-item"}>
+          <div class={`${cs.isLarge ? 'project-item project-item--wide' : 'project-item'}${cs.cardVideo ? ' project-item--has-video' : ''}`}>
             <a href={cs.href} class="project-item__link">
               <div class="project-item__media">
                 {cs.coverImage
@@ -170,8 +173,13 @@ const faqLd = {
                       sizes={cs.isLarge ? '(max-width: 768px) 100vw, 70vw' : '(max-width: 768px) 100vw, 40vw'}
                       class="project-item__img"
                     />
-                  : <div class="project-item__placeholder" />
+                  : cs.cardImageFallback
+                    ? <img src={cs.cardImageFallback} alt={cs.title} loading="lazy" class="project-item__img" />
+                    : <div class="project-item__placeholder" />
                 }
+                {cs.cardVideo && (
+                  <video class="project-item__video" data-card-video src={cs.cardVideo} muted loop playsinline preload="none" poster={cs.cardImageFallback} aria-hidden="true"></video>
+                )}
               </div>
               <div class="project-item__info">
                 <h3 class="project-item__title">{cs.title}</h3>
@@ -511,6 +519,14 @@ gsap.from('#js-hero-bot', {
       y: 60, opacity: 0, duration: 0.9, ease: 'power3.out',
       scrollTrigger: { trigger: item, start: 'top 85%' },
     })
+  })
+
+  // ── Hover-play project card videos ───────────────────────────────────
+  document.querySelectorAll<HTMLVideoElement>('[data-card-video]').forEach(video => {
+    const card = video.closest('.project-item')
+    if (!card) return
+    card.addEventListener('mouseenter', () => { video.play().catch(() => {}) })
+    card.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0 })
   })
 
   // ── Blog drag scroll ─────────────────────────────────────────────────
@@ -933,10 +949,24 @@ gsap.from('#js-hero-bot', {
 }
 
 .project-item__media {
+  position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
+
+/* Hover-play video overlay */
+.project-item__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.project-item:hover .project-item__video { opacity: 1; }
 
 .project-item--wide .project-item__media {
   aspect-ratio: 21 / 9;
@@ -961,8 +991,8 @@ gsap.from('#js-hero-bot', {
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.project-item:hover .project-item__media :global(picture img),
-.project-item:hover .project-item__media :global(.project-item__img) { transform: scale(1.04); }
+.project-item:not(.project-item--has-video):hover .project-item__media :global(picture img),
+.project-item:not(.project-item--has-video):hover .project-item__media :global(.project-item__img) { transform: scale(1.04); }
 
 .project-item__placeholder {
   width: 100%; height: 100%; background: var(--clr-surface);

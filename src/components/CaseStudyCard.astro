@@ -22,7 +22,7 @@ const cardVideo = Astro.props.cardVideo ?? (slug === 'jatvar' ? '/work/jatvar-he
 const cardImageFallback = slug === 'jatvar' ? '/work/jatvar/hero-poster.jpg' : undefined
 ---
 
-<article class="case-card" data-fade>
+<article class={`case-card${cardVideo ? ' case-card--has-video' : ''}`} data-fade>
   <a href={`${workBase}/${slug}`} class="case-card__link">
     <div class="case-card__media">
       {coverImage
@@ -80,7 +80,8 @@ const cardImageFallback = slug === 'jatvar' ? '/work/jatvar/hero-poster.jpg' : u
   transition: transform 0.6s var(--ease-out-expo);
 }
 
-.case-card__link:hover .case-card__img { transform: scale(1.04); }
+/* Slight zoom on hover — only when there's no hover video */
+.case-card:not(.case-card--has-video) .case-card__link:hover .case-card__img { transform: scale(1.04); }
 
 /* Hover-play video overlay */
 .case-card__video {
