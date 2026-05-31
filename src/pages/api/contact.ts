@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro'
-import { Resend } from 'resend'
 
 // On-demand (serverless) — nesmí se prerenderovat staticky
 export const prerender = false
@@ -229,21 +228,36 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     attachments = [{ filename: att.filename.slice(0, 200), content: att.data }]
   }
 
-  const resend = new Resend(RESEND_API_KEY)
+  // Přímé volání Resend HTTP API přes fetch — Workers-native (bez SDK)
+  async function sendEmail(payload: Record<string, unknown>) {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '')
+      throw new Error(`Resend ${r.status}: ${detail}`)
+    }
+    return r.json()
+  }
 
   try {
     // 1) Interní notifikace
-    await resend.emails.send({
+    await sendEmail({
       from: RESEND_FROM,
       to: CONTACT_TO,
-      replyTo: email,
+      reply_to: email,
       subject: `Nová poptávka — ${name}`,
       html: internalEmailHtml(name, email, services, message),
       ...(attachments && { attachments }),
     })
 
     // 2) Personalizovaný e-mail leadovi
-    await resend.emails.send({
+    await sendEmail({
       from: RESEND_FROM,
       to: email,
       subject: lang === 'cs' ? 'Díky za vaši zprávu — Slant' : 'Thanks for reaching out — Slant',
