@@ -23,9 +23,8 @@ const {
 
 const workBase = lang === 'en' ? '/en/work' : '/work'
 
-// Optional hover-play video + local image fallback (Sanity fields later).
-const cardVideo = Astro.props.cardVideo ?? (slug === 'jatvar' ? '/work/jatvar-hero.mp4' : undefined)
-const cardImageFallback = Astro.props.cardImageFallback ?? (slug === 'jatvar' ? '/work/jatvar/hero-poster.jpg' : undefined)
+// Optional hover-play video (Sanity field)
+const cardVideo = Astro.props.cardVideo
 
 const Heading = (headingLevel === 3 ? 'h3' : 'h2') as 'h2' | 'h3'
 
@@ -50,12 +49,10 @@ const dims = variant === 'wide'
             sizes={dims.sizes}
             class="case-card__img"
           />
-        : cardImageFallback
-          ? <img src={cardImageFallback} alt={title} loading="lazy" class="case-card__img" />
-          : <div class="case-card__placeholder" aria-hidden="true" />
+        : <div class="case-card__placeholder" aria-hidden="true" />
       }
       {cardVideo && (
-        <video class="case-card__video" data-card-video src={cardVideo} muted loop playsinline preload="none" poster={cardImageFallback} aria-hidden="true"></video>
+        <video class="case-card__video" data-card-video src={cardVideo} muted loop playsinline preload="none" aria-hidden="true"></video>
       )}
     </div>
     <div class="case-card__info">

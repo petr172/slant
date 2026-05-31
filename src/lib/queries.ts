@@ -9,6 +9,7 @@ export const ALL_CASE_STUDIES_QUERY = `
     services,
     industry,
     coverImage,
+    cardVideo,
     featured
   }
 `
@@ -22,7 +23,8 @@ export const FEATURED_CASE_STUDIES_QUERY = `
     tagline, taglineEn,
     year,
     services,
-    coverImage
+    coverImage,
+    cardVideo
   }
 `
 
@@ -146,7 +148,16 @@ export const CASE_STUDY_BY_SLUG_QUERY = `
     services,
     liveUrl,
     heroVideo,
+    cardVideo,
     coverImage,
+    brief, briefEn,
+    vysledek, vysledekEn,
+    gallery[] {
+      image,
+      videoUrl,
+      alt,
+      caption
+    },
     sections[] {
       heading, headingEn,
       body, bodyEn,

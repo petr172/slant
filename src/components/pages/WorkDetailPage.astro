@@ -14,32 +14,22 @@ interface Props {
 
 const { lang, slug, cs, allNav = [] } = Astro.props
 
-// Hero video — Sanity heroVideo URL, with a local fallback for specific cases
-const heroVideo = cs?.heroVideo || (slug === 'jatvar' ? '/work/jatvar-hero.mp4' : null)
+// Hero video — z Sanity
+const heroVideo = cs?.heroVideo || null
 
-// Brief / Výsledek — short paragraphs (replaces the single "O projektu" lead).
-// TODO: move to Sanity fields; hardcoded draft copy for Jatvar for now.
-const brief = slug === 'jatvar'
-  ? (lang === 'cs'
-      ? 'Jatvar je rodinné kamenictví s řemeslem od roku 1965. Chyběla mu ale značka, která by jeho preciznost ukázala i navenek — od loga přes vzorníky až po polep vozů a web.'
-      : 'Jatvar is a family stone workshop with craft dating back to 1965. What it lacked was a brand that carried that precision outward — from the logo to sample boxes, vehicle livery and the website.')
-  : null
-const result = slug === 'jatvar'
-  ? (lang === 'cs'
-      ? 'Postavili jsme uzavřenou identitu na sytě zelené a kameni. Monogram „J“, systém tiskovin, obalový vzorník i responzivní web dnes Jatvaru dávají jednotný, sebevědomý výraz napříč všemi dotykovými body.'
-      : 'We built a cohesive identity rooted in deep green and stone. The “J” monogram, a print system, packaging sampler and a responsive website now give Jatvar one confident voice across every touchpoint.')
-  : null
+// Brief / Výsledek — z Sanity (s EN fallbackem na CS)
+const brief  = lang === 'en' ? (cs?.briefEn    || cs?.brief)    : cs?.brief
+const result = lang === 'en' ? (cs?.vysledekEn || cs?.vysledek) : cs?.vysledek
 
-// Gallery (Jatvar) — images + videos, opened in a lightbox
-const galleryItems = slug === 'jatvar' ? [
-  { type: 'image', src: '/work/jatvar/david.webp',    alt: 'Jatvar — vizuální identita na tričku' },
-  { type: 'video', src: '/work/jatvar/krabicka.mp4',  poster: '/work/jatvar/krabicka-poster.jpg', alt: 'Jatvar — obalový vzorník' },
-  { type: 'image', src: '/work/jatvar/kuchyne.webp',  alt: 'Jatvar — tiskovina Kámen v kuchyni' },
-  { type: 'video', src: '/work/jatvar/web.mp4',       poster: '/work/jatvar/web-poster.jpg', alt: 'Jatvar — webová prezentace' },
-  { type: 'image', src: '/work/jatvar/van.webp',      alt: 'Jatvar — polep vozů' },
-  { type: 'image', src: '/work/jatvar/koupelna.webp', alt: 'Jatvar — tiskovina' },
-  { type: 'image', src: '/work/jatvar/wordmark.webp', alt: 'Jatvar — logo' },
-] : []
+// Gallery — z Sanity: každá položka je obrázek nebo video
+import { urlFor } from '../../lib/imageUrl'
+const galleryItems = (cs?.gallery ?? []).map((g: any) => {
+  const thumb = g.image ? urlFor(g.image).width(900).fit('max').format('webp').quality(82).url() : undefined
+  const full  = g.image ? urlFor(g.image).width(1600).fit('max').format('webp').quality(85).url() : undefined
+  return g.videoUrl
+    ? { type: 'video', src: g.videoUrl, thumb, alt: g.alt ?? '' }
+    : { type: 'image', src: full, thumb, alt: g.alt ?? '' }
+}).filter((g: any) => g.src || g.thumb)
 
 // Prev / next
 const navIdx  = allNav.findIndex(p => p.slug === slug)
@@ -195,9 +185,9 @@ const caseStudyLd = {
             {galleryItems.map((item, i) => (
               <button class="cs-gallery__item" type="button" data-lightbox-index={i} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
                 {item.type === 'video' ? (
-                  <video class="cs-gallery__media" src={item.src} poster={item.poster} autoplay loop muted playsinline preload="metadata"></video>
+                  <video class="cs-gallery__media" src={item.src} poster={item.thumb} autoplay loop muted playsinline preload="metadata"></video>
                 ) : (
-                  <img class="cs-gallery__media" src={item.src} alt={item.alt} loading="lazy" />
+                  <img class="cs-gallery__media" src={item.thumb} alt={item.alt} loading="lazy" />
                 )}
                 <span class="cs-gallery__zoom" aria-hidden="true">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

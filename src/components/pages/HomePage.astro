@@ -25,9 +25,6 @@ const projects = allProjects.map((cs: any, i: number) => ({
   tagline:  lang === 'en' ? (cs.taglineEn || cs.tagline) : cs.tagline,
   href:     `${workUrl}/${cs.slug}`,
   isLarge:  i === 0 || i === 3,
-  // Optional hover-play video + local image fallback (Sanity fields later)
-  cardVideo:         cs.slug === 'jatvar' ? '/work/jatvar-hero.mp4' : null,
-  cardImageFallback: cs.slug === 'jatvar' ? '/work/jatvar/hero-poster.jpg' : null,
 }))
 
 // ─── FAQ — jeden zdroj pravdy pro render i JSON-LD ──────────────────────────
@@ -168,7 +165,6 @@ const faqLd = {
             services={cs.services}
             coverImage={cs.coverImage}
             cardVideo={cs.cardVideo}
-            cardImageFallback={cs.cardImageFallback}
             variant={cs.isLarge ? 'wide' : 'home'}
             headingLevel={3}
             {lang}

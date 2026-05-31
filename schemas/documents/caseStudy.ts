@@ -117,13 +117,62 @@ export const caseStudy = defineType({
     }),
     defineField({
       name: 'heroVideo',
-      title: 'Hero video URL',
-      type: 'url',
+      title: 'Hero video',
+      type: 'string',
       group: 'media',
-      description: 'Přímý odkaz na .mp4 (Vimeo CDN, BunnyNet, vlastní CDN). Pokud prázdné, použije se cover obrázek.',
+      description: 'Cesta nebo URL k .mp4 (např. /work/jatvar-hero.mp4 nebo https://…). Pokud prázdné, použije se cover obrázek.',
+    }),
+    defineField({
+      name: 'cardVideo',
+      title: 'Card video (hover)',
+      type: 'string',
+      group: 'media',
+      description: 'Volitelné video, které se přehraje při najetí na kartu v listingu. Cesta nebo URL k .mp4.',
+    }),
+    defineField({
+      name: 'gallery',
+      title: 'Galerie',
+      type: 'array',
+      group: 'media',
+      description: 'Obrázky a videa zobrazená pod úvodem; klik otevře lightbox.',
+      of: [
+        {
+          type: 'object',
+          name: 'galleryItem',
+          title: 'Položka',
+          fields: [
+            defineField({ name: 'image', title: 'Obrázek', type: 'image', options: { hotspot: true } }),
+            defineField({ name: 'videoUrl', title: 'Video (cesta/URL k .mp4)', type: 'string', description: 'Vyplň pro video. Obrázek výše pak slouží jako poster.' }),
+            defineField({ name: 'alt', title: 'Alt text', type: 'string' }),
+            defineField({ name: 'caption', title: 'Popisek', type: 'string' }),
+          ],
+          preview: {
+            select: { media: 'image', alt: 'alt', videoUrl: 'videoUrl' },
+            prepare({ media, alt, videoUrl }) {
+              return { title: alt || (videoUrl ? 'Video' : 'Obrázek'), subtitle: videoUrl ? '🎬 video' : '🖼 obrázek', media }
+            },
+          },
+        },
+      ],
     }),
 
     // ─── OBSAH ─────────────────────────────────────────────────────────────────
+    defineField({
+      name: 'brief',
+      title: 'Brief',
+      type: 'text',
+      group: 'content',
+      rows: 3,
+      description: 'Krátký odstavec (cca 40 slov) — zadání / výchozí situace. Zobrazí se v úvodu vedle Výsledku.',
+    }),
+    defineField({
+      name: 'vysledek',
+      title: 'Výsledek',
+      type: 'text',
+      group: 'content',
+      rows: 3,
+      description: 'Krátký odstavec (cca 40 slov) — co vzniklo. Zobrazí se v úvodu vedle Briefu.',
+    }),
     defineField({
       name: 'sections',
       title: 'Sekce obsahu',
@@ -155,6 +204,20 @@ export const caseStudy = defineType({
       type: 'string',
       group: 'translations',
       validation: (r) => r.max(120),
+    }),
+    defineField({
+      name: 'briefEn',
+      title: 'Brief (EN)',
+      type: 'text',
+      group: 'translations',
+      rows: 3,
+    }),
+    defineField({
+      name: 'vysledekEn',
+      title: 'Result (EN)',
+      type: 'text',
+      group: 'translations',
+      rows: 3,
     }),
     defineField({
       name: 'creditsEn',
