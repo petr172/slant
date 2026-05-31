@@ -584,7 +584,7 @@ gsap.from('#js-hero-bot', {
   if (ctaSvg) {
     const mq = window.matchMedia('(max-width: 40em)')
     const applyViewBox = () => {
-      ctaSvg.setAttribute('viewBox', mq.matches ? '-10 0 810 471' : '0 0 1410 471')
+      ctaSvg.setAttribute('viewBox', mq.matches ? '-10 0 1020 471' : '0 0 1410 471')
     }
     applyViewBox()
     mq.addEventListener('change', applyViewBox)
@@ -1366,9 +1366,9 @@ gsap.from('#js-hero-bot', {
   color: #111;
 }
 
-/* Mobile: show only 3 shapes (viewBox cropped via JS, hide the rest) */
+/* Mobile: show only 4 shapes (viewBox cropped via JS, hide the rest) */
 @media (max-width: 40em) {
-  .cta-pill:nth-child(n + 4) {
+  .cta-pill:nth-child(n + 5) {
     display: none;
   }
 
@@ -1376,12 +1376,13 @@ gsap.from('#js-hero-bot', {
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    gap: var(--sp-lg);
-    padding-inline: clamp(2rem, 8vw, 3rem);
+    gap: var(--sp-md);
+    padding-inline: clamp(1.5rem, 7vw, 2.5rem);
   }
 
   .cta-brutal__text {
-    font-size: clamp(1.2rem, 6vw, 1.8rem);
+    font-size: clamp(1.1rem, 5.2vw, 1.6rem);
+    max-width: 14ch;
   }
 }
 
