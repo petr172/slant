@@ -11,12 +11,17 @@ const RESEND_FROM = import.meta.env.RESEND_FROM ?? 'Slant <hello@slant.cz>'
 const CONTACT_TO = import.meta.env.CONTACT_TO ?? 'hello@slant.cz'
 // Google Workspace Appointment Schedules — veřejný booking odkaz
 const BOOKING_URL = import.meta.env.BOOKING_URL ?? 'https://calendar.app.google/'
+// Cloudflare Turnstile — server-side secret (pokud prázdné, ověření se přeskočí)
+const TURNSTILE_SECRET = import.meta.env.TURNSTILE_SECRET_KEY ?? ''
+// Limit přílohy (base64) — drží request pod ~4,5 MB limitem Vercelu
+const MAX_ATTACH_BYTES = 4 * 1024 * 1024
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const BRAND = '#FF5522' // = --clr-accent
 
 type Lang = 'cs' | 'en'
 
+interface Attachment { filename?: string; contentType?: string; data?: string }
 interface ContactPayload {
   name?: string
   email?: string
@@ -24,6 +29,23 @@ interface ContactPayload {
   message?: string
   lang?: string
   botcheck?: boolean
+  elapsedMs?: number
+  turnstileToken?: string
+  attachment?: Attachment | null
+}
+
+async function verifyTurnstile(token: string, ip?: string): Promise<boolean> {
+  if (!TURNSTILE_SECRET) return true // ověření vypnuté (žádný klíč)
+  if (!token) return false
+  try {
+    const body = new URLSearchParams({ secret: TURNSTILE_SECRET, response: token })
+    if (ip) body.set('remoteip', ip)
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body })
+    const data = await r.json()
+    return !!data.success
+  } catch {
+    return false
+  }
 }
 
 function esc(s: string): string {
@@ -154,7 +176,7 @@ function internalEmailHtml(name: string, email: string, services: string[], mess
   </div>`
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (!RESEND_API_KEY) {
     return json({ success: false, message: 'Email service not configured.' }, 500)
   }
@@ -169,6 +191,17 @@ export const POST: APIRoute = async ({ request }) => {
   // Honeypot — boti zaškrtnou skryté pole
   if (body.botcheck) {
     return json({ success: true }) // tváříme se OK, ale nic neodešleme
+  }
+
+  // Časový trap — formulář odeslaný do 3 s je nejspíš bot
+  if (typeof body.elapsedMs === 'number' && body.elapsedMs >= 0 && body.elapsedMs < 3000) {
+    return json({ success: true }) // tiše ignoruj
+  }
+
+  // Cloudflare Turnstile
+  const captchaOk = await verifyTurnstile(body.turnstileToken ?? '', clientAddress)
+  if (!captchaOk) {
+    return json({ success: false, message: 'Captcha verification failed.' }, 400)
   }
 
   const name = (body.name ?? '').toString().trim().slice(0, 120)
@@ -186,6 +219,20 @@ export const POST: APIRoute = async ({ request }) => {
   if (!name) return json({ success: false, message: 'Name is required.' }, 400)
   if (!EMAIL_RE.test(email)) return json({ success: false, message: 'Valid email is required.' }, 400)
 
+  // Příloha (volitelná) — base64, limit kvůli Vercel body size
+  let attachments: { filename: string; content: Buffer }[] | undefined
+  const att = body.attachment
+  if (att?.data && att.filename) {
+    if (att.data.length > MAX_ATTACH_BYTES * 1.4) {
+      return json({ success: false, message: 'Attachment too large.' }, 413)
+    }
+    try {
+      attachments = [{ filename: att.filename.slice(0, 200), content: Buffer.from(att.data, 'base64') }]
+    } catch {
+      // ignoruj neplatnou přílohu, e-mail pošli bez ní
+    }
+  }
+
   const resend = new Resend(RESEND_API_KEY)
 
   try {
@@ -196,6 +243,7 @@ export const POST: APIRoute = async ({ request }) => {
       replyTo: email,
       subject: `Nová poptávka — ${name}`,
       html: internalEmailHtml(name, email, services, message),
+      ...(attachments && { attachments }),
     })
 
     // 2) Personalizovaný e-mail leadovi

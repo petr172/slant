@@ -7,6 +7,10 @@ interface Props {
 
 const { lang = 'cs' } = Astro.props
 
+// Cloudflare Turnstile site key (veřejný). Pokud prázdné, widget se nezobrazí.
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? ''
+const MAX_FILE_MB = 3
+
 const t = {
   cs: {
     step1Heading1: 'Jak vám říkáme?',
@@ -17,9 +21,20 @@ const t = {
     otherTitle: 'Prosím popište nám, co potřebujete.',
     otherPlaceholder: 'S čím vám můžeme pomoci?',
     next: 'Pokračovat',
-    step2Heading: 'Jak vás kontaktujeme?',
+    step2Heading: 'Kam vám napíšeme?',
+    greeting: (name: string) => `Díky, ${name}!`,
     emailPlaceholder: 'váš@email.cz',
-    messagePlaceholder: 'Stručně popište projekt...',
+    messagePlaceholder: 'Stručně popište projekt…',
+    attachLabel: `Příloha (volitelné, max ${MAX_FILE_MB} MB)`,
+    attachChoose: 'Vybrat soubor',
+    attachRemove: 'Odebrat',
+    attachTooBig: `Soubor je moc velký (max ${MAX_FILE_MB} MB).`,
+    step3Heading: 'Ještě rychlá kontrola',
+    sumName: 'Jméno',
+    sumServices: 'Služby',
+    sumEmail: 'E-mail',
+    sumMessage: 'Zpráva',
+    sumAttach: 'Příloha',
     send: 'Odeslat',
     sending: 'Odesílám…',
     back: '← Zpět',
@@ -28,7 +43,9 @@ const t = {
     closeLabel: 'Zavřít',
     errName: 'Napište prosím své jméno.',
     errEmail: 'Zadejte platný e-mail.',
+    errCaptcha: 'Potvrďte prosím, že nejste robot.',
     errSend: 'Něco se pokazilo. Zkuste to prosím znovu nebo napište na hello@slant.cz.',
+    none: '—',
   },
   en: {
     step1Heading1: "What's your name?",
@@ -39,9 +56,20 @@ const t = {
     otherTitle: 'Please describe what you need.',
     otherPlaceholder: 'How can we help?',
     next: 'Continue',
-    step2Heading: 'How do we reach you?',
+    step2Heading: 'Where do we reach you?',
+    greeting: (name: string) => `Thanks, ${name}!`,
     emailPlaceholder: 'your@email.com',
-    messagePlaceholder: 'Briefly describe your project...',
+    messagePlaceholder: 'Briefly describe your project…',
+    attachLabel: `Attachment (optional, max ${MAX_FILE_MB} MB)`,
+    attachChoose: 'Choose file',
+    attachRemove: 'Remove',
+    attachTooBig: `File is too large (max ${MAX_FILE_MB} MB).`,
+    step3Heading: 'A quick check',
+    sumName: 'Name',
+    sumServices: 'Services',
+    sumEmail: 'Email',
+    sumMessage: 'Message',
+    sumAttach: 'Attachment',
     send: 'Send',
     sending: 'Sending…',
     back: '← Back',
@@ -50,13 +78,14 @@ const t = {
     closeLabel: 'Close',
     errName: 'Please enter your name.',
     errEmail: 'Enter a valid email.',
+    errCaptcha: 'Please confirm you are not a robot.',
     errSend: 'Something went wrong. Please try again or email hello@slant.cz.',
+    none: '—',
   },
 }[lang]
-
 ---
 
-<div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+<div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden data-max-mb={MAX_FILE_MB}>
   <div class="modal__backdrop"></div>
   <div class="modal__dialog">
     <button class="modal__close" aria-label={t.closeLabel}>
@@ -66,25 +95,10 @@ const t = {
       </svg>
     </button>
 
-    <!-- Progress -->
-    <div class="modal__progress" id="modal-progress">
-      <div class="modal__progress-track"><span class="modal__progress-fill" id="modal-progress-fill"></span></div>
-      <span class="modal__progress-count"><span id="modal-step-num">1</span>/2</span>
-    </div>
-
     <!-- Step 1 -->
     <div class="modal__step" data-step="1">
       <h2 class="modal__heading" id="modal-title">{t.step1Heading1}</h2>
-      <input
-        class="modal__input"
-        type="text"
-        id="modal-name"
-        name="name"
-        placeholder={t.namePlaceholder}
-        autocomplete="name"
-        required
-        aria-describedby="modal-name-err"
-      />
+      <input class="modal__input" type="text" id="modal-name" name="name" placeholder={t.namePlaceholder} autocomplete="name" required aria-describedby="modal-name-err" />
       <p class="modal__error" id="modal-name-err" hidden>{t.errName}</p>
 
       <h2 class="modal__heading modal__heading--sm">{t.step1Heading2}</h2>
@@ -114,30 +128,51 @@ const t = {
 
     <!-- Step 2 -->
     <div class="modal__step" data-step="2" hidden>
+      <p class="modal__greeting" id="modal-greeting"></p>
       <h2 class="modal__heading" id="modal-title-2">{t.step2Heading}</h2>
-      <input
-        class="modal__input"
-        type="email"
-        id="modal-email"
-        name="email"
-        placeholder={t.emailPlaceholder}
-        autocomplete="email"
-        required
-        aria-describedby="modal-email-err"
-      />
+      <input class="modal__input" type="email" id="modal-email" name="email" placeholder={t.emailPlaceholder} autocomplete="email" required aria-describedby="modal-email-err" />
       <p class="modal__error" id="modal-email-err" hidden>{t.errEmail}</p>
-      <textarea
-        class="modal__textarea"
-        id="modal-message"
-        name="message"
-        placeholder={t.messagePlaceholder}
-        rows="4"
-      ></textarea>
+      <textarea class="modal__textarea" id="modal-message" name="message" placeholder={t.messagePlaceholder} rows="4"></textarea>
 
-      <p class="modal__error" id="modal-send-err" hidden>{t.errSend}</p>
+      <!-- Attachment -->
+      <div class="modal__attach">
+        <label class="modal__label" for="modal-file">{t.attachLabel}</label>
+        <div class="modal__attach-row">
+          <label class="modal__btn modal__btn--outline modal__attach-btn">
+            {t.attachChoose}
+            <input type="file" id="modal-file" accept="image/*,application/pdf,.ai,.psd,.zip" hidden />
+          </label>
+          <span class="modal__attach-name" id="modal-file-name"></span>
+          <button type="button" class="modal__attach-remove" id="modal-file-remove" hidden>{t.attachRemove}</button>
+        </div>
+        <p class="modal__error" id="modal-file-err" hidden>{t.attachTooBig}</p>
+      </div>
 
       <div class="modal__actions">
         <button type="button" class="modal__back" id="modal-back">{t.back}</button>
+        <button type="button" class="modal__btn modal__btn--primary" id="modal-next-2">{t.next}</button>
+      </div>
+    </div>
+
+    <!-- Step 3 — summary -->
+    <div class="modal__step" data-step="3" hidden>
+      <h2 class="modal__heading" id="modal-title-3">{t.step3Heading}</h2>
+      <dl class="modal__summary" id="modal-summary">
+        <div><dt>{t.sumName}</dt><dd data-sum="name"></dd></div>
+        <div><dt>{t.sumServices}</dt><dd data-sum="services"></dd></div>
+        <div><dt>{t.sumEmail}</dt><dd data-sum="email"></dd></div>
+        <div><dt>{t.sumMessage}</dt><dd data-sum="message"></dd></div>
+        <div data-sum-row="attach" hidden><dt>{t.sumAttach}</dt><dd data-sum="attach"></dd></div>
+      </dl>
+
+      {TURNSTILE_SITE_KEY && (
+        <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="auto"></div>
+      )}
+      <p class="modal__error" id="modal-captcha-err" hidden>{t.errCaptcha}</p>
+      <p class="modal__error" id="modal-send-err" hidden>{t.errSend}</p>
+
+      <div class="modal__actions">
+        <button type="button" class="modal__back" id="modal-back-2">{t.back}</button>
         <button type="button" class="modal__btn modal__btn--primary" id="modal-submit" data-label-send={t.send} data-label-sending={t.sending}>{t.send}</button>
       </div>
     </div>
@@ -153,8 +188,18 @@ const t = {
       <p class="modal__thanks-text">{t.thanks}</p>
       <button class="modal__btn modal__btn--outline" id="modal-done">{t.close}</button>
     </div>
+
+    <!-- Progress (bottom) -->
+    <div class="modal__progress" id="modal-progress">
+      <div class="modal__progress-track"><span class="modal__progress-fill" id="modal-progress-fill"></span></div>
+      <span class="modal__progress-count"><span id="modal-step-num">1</span>/3</span>
+    </div>
   </div>
 </div>
+
+{TURNSTILE_SITE_KEY && (
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+)}
 
 <script>
   import { gsap } from 'gsap'
@@ -164,33 +209,28 @@ const t = {
   const dialog  = modal?.querySelector('.modal__dialog') as HTMLElement
   const closeBtn = modal?.querySelector('.modal__close') as HTMLButtonElement
   const nextBtn  = document.getElementById('modal-next') as HTMLButtonElement
+  const next2Btn = document.getElementById('modal-next-2') as HTMLButtonElement
   const backBtn  = document.getElementById('modal-back') as HTMLButtonElement
+  const back2Btn = document.getElementById('modal-back-2') as HTMLButtonElement
   const submitBtn = document.getElementById('modal-submit') as HTMLButtonElement
   const doneBtn  = document.getElementById('modal-done') as HTMLButtonElement
-
   const steps = modal?.querySelectorAll<HTMLElement>('.modal__step')
+  const MAX_MB = Number(modal?.dataset.maxMb ?? 3)
 
-  let currentStep = 1
+  let openedAt = 0
 
   // ── Focus trap ────────────────────────────────────────────────────────────
   function getFocusable(): HTMLElement[] {
+    const visibleStep = modal?.querySelector('.modal__step:not([hidden])')
     return Array.from(
-      dialog?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])'
-      ) ?? []
-    )
+      dialog?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([type="checkbox"][hidden]), textarea, select, [tabindex]:not([tabindex="-1"])') ?? []
+    ).filter(el => el.offsetParent !== null || el === document.activeElement)
   }
-
   function trapFocus(e: KeyboardEvent) {
     if (e.key !== 'Tab') return
-    const focusable = getFocusable()
-    const first = focusable[0]
-    const last  = focusable[focusable.length - 1]
-    if (e.shiftKey) {
-      if (document.activeElement === first) { e.preventDefault(); last?.focus() }
-    } else {
-      if (document.activeElement === last)  { e.preventDefault(); first?.focus() }
-    }
+    const f = getFocusable(); const first = f[0]; const last = f[f.length - 1]
+    if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last?.focus() } }
+    else { if (document.activeElement === last) { e.preventDefault(); first?.focus() } }
   }
 
   // ── Open / close ──────────────────────────────────────────────────────────
@@ -198,87 +238,47 @@ const t = {
     if (!modal) return
     modal.removeAttribute('hidden')
     document.body.style.overflow = 'hidden'
-
-    // Reset to step 1
     showStep(1, false)
-    currentStep = 1
-
+    openedAt = Date.now()
     gsap.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' })
-    gsap.fromTo(dialog,
-      { opacity: 0, y: 30, scale: 0.97 },
-      { opacity: 1, y: 0,  scale: 1,    duration: 0.45, ease: 'power3.out', delay: 0.05 }
-    )
-
-    // Focus first input
-    requestAnimationFrame(() => {
-      const first = getFocusable()[0]
-      first?.focus()
-    })
-
+    gsap.fromTo(dialog, { opacity: 0, y: 30, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: 'power3.out', delay: 0.05 })
+    requestAnimationFrame(() => nameInput?.focus())
     document.addEventListener('keydown', handleKey)
   }
-
   function closeModal() {
     if (!modal) return
     document.body.style.overflow = ''
     document.removeEventListener('keydown', handleKey)
-
-    gsap.to(dialog,   { opacity: 0, y: 16, scale: 0.97, duration: 0.3, ease: 'power2.in' })
-    gsap.to(backdrop, { opacity: 0, duration: 0.3, ease: 'power2.in',
-      onComplete: () => modal.setAttribute('hidden', '') })
+    gsap.to(dialog, { opacity: 0, y: 16, scale: 0.97, duration: 0.3, ease: 'power2.in' })
+    gsap.to(backdrop, { opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: () => modal.setAttribute('hidden', '') })
   }
-
-  function handleKey(e: KeyboardEvent) {
-    if (e.key === 'Escape') closeModal()
-    trapFocus(e)
-  }
-
-  // Expose to window
+  function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') closeModal(); trapFocus(e) }
   ;(window as any).openModal  = openModal
   ;(window as any).closeModal = closeModal
 
-  // ── Step logic ────────────────────────────────────────────────────────────
-  const progress    = document.getElementById('modal-progress') as HTMLElement | null
+  // ── Progress + steps ────────────────────────────────────────────────────────
+  const progress = document.getElementById('modal-progress') as HTMLElement | null
   const progressFill = document.getElementById('modal-progress-fill') as HTMLElement | null
-  const stepNum     = document.getElementById('modal-step-num') as HTMLElement | null
-
+  const stepNum = document.getElementById('modal-step-num') as HTMLElement | null
   function updateProgress(n: number | 'thanks') {
     if (!progress) return
     if (n === 'thanks') { progress.setAttribute('hidden', ''); return }
     progress.removeAttribute('hidden')
     if (stepNum) stepNum.textContent = String(n)
-    if (progressFill) progressFill.style.width = n === 1 ? '50%' : '100%'
+    if (progressFill) progressFill.style.width = `${(n / 3) * 100}%`
   }
-
   function showStep(n: number | 'thanks', animate = true) {
     updateProgress(n)
     steps?.forEach(el => {
-      const stepAttr = el.dataset.step
-      const isTarget = stepAttr === String(n)
+      const isTarget = el.dataset.step === String(n)
       if (isTarget) {
         el.removeAttribute('hidden')
-        if (animate) {
-          gsap.fromTo(el,
-            { opacity: 0, x: 20 },
-            { opacity: 1, x: 0, duration: 0.35, ease: 'power3.out' }
-          )
-        }
-      } else {
-        el.setAttribute('hidden', '')
-      }
+        if (animate) gsap.fromTo(el, { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.35, ease: 'power3.out' })
+      } else el.setAttribute('hidden', '')
     })
   }
 
-  // "Jiné/Other" chip reveals a description field
-  const otherToggle = document.getElementById('modal-other-toggle') as HTMLInputElement | null
-  const otherWrap   = document.getElementById('modal-other-wrap') as HTMLElement | null
-  const otherInput  = document.getElementById('modal-other') as HTMLTextAreaElement | null
-  otherToggle?.addEventListener('change', () => {
-    const on = otherToggle.checked
-    otherWrap?.toggleAttribute('hidden', !on)
-    if (on) requestAnimationFrame(() => otherInput?.focus())
-  })
-
+  // ── Refs ──────────────────────────────────────────────────────────────────
   const nameInput  = document.getElementById('modal-name') as HTMLInputElement | null
   const emailInput = document.getElementById('modal-email') as HTMLInputElement | null
   const msgInput   = document.getElementById('modal-message') as HTMLTextAreaElement | null
@@ -286,61 +286,119 @@ const t = {
   const nameErr    = document.getElementById('modal-name-err') as HTMLElement | null
   const emailErr   = document.getElementById('modal-email-err') as HTMLElement | null
   const sendErr    = document.getElementById('modal-send-err') as HTMLElement | null
+  const captchaErr = document.getElementById('modal-captcha-err') as HTMLElement | null
+  const greeting   = document.getElementById('modal-greeting') as HTMLElement | null
+  const otherToggle = document.getElementById('modal-other-toggle') as HTMLInputElement | null
+  const otherWrap   = document.getElementById('modal-other-wrap') as HTMLElement | null
+  const otherInput  = document.getElementById('modal-other') as HTMLTextAreaElement | null
+  const fileInput  = document.getElementById('modal-file') as HTMLInputElement | null
+  const fileName   = document.getElementById('modal-file-name') as HTMLElement | null
+  const fileRemove = document.getElementById('modal-file-remove') as HTMLButtonElement | null
+  const fileErr    = document.getElementById('modal-file-err') as HTMLElement | null
+  const greetFn = (n: string) => (document.documentElement.lang?.startsWith('en') ? `Thanks, ${n}!` : `Díky, ${n}!`)
 
   function showErr(el: HTMLElement | null, input: HTMLElement | null, show: boolean) {
     el?.toggleAttribute('hidden', !show)
     input?.setAttribute('aria-invalid', show ? 'true' : 'false')
     input?.classList.toggle('is-error', show)
   }
-
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const isEn = () => document.documentElement.lang?.startsWith('en')
 
-  nextBtn?.addEventListener('click', () => {
-    if (!nameInput?.value.trim()) {
-      showErr(nameErr, nameInput, true)
-      nameInput?.focus()
+  // ── Other chip reveal ──────────────────────────────────────────────────────
+  otherToggle?.addEventListener('change', () => {
+    const on = otherToggle.checked
+    otherWrap?.toggleAttribute('hidden', !on)
+    if (on) requestAnimationFrame(() => otherInput?.focus())
+  })
+
+  // ── Attachment ─────────────────────────────────────────────────────────────
+  let attachment: { filename: string; contentType: string; data: string } | null = null
+  fileInput?.addEventListener('change', () => {
+    const f = fileInput.files?.[0]
+    attachment = null
+    fileErr?.setAttribute('hidden', '')
+    if (!f) { if (fileName) fileName.textContent = ''; fileRemove?.setAttribute('hidden', ''); return }
+    if (f.size > MAX_MB * 1024 * 1024) {
+      fileErr?.removeAttribute('hidden')
+      fileInput.value = ''
+      if (fileName) fileName.textContent = ''
+      fileRemove?.setAttribute('hidden', '')
       return
     }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const res = String(reader.result)
+      attachment = { filename: f.name, contentType: f.type || 'application/octet-stream', data: res.split(',')[1] ?? '' }
+    }
+    reader.readAsDataURL(f)
+    if (fileName) fileName.textContent = `${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`
+    fileRemove?.removeAttribute('hidden')
+  })
+  fileRemove?.addEventListener('click', () => {
+    attachment = null
+    if (fileInput) fileInput.value = ''
+    if (fileName) fileName.textContent = ''
+    fileRemove.setAttribute('hidden', '')
+    fileErr?.setAttribute('hidden', '')
+  })
+
+  function selectedServices(): string[] {
+    return Array.from(modal.querySelectorAll<HTMLInputElement>('input[name="service"]:checked')).map(c => c.value)
+  }
+
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  nextBtn?.addEventListener('click', () => {
+    if (!nameInput?.value.trim()) { showErr(nameErr, nameInput, true); nameInput?.focus(); return }
     showErr(nameErr, nameInput, false)
-    currentStep = 2
+    if (greeting && nameInput) greeting.textContent = greetFn(nameInput.value.trim())
     showStep(2)
     requestAnimationFrame(() => emailInput?.focus())
   })
+  nameInput?.addEventListener('input', () => { if (nameInput.value.trim()) showErr(nameErr, nameInput, false) })
+  emailInput?.addEventListener('input', () => { if (EMAIL_RE.test(emailInput.value.trim())) showErr(emailErr, emailInput, false) })
 
-  nameInput?.addEventListener('input', () => {
-    if (nameInput.value.trim()) showErr(nameErr, nameInput, false)
-  })
-  emailInput?.addEventListener('input', () => {
-    if (EMAIL_RE.test(emailInput.value.trim())) showErr(emailErr, emailInput, false)
-  })
+  back2Btn?.addEventListener('click', () => { showStep(2); requestAnimationFrame(() => emailInput?.focus()) })
+  backBtn?.addEventListener('click', () => { showStep(1); requestAnimationFrame(() => nameInput?.focus()) })
 
-  backBtn?.addEventListener('click', () => {
-    currentStep = 1
-    showStep(1)
-    requestAnimationFrame(() => nameInput?.focus())
-  })
-
-  submitBtn?.addEventListener('click', async (e) => {
-    e.preventDefault()
-    showErr(sendErr, null, false)
-
-    if (!EMAIL_RE.test(emailInput?.value.trim() ?? '')) {
-      showErr(emailErr, emailInput, true)
-      emailInput?.focus()
-      return
-    }
+  next2Btn?.addEventListener('click', () => {
+    if (!EMAIL_RE.test(emailInput?.value.trim() ?? '')) { showErr(emailErr, emailInput, true); emailInput?.focus(); return }
     showErr(emailErr, emailInput, false)
+    buildSummary()
+    showStep(3)
+  })
 
-    const services = Array.from(
-      modal.querySelectorAll<HTMLInputElement>('input[name="service"]:checked')
-    ).map(c => c.value)
-
-    // Fold the "other" description into the message
+  function buildSummary() {
+    const none = isEn() ? '—' : '—'
+    const set = (k: string, v: string) => {
+      const el = modal.querySelector(`[data-sum="${k}"]`); if (el) el.textContent = v || none
+    }
+    set('name', nameInput?.value.trim() ?? '')
+    set('services', selectedServices().join(', '))
+    set('email', emailInput?.value.trim() ?? '')
     const otherText = otherToggle?.checked ? (otherInput?.value.trim() ?? '') : ''
-    const message = [otherText && `Jiné: ${otherText}`, msgInput?.value.trim()]
-      .filter(Boolean).join('\n\n')
+    const msg = [otherText && `${isEn() ? 'Other' : 'Jiné'}: ${otherText}`, msgInput?.value.trim()].filter(Boolean).join(' · ')
+    set('message', msg)
+    const attachRow = modal.querySelector('[data-sum-row="attach"]') as HTMLElement | null
+    if (attachment) { set('attach', attachment.filename); attachRow?.removeAttribute('hidden') }
+    else attachRow?.setAttribute('hidden', '')
+  }
 
-    const labelSend    = submitBtn.dataset.labelSend ?? submitBtn.textContent ?? 'Odeslat'
+  // ── Submit (step 3) ──────────────────────────────────────────────────────────
+  submitBtn?.addEventListener('click', async () => {
+    showErr(sendErr, null, false)
+    showErr(captchaErr, null, false)
+
+    // Turnstile token (if widget present)
+    const tokenEl = modal.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]')
+    const hasWidget = !!modal.querySelector('.cf-turnstile')
+    const token = tokenEl?.value ?? ''
+    if (hasWidget && !token) { showErr(captchaErr, null, true); return }
+
+    const otherText = otherToggle?.checked ? (otherInput?.value.trim() ?? '') : ''
+    const message = [otherText && `${isEn() ? 'Other' : 'Jiné'}: ${otherText}`, msgInput?.value.trim()].filter(Boolean).join('\n\n')
+
+    const labelSend = submitBtn.dataset.labelSend ?? 'Odeslat'
     const labelSending = submitBtn.dataset.labelSending ?? '…'
     submitBtn.disabled = true
     submitBtn.textContent = labelSending
@@ -352,16 +410,17 @@ const t = {
         body: JSON.stringify({
           name: nameInput?.value.trim(),
           email: emailInput?.value.trim(),
-          services,
+          services: selectedServices(),
           message,
-          lang: document.documentElement.lang?.startsWith('en') ? 'en' : 'cs',
+          lang: isEn() ? 'en' : 'cs',
           botcheck: botcheck?.checked ?? false,
+          elapsedMs: Date.now() - openedAt,
+          turnstileToken: token,
+          attachment,
         }),
       })
-
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.success) throw new Error(data.message || 'Submit failed')
-
       showStep('thanks')
       requestAnimationFrame(() => doneBtn?.focus())
     } catch (err) {
@@ -370,6 +429,8 @@ const t = {
     } finally {
       submitBtn.disabled = false
       submitBtn.textContent = labelSend
+      // reset turnstile for a retry
+      if ((window as any).turnstile) (window as any).turnstile.reset()
     }
   })
 
@@ -377,306 +438,105 @@ const t = {
   closeBtn?.addEventListener('click', closeModal)
   backdrop?.addEventListener('click', closeModal)
 
-  // Wire data-open-modal triggers on this page
   document.querySelectorAll('[data-open-modal]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.preventDefault()
-      openModal()
-    })
+    el.addEventListener('click', (e) => { e.preventDefault(); openModal() })
   })
 </script>
 
 <style>
 /* ── Overlay ─────────────────────────────────────────────────────────────── */
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
+.modal { position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .modal[hidden] { display: none; }
-
-.modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
+.modal__backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
 /* ── Dialog ──────────────────────────────────────────────────────────────── */
 .modal__dialog {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 520px;
-  background: var(--clr-bg);
-  border: 1px solid var(--clr-border);
-  border-radius: 1.5rem;
-  padding: 2.5rem 2rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  position: relative; z-index: 1; width: 100%; max-width: 520px;
+  background: var(--clr-bg); border: 1px solid var(--clr-border); border-radius: 1.5rem;
+  padding: 2.5rem 2rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;
 }
 
 /* ── Close ───────────────────────────────────────────────────────────────── */
-.modal__close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--clr-muted);
-  transition: color 0.2s, background 0.2s;
-}
-.modal__close:hover {
-  color: var(--clr-text);
-  background: color-mix(in srgb, var(--clr-text) 6%, transparent);
-}
+.modal__close { position: absolute; top: 1rem; right: 1rem; width: 2rem; height: 2rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--clr-muted); transition: color 0.2s, background 0.2s; }
+.modal__close:hover { color: var(--clr-text); background: color-mix(in srgb, var(--clr-text) 6%, transparent); }
 
-/* ── Progress ────────────────────────────────────────────────────────────── */
-.modal__progress {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+/* ── Progress (bottom) ───────────────────────────────────────────────────── */
+.modal__progress { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem; }
 .modal__progress[hidden] { display: none; }
-.modal__progress-track {
-  flex: 1;
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--clr-text) 10%, transparent);
-  overflow: hidden;
-}
-.modal__progress-fill {
-  display: block;
-  height: 100%;
-  width: 50%;
-  border-radius: 999px;
-  background: var(--clr-accent);
-  transition: width 0.4s var(--ease-out-expo);
-}
-.modal__progress-count {
-  flex-shrink: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--clr-muted);
-  font-variant-numeric: tabular-nums;
-}
+.modal__progress-track { flex: 1; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--clr-text) 10%, transparent); overflow: hidden; }
+.modal__progress-fill { display: block; height: 100%; width: 33.33%; border-radius: 999px; background: var(--clr-accent); transition: width 0.4s var(--ease-out-expo); }
+.modal__progress-count { flex-shrink: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; color: var(--clr-muted); font-variant-numeric: tabular-nums; }
 
-/* ── Label (other description) ───────────────────────────────────────────── */
-.modal__label {
-  display: block;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--clr-text);
-  margin-bottom: 0.5rem;
-}
+/* ── Greeting ────────────────────────────────────────────────────────────── */
+.modal__greeting { margin: 0; font-size: 0.9375rem; font-weight: 600; color: var(--clr-accent); }
+
+/* ── Label ───────────────────────────────────────────────────────────────── */
+.modal__label { display: block; font-size: 0.9375rem; font-weight: 500; color: var(--clr-text); margin-bottom: 0.5rem; }
 .modal__other[hidden] { display: none; }
 .modal__textarea--sm { min-height: 4.5rem; }
 
 /* ── Headings ────────────────────────────────────────────────────────────── */
-.modal__heading {
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  font-weight: 400;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  color: var(--clr-text);
-  margin: 0;
-}
-
-.modal__heading--sm {
-  font-size: clamp(1.1rem, 3vw, 1.35rem);
-  margin-top: 0.25rem;
-}
+.modal__heading { font-family: var(--font-display); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 400; letter-spacing: -0.03em; line-height: 1.15; color: var(--clr-text); margin: 0; }
+.modal__heading--sm { font-size: clamp(1.1rem, 3vw, 1.35rem); margin-top: 0.25rem; }
 
 /* ── Inputs ──────────────────────────────────────────────────────────────── */
-.modal__input,
-.modal__textarea {
-  width: 100%;
-  border: 1px solid var(--clr-border);
-  border-radius: 0.75rem;
-  padding: 0.75em 1em;
-  background: transparent;
-  color: var(--clr-text);
-  font-size: 0.9375rem;
-  font-family: inherit;
-  line-height: 1.5;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  outline: none;
-  resize: vertical;
+.modal__input, .modal__textarea {
+  width: 100%; border: 1px solid var(--clr-border); border-radius: 0.75rem; padding: 0.75em 1em;
+  background: transparent; color: var(--clr-text); font-size: 0.9375rem; font-family: inherit; line-height: 1.5;
+  transition: border-color 0.2s, box-shadow 0.2s; outline: none; resize: vertical;
 }
-
-.modal__input::placeholder,
-.modal__textarea::placeholder {
-  color: var(--clr-muted);
-}
-
-.modal__input:focus,
-.modal__textarea:focus {
-  border-color: var(--clr-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-accent) 15%, transparent);
-}
-
-.modal__textarea {
-  min-height: 7rem;
-  border-radius: 0.75rem;
-}
-
-.modal__input.is-error,
-.modal__textarea.is-error {
-  border-color: #e5484d;
-}
-
-.modal__error {
-  margin: -0.6rem 0 0;
-  font-size: 0.8125rem;
-  color: #e5484d;
-}
+.modal__input::placeholder, .modal__textarea::placeholder { color: var(--clr-muted); }
+.modal__input:focus, .modal__textarea:focus { border-color: var(--clr-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-accent) 15%, transparent); }
+.modal__textarea { min-height: 7rem; }
+.modal__input.is-error, .modal__textarea.is-error { border-color: #e5484d; }
+.modal__error { margin: -0.6rem 0 0; font-size: 0.8125rem; color: #e5484d; }
 .modal__btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ── Attachment ──────────────────────────────────────────────────────────── */
+.modal__attach-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.modal__attach-btn { padding: 0.5em 1.1em; font-size: 0.8125rem; cursor: pointer; }
+.modal__attach-name { font-size: 0.8125rem; color: var(--clr-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.modal__attach-remove { font-size: 0.8125rem; color: var(--clr-muted); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.modal__attach-remove:hover { color: var(--clr-text); }
+
+/* ── Summary ─────────────────────────────────────────────────────────────── */
+.modal__summary { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.modal__summary > div { display: grid; grid-template-columns: 6rem 1fr; gap: 0.75rem; align-items: baseline; }
+.modal__summary dt { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--clr-muted); margin: 0; }
+.modal__summary dd { margin: 0; font-size: 0.9375rem; color: var(--clr-text); word-break: break-word; }
+
 /* ── Chips ───────────────────────────────────────────────────────────────── */
-.modal__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.modal__chip {
-  cursor: pointer;
-}
-
-.modal__chip input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.modal__chip span {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4em 1em;
-  border-radius: 999px;
-  border: 1px solid var(--clr-border);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--clr-muted);
-  background: transparent;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
-  user-select: none;
-}
-
-.modal__chip:hover span {
-  border-color: var(--clr-text);
-  color: var(--clr-text);
-}
-
-.modal__chip input:checked + span {
-  border-color: var(--clr-accent);
-  background: color-mix(in srgb, var(--clr-accent) 10%, transparent);
-  color: var(--clr-accent);
-}
+.modal__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.modal__chip { cursor: pointer; }
+.modal__chip input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.modal__chip span { display: inline-flex; align-items: center; padding: 0.4em 1em; border-radius: 999px; border: 1px solid var(--clr-border); font-size: 0.8125rem; font-weight: 500; color: var(--clr-muted); background: transparent; transition: border-color 0.2s, background 0.2s, color 0.2s; user-select: none; }
+.modal__chip:hover span { border-color: var(--clr-text); color: var(--clr-text); }
+.modal__chip input:checked + span { border-color: var(--clr-accent); background: color-mix(in srgb, var(--clr-accent) 10%, transparent); color: var(--clr-accent); }
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
-.modal__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5em;
-  padding: 0.75em 2em;
-  border-radius: 999px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  transition: opacity 0.2s, background 0.2s, border-color 0.2s;
-}
-
-.modal__btn--primary {
-  background: var(--clr-accent);
-  color: #fff;
-  border: 1px solid var(--clr-accent);
-  align-self: flex-end;
-}
+.modal__btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; padding: 0.75em 2em; border-radius: 999px; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.01em; cursor: pointer; transition: opacity 0.2s, background 0.2s, border-color 0.2s; }
+.modal__btn--primary { background: var(--clr-accent); color: #fff; border: 1px solid var(--clr-accent); align-self: flex-end; }
 .modal__btn--primary:hover { opacity: 0.85; }
-
-.modal__btn--outline {
-  background: transparent;
-  color: var(--clr-text);
-  border: 1px solid var(--clr-border);
-  align-self: center;
-}
-.modal__btn--outline:hover {
-  border-color: var(--clr-text);
-  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
-}
+.modal__btn--outline { background: transparent; color: var(--clr-text); border: 1px solid var(--clr-border); align-self: center; }
+.modal__btn--outline:hover { border-color: var(--clr-text); background: color-mix(in srgb, var(--clr-text) 5%, transparent); }
 
 /* ── Actions row ─────────────────────────────────────────────────────────── */
-.modal__actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.modal__back {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--clr-muted);
-  padding: 0.4em 0;
-  transition: color 0.2s;
-}
+.modal__actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.modal__back { font-size: 0.8125rem; font-weight: 500; color: var(--clr-muted); padding: 0.4em 0; transition: color 0.2s; }
 .modal__back:hover { color: var(--clr-text); }
 
 /* ── Thank you ───────────────────────────────────────────────────────────── */
-.modal__step--thanks {
-  align-items: center;
-  text-align: center;
-  padding: 1rem 0 0.5rem;
-}
-
-.modal__thanks-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-
-.modal__thanks-text {
-  font-family: var(--font-display);
-  font-size: clamp(1.35rem, 4vw, 1.75rem);
-  font-weight: 400;
-  letter-spacing: -0.03em;
-  color: var(--clr-text);
-  margin: 0 0 1.5rem;
-}
+.modal__step--thanks { align-items: center; text-align: center; padding: 1rem 0 0.5rem; }
+.modal__thanks-icon { display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+.modal__thanks-text { font-family: var(--font-display); font-size: clamp(1.35rem, 4vw, 1.75rem); font-weight: 400; letter-spacing: -0.03em; color: var(--clr-text); margin: 0 0 1.5rem; }
 
 /* ── Step visibility ─────────────────────────────────────────────────────── */
-.modal__step {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+.modal__step { display: flex; flex-direction: column; gap: 1rem; }
 .modal__step[hidden] { display: none; }
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media (max-width: 36em) {
-  .modal__dialog {
-    padding: 2rem 1.25rem 1.5rem;
-    border-radius: 1.25rem;
-    max-height: 90svh;
-    overflow-y: auto;
-  }
+  .modal__dialog { padding: 2rem 1.25rem 1.25rem; border-radius: 1.25rem; max-height: 90svh; overflow-y: auto; }
+  .modal__summary > div { grid-template-columns: 5rem 1fr; }
 }
 </style>
