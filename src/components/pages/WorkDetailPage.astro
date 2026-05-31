@@ -77,28 +77,29 @@ const caseStudyLd = {
     </div>
   ) : (
     <article class="cs" data-sanity-document={cs._id}>
-      <nav class="breadcrumbs container cs-breadcrumbs" aria-label="Breadcrumb" data-fade>
-        <a href={homeUrl}>{homeLabel}</a>
-        <a href={workUrl}>{workLabel}</a>
-      </nav>
-
-      <!-- Full-bleed hero media -->
-      <div class="cs-media" data-fade>
-        {heroVideo ? (
-          <video src={heroVideo} autoplay loop muted playsinline class="cs-media__video" />
-        ) : cs.coverImage ? (
-          <SanityImage
-            image={cs.coverImage}
-            alt={cs.coverImage.alt ?? title}
-            width={1800}
-            height={1012}
-            widths={[800, 1200, 1800]}
-            sizes="100vw"
-            quality={90}
-            loading="eager"
-            class="cs-media__image"
-          />
-        ) : null}
+      <!-- Hero media with breadcrumb overlaid top-left -->
+      <div class="cs-media-wrap container" data-fade>
+        <div class="cs-media">
+          {heroVideo ? (
+            <video src={heroVideo} autoplay loop muted playsinline class="cs-media__video" />
+          ) : cs.coverImage ? (
+            <SanityImage
+              image={cs.coverImage}
+              alt={cs.coverImage.alt ?? title}
+              width={1800}
+              height={1012}
+              widths={[800, 1200, 1800]}
+              sizes="100vw"
+              quality={90}
+              loading="eager"
+              class="cs-media__image"
+            />
+          ) : null}
+          <nav class="breadcrumbs cs-breadcrumbs" aria-label="Breadcrumb">
+            <a href={homeUrl}>{homeLabel}</a>
+            <a href={workUrl}>{workLabel}</a>
+          </nav>
+        </div>
       </div>
 
       <!-- Intro block -->
@@ -131,7 +132,11 @@ const caseStudyLd = {
               <div class="cs-intro__col">
                 <span class="cs-intro__label">{lang === 'cs' ? 'Služby' : 'Services'}</span>
                 <ul class="cs-intro__tags">
-                  {cs.services.map((s: string) => <li class="cs-intro__tag">{s}</li>)}
+                  {cs.services.map((s: string) => (
+                    <li>
+                      <a class="cs-intro__tag" href={`${workUrl}?tag=${encodeURIComponent(s)}`}>{s}</a>
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -251,8 +256,38 @@ const caseStudyLd = {
 </Layout>
 
 <style>
-/* Breadcrumb above the media */
-.cs-breadcrumbs { padding-block: var(--sp-md) var(--sp-md); }
+/* ── Hero media ──────────────────────────────────────────────────────── */
+.cs-media-wrap { padding-block-start: var(--sp-md); }
+.cs-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 600px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--clr-surface);
+}
+
+/* Breadcrumb overlaid on the media (top-left), frosted for legibility */
+.cs-media .cs-breadcrumbs {
+  position: absolute;
+  top: var(--sp-md);
+  left: var(--sp-md);
+  margin: 0;
+  z-index: 2;
+}
+.cs-media .cs-breadcrumbs a {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.32);
+  border-color: rgba(255, 255, 255, 0.22);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.cs-media .cs-breadcrumbs a:hover {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.4);
+}
 
 /* ── Intro block ─────────────────────────────────────────────────────── */
 .cs-intro { padding-block: var(--sp-2xl) var(--sp-xl); }
@@ -328,12 +363,19 @@ const caseStudyLd = {
 }
 .cs-intro__tags { display: flex; flex-wrap: wrap; gap: var(--sp-xs); list-style: none; margin: 0; padding: 0; }
 .cs-intro__tag {
+  display: inline-block;
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   padding: 0.35em 0.85em;
   border: 1px solid var(--clr-accent);
   border-radius: 999px;
   color: var(--clr-accent);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.cs-intro__tag:hover {
+  background: var(--clr-accent);
+  color: #fff;
 }
 .cs-intro__lead {
   margin: 0;
@@ -349,7 +391,6 @@ const caseStudyLd = {
   .cs-intro__detail { grid-template-columns: 1fr; gap: var(--sp-lg); }
 }
 
-.cs-media { width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: var(--clr-surface); }
 .cs-media__video,
 .cs-media :global(picture),
 .cs-media :global(.cs-media__image) { width: 100%; height: 100%; display: block; }
