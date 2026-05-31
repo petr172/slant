@@ -17,6 +17,30 @@ const { lang, slug, cs, allNav = [] } = Astro.props
 // Hero video — Sanity heroVideo URL, with a local fallback for specific cases
 const heroVideo = cs?.heroVideo || (slug === 'jatvar' ? '/work/jatvar-hero.mp4' : null)
 
+// Brief / Výsledek — short paragraphs (replaces the single "O projektu" lead).
+// TODO: move to Sanity fields; hardcoded draft copy for Jatvar for now.
+const brief = slug === 'jatvar'
+  ? (lang === 'cs'
+      ? 'Jatvar je rodinné kamenictví s řemeslem od roku 1965. Chyběla mu ale značka, která by jeho preciznost ukázala i navenek — od loga přes vzorníky až po polep vozů a web.'
+      : 'Jatvar is a family stone workshop with craft dating back to 1965. What it lacked was a brand that carried that precision outward — from the logo to sample boxes, vehicle livery and the website.')
+  : null
+const result = slug === 'jatvar'
+  ? (lang === 'cs'
+      ? 'Postavili jsme uzavřenou identitu na sytě zelené a kameni. Monogram „J“, systém tiskovin, obalový vzorník i responzivní web dnes Jatvaru dávají jednotný, sebevědomý výraz napříč všemi dotykovými body.'
+      : 'We built a cohesive identity rooted in deep green and stone. The “J” monogram, a print system, packaging sampler and a responsive website now give Jatvar one confident voice across every touchpoint.')
+  : null
+
+// Gallery (Jatvar) — images + videos, opened in a lightbox
+const galleryItems = slug === 'jatvar' ? [
+  { type: 'image', src: '/work/jatvar/david.webp',    alt: 'Jatvar — vizuální identita na tričku' },
+  { type: 'video', src: '/work/jatvar/krabicka.mp4',  poster: '/work/jatvar/krabicka-poster.jpg', alt: 'Jatvar — obalový vzorník' },
+  { type: 'image', src: '/work/jatvar/kuchyne.webp',  alt: 'Jatvar — tiskovina Kámen v kuchyni' },
+  { type: 'video', src: '/work/jatvar/web.mp4',       poster: '/work/jatvar/web-poster.jpg', alt: 'Jatvar — webová prezentace' },
+  { type: 'image', src: '/work/jatvar/van.webp',      alt: 'Jatvar — polep vozů' },
+  { type: 'image', src: '/work/jatvar/koupelna.webp', alt: 'Jatvar — tiskovina' },
+  { type: 'image', src: '/work/jatvar/wordmark.webp', alt: 'Jatvar — logo' },
+] : []
+
 // Prev / next
 const navIdx  = allNav.findIndex(p => p.slug === slug)
 const prevCs  = navIdx > 0 ? allNav[navIdx - 1] : null
@@ -126,10 +150,10 @@ const caseStudyLd = {
           )}
         </dl>
 
-        {(cs.services?.length > 0 || tagline) && (
+        {(cs.services?.length > 0 || brief || result || tagline) && (
           <div class="cs-intro__detail" data-fade>
             {cs.services?.length > 0 && (
-              <div class="cs-intro__col">
+              <div class="cs-intro__col cs-intro__col--services">
                 <span class="cs-intro__label">{lang === 'cs' ? 'Služby' : 'Services'}</span>
                 <ul class="cs-intro__tags">
                   {cs.services.map((s: string) => (
@@ -140,18 +164,51 @@ const caseStudyLd = {
                 </ul>
               </div>
             )}
-            {tagline && (
+            {(brief || result) ? (
+              <>
+                {brief && (
+                  <div class="cs-intro__col cs-intro__col--text">
+                    <span class="cs-intro__label">Brief</span>
+                    <p class="cs-intro__lead">{brief}</p>
+                  </div>
+                )}
+                {result && (
+                  <div class="cs-intro__col cs-intro__col--text">
+                    <span class="cs-intro__label">{lang === 'cs' ? 'Výsledek' : 'Result'}</span>
+                    <p class="cs-intro__lead">{result}</p>
+                  </div>
+                )}
+              </>
+            ) : tagline ? (
               <div class="cs-intro__col cs-intro__col--text">
                 <span class="cs-intro__label">{lang === 'cs' ? 'O projektu' : 'About'}</span>
-                <p
-                  class="cs-intro__lead"
-                  data-sanity={lang === 'en' ? 'taglineEn' : 'tagline'}
-                >{tagline}</p>
+                <p class="cs-intro__lead" data-sanity={lang === 'en' ? 'taglineEn' : 'tagline'}>{tagline}</p>
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </header>
+
+      {galleryItems.length > 0 && (
+        <section class="cs-gallery container" data-fade>
+          <div class="cs-gallery__grid">
+            {galleryItems.map((item, i) => (
+              <button class="cs-gallery__item" type="button" data-lightbox-index={i} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
+                {item.type === 'video' ? (
+                  <video class="cs-gallery__media" src={item.src} poster={item.poster} autoplay loop muted playsinline preload="metadata"></video>
+                ) : (
+                  <img class="cs-gallery__media" src={item.src} alt={item.alt} loading="lazy" />
+                )}
+                <span class="cs-gallery__zoom" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/>
+                  </svg>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {cs.sections?.length > 0 && (
         <div class="cs-sections container">
@@ -251,6 +308,82 @@ const caseStudyLd = {
         ) : <span />}
 
       </nav>
+
+      {galleryItems.length > 0 && (
+        <div id="cs-lightbox" class="cs-lightbox" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Galerie">
+          <button class="cs-lightbox__close" type="button" aria-label={lang === 'cs' ? 'Zavřít' : 'Close'}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+          <button class="cs-lightbox__nav cs-lightbox__nav--prev" type="button" aria-label={lang === 'cs' ? 'Předchozí' : 'Previous'}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <div class="cs-lightbox__stage" id="cs-lightbox-stage"></div>
+          <button class="cs-lightbox__nav cs-lightbox__nav--next" type="button" aria-label={lang === 'cs' ? 'Další' : 'Next'}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+
+        <script define:vars={{ galleryItems }}>
+          ;(function () {
+            const lb    = document.getElementById('cs-lightbox')
+            const stage = document.getElementById('cs-lightbox-stage')
+            if (!lb || !stage) return
+            const items = galleryItems
+            let idx = 0
+
+            function render() {
+              const it = items[idx]
+              stage.innerHTML = ''
+              let el
+              if (it.type === 'video') {
+                el = document.createElement('video')
+                el.src = it.src
+                el.controls = true
+                el.autoplay = true
+                el.loop = true
+                el.playsInline = true
+              } else {
+                el = document.createElement('img')
+                el.src = it.src
+                el.alt = it.alt || ''
+              }
+              el.className = 'cs-lightbox__media'
+              stage.appendChild(el)
+            }
+            function open(i) {
+              idx = (i + items.length) % items.length
+              render()
+              lb.removeAttribute('hidden')
+              lb.setAttribute('aria-hidden', 'false')
+              document.body.style.overflow = 'hidden'
+              requestAnimationFrame(() => lb.classList.add('is-open'))
+            }
+            function close() {
+              lb.classList.remove('is-open')
+              document.body.style.overflow = ''
+              lb.setAttribute('aria-hidden', 'true')
+              setTimeout(() => { lb.setAttribute('hidden', ''); stage.innerHTML = '' }, 250)
+            }
+            function go(dir) { idx = (idx + dir + items.length) % items.length; render() }
+
+            document.querySelectorAll('[data-lightbox-index]').forEach(btn => {
+              btn.addEventListener('click', () => open(Number(btn.dataset.lightboxIndex)))
+            })
+            lb.querySelector('.cs-lightbox__close').addEventListener('click', close)
+            lb.querySelector('.cs-lightbox__nav--prev').addEventListener('click', () => go(-1))
+            lb.querySelector('.cs-lightbox__nav--next').addEventListener('click', () => go(1))
+            // Click on backdrop (outside the media/buttons) closes
+            lb.addEventListener('click', (e) => { if (e.target === lb || e.target === stage) close() })
+            // Keyboard
+            document.addEventListener('keydown', (e) => {
+              if (lb.hasAttribute('hidden')) return
+              if (e.key === 'Escape') close()
+              else if (e.key === 'ArrowLeft') go(-1)
+              else if (e.key === 'ArrowRight') go(1)
+            })
+          })()
+        </script>
+      )}
     </article>
   )}
 </Layout>
@@ -347,12 +480,14 @@ const caseStudyLd = {
 }
 .cs-intro__live:hover { opacity: 0.75; }
 
-/* Detail row: Služby + lead text */
+/* Detail row: Služby + Brief + Výsledek */
 .cs-intro__detail {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: var(--sp-2xl);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xl) var(--sp-2xl);
 }
+.cs-intro__col { flex: 1 1 16rem; min-width: 0; }
+.cs-intro__col--services { flex: 0 0 auto; min-width: 8rem; }
 .cs-intro__label {
   display: block;
   font-size: 0.7rem;
@@ -379,16 +514,129 @@ const caseStudyLd = {
 }
 .cs-intro__lead {
   margin: 0;
-  font-size: clamp(1rem, 1.6vw, 1.25rem);
-  line-height: 1.55;
+  font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+  line-height: 1.6;
   color: var(--clr-text);
-  max-width: 52ch;
+  max-width: 36ch;
 }
 
 @media (max-width: 48em) {
   .cs-intro__top { flex-direction: column; align-items: flex-start; gap: var(--sp-sm); }
   .cs-intro__meta { gap: var(--sp-lg); }
-  .cs-intro__detail { grid-template-columns: 1fr; gap: var(--sp-lg); }
+  .cs-intro__detail { gap: var(--sp-lg); }
+}
+
+/* ── Gallery ─────────────────────────────────────────────────────────── */
+.cs-gallery { padding-block: var(--sp-2xl); }
+.cs-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-sm);
+}
+.cs-gallery__item {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  background: var(--clr-surface);
+  cursor: pointer;
+}
+.cs-gallery__media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.cs-gallery__item:hover .cs-gallery__media { transform: scale(1.04); }
+.cs-gallery__zoom {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.25s, transform 0.25s;
+}
+.cs-gallery__item:hover .cs-gallery__zoom { opacity: 1; transform: scale(1); }
+
+@media (max-width: 48em) {
+  .cs-gallery__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Lightbox ────────────────────────────────────────────────────────── */
+.cs-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: rgba(8, 8, 7, 0.92);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.cs-lightbox.is-open { opacity: 1; }
+.cs-lightbox__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(92vw, 1100px);
+  max-height: 88vh;
+}
+.cs-lightbox :global(.cs-lightbox__media) {
+  max-width: min(92vw, 1100px);
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  border-radius: var(--radius-md);
+  display: block;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.cs-lightbox__close,
+.cs-lightbox__nav {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  z-index: 2;
+}
+.cs-lightbox__close:hover,
+.cs-lightbox__nav:hover { background: rgba(255, 255, 255, 0.22); border-color: rgba(255, 255, 255, 0.4); }
+.cs-lightbox__close { top: clamp(1rem, 3vw, 2rem); right: clamp(1rem, 3vw, 2rem); width: 2.75rem; height: 2.75rem; }
+.cs-lightbox__nav { top: 50%; transform: translateY(-50%); width: 3rem; height: 3rem; }
+.cs-lightbox__nav--prev { left: clamp(0.5rem, 2vw, 2rem); }
+.cs-lightbox__nav--next { right: clamp(0.5rem, 2vw, 2rem); }
+
+@media (max-width: 48em) {
+  .cs-lightbox__nav { width: 2.5rem; height: 2.5rem; top: auto; bottom: clamp(1rem, 4vw, 2rem); transform: none; }
+  .cs-lightbox__nav--prev { left: clamp(1rem, 6vw, 3rem); }
+  .cs-lightbox__nav--next { right: clamp(1rem, 6vw, 3rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-lightbox, .cs-gallery__media, .cs-gallery__zoom { transition: none; }
 }
 
 .cs-media__video,
