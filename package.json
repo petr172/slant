@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.13",
-    "@astrojs/react": "^5.0.6",
     "@astrojs/sitemap": "^3.7.3",
     "@astrojs/vercel": "^8.2.11",
     "@sanity/client": "^7.22.1",

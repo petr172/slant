@@ -1,6 +1,5 @@
 import { defineConfig } from 'astro/config'
 import sitemap from '@astrojs/sitemap'
-import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import compress from 'astro-compress'
 import cloudflare from '@astrojs/cloudflare'
@@ -17,7 +16,6 @@ export default defineConfig({
   },
 
   integrations: [
-    react(),
     sitemap({
       i18n: {
         defaultLocale: 'cs',
