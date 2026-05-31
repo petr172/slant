@@ -632,10 +632,17 @@ main { padding-top: 5rem; }
   flex-direction: column;
   gap: var(--sp-xl);
   transform: translateY(-100%);
+  /* Hidden while closed so the panel's bottom border/corners don't peek
+     out below the header island */
+  visibility: hidden;
 }
 
 .mobile-menu.is-open {
   pointer-events: all;
+}
+
+.mobile-menu.is-open .mobile-menu__inner {
+  visibility: visible;
 }
 
 .mobile-menu__nav {
