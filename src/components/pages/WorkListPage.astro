@@ -26,10 +26,12 @@ const breadcrumbLd = {
   ],
 }
 
-// Collect all unique tags
+// Collect all unique tags + counts
 const allTags: string[] = [...new Set(
   caseStudies.flatMap((cs: any) => cs.services ?? [])
 )].sort() as string[]
+const tagCount = (tag: string) =>
+  caseStudies.filter((cs: any) => (cs.services ?? []).includes(tag)).length
 ---
 
 <Layout
@@ -47,19 +49,18 @@ const allTags: string[] = [...new Set(
 
     <header class="page-header" data-fade>
       <h1 class="page-header__title">Work</h1>
-      <p class="page-header__meta">
-        <span id="count">{caseStudies?.length ?? 0}</span> {t('work.projects')}
-      </p>
     </header>
 
-    <!-- Tag filters -->
+    <!-- Tag filters with counts -->
     {allTags.length > 0 && (
       <div class="work-listing__filters" id="tag-filters">
         <button class="tag-btn tag-btn--all is-active" data-tag="">
-          {lang === 'cs' ? 'Vše' : 'All'}
+          {lang === 'cs' ? 'Vše' : 'All'} <span class="tag-btn__count">{caseStudies?.length ?? 0}</span>
         </button>
         {allTags.map(tag => (
-          <button class="tag-btn" data-tag={tag}>{tag}</button>
+          <button class="tag-btn" data-tag={tag}>
+            {tag} <span class="tag-btn__count">{tagCount(tag)}</span>
+          </button>
         ))}
       </div>
     )}
@@ -98,13 +99,11 @@ const allTags: string[] = [...new Set(
 
   const filters  = document.getElementById('tag-filters')
   const grid     = document.getElementById('work-grid')
-  const countEl  = document.getElementById('count')
   const cards    = grid?.querySelectorAll<HTMLElement>('.work-listing__card')
   const btns     = filters?.querySelectorAll<HTMLButtonElement>('.tag-btn')
 
   function applyFilter(tag: string) {
-    if (!cards || !btns || !countEl) return
-    let visible = 0
+    if (!cards || !btns) return
 
     btns.forEach(b => b.classList.toggle('is-active', b.dataset.tag === tag))
 
@@ -112,10 +111,7 @@ const allTags: string[] = [...new Set(
       const services: string[] = JSON.parse(card.dataset.services ?? '[]')
       const show = !tag || services.includes(tag)
       card.style.display = show ? '' : 'none'
-      if (show) visible++
     })
-
-    countEl.textContent = String(visible)
 
     // update URL without reload
     const url = new URL(window.location.href)
@@ -161,6 +157,12 @@ const allTags: string[] = [...new Set(
   border-color: var(--clr-text);
   background: color-mix(in srgb, var(--clr-text) 6%, transparent);
 }
+.tag-btn__count {
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.15em;
+}
+.tag-btn.is-active .tag-btn__count { opacity: 0.7; }
 
 .work-listing__grid {
   display: grid;

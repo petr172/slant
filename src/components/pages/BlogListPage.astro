@@ -48,10 +48,11 @@ function postDesc(post: any) {
 const featuredPost = posts.find((p: any) => p.featured) ?? posts[0] ?? null
 const listPosts = posts.filter((p: any) => p !== featuredPost)
 
-// Unique categories for filtering
+// Unique categories for filtering + counts
 const allCategories: string[] = [...new Set(
   posts.map((p: any) => p.category).filter(Boolean)
 )].sort() as string[]
+const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).length
 ---
 
 <Layout
@@ -71,21 +72,18 @@ const allCategories: string[] = [...new Set(
     <!-- Header -->
     <header class="page-header">
       <h1 class="page-header__title">{lang === 'cs' ? 'Ze studia' : 'From the studio'}</h1>
-      {posts.length > 0 && (
-        <span class="page-header__meta">
-          <span id="blog-count">{posts.length}</span> {lang === 'cs' ? 'článků' : 'articles'}
-        </span>
-      )}
     </header>
 
-    <!-- Category filters -->
+    <!-- Category filters with counts -->
     {allCategories.length > 0 && (
       <div class="blog-filters" id="blog-filters">
         <button class="tag-btn is-active" data-cat="">
-          {lang === 'cs' ? 'Vše' : 'All'}
+          {lang === 'cs' ? 'Vše' : 'All'} <span class="tag-btn__count">{posts.length}</span>
         </button>
         {allCategories.map(cat => (
-          <button class="tag-btn" data-cat={cat}>{cat}</button>
+          <button class="tag-btn" data-cat={cat}>
+            {cat} <span class="tag-btn__count">{catCount(cat)}</span>
+          </button>
         ))}
       </div>
     )}
@@ -219,6 +217,12 @@ const allCategories: string[] = [...new Set(
   border-color: var(--clr-text);
   background: color-mix(in srgb, var(--clr-text) 6%, transparent);
 }
+.tag-btn__count {
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.15em;
+}
+.tag-btn.is-active .tag-btn__count { opacity: 0.7; }
 
 /* ── Featured post ─────────────────────────────────────────────────── */
 .featured-post {
@@ -259,6 +263,7 @@ const allCategories: string[] = [...new Set(
 .featured-post__content {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--sp-sm);
 }
 .featured-post__date {
@@ -402,27 +407,21 @@ if (filters) {
   const btns     = filters.querySelectorAll<HTMLButtonElement>('.tag-btn')
   const featured = document.querySelector<HTMLElement>('[data-featured]')
   const items    = document.querySelectorAll<HTMLElement>('[data-list-item]')
-  const countEl  = document.getElementById('blog-count')
 
   const params  = new URLSearchParams(window.location.search)
   const initCat = params.get('category') ?? ''
 
   function applyFilter(cat: string) {
-    let visible = 0
-
     btns.forEach(b => b.classList.toggle('is-active', b.dataset.cat === cat))
 
     const toggle = (el: HTMLElement | null) => {
       if (!el) return
       const show = !cat || el.dataset.category === cat
       el.style.display = show ? '' : 'none'
-      if (show) visible++
     }
 
     toggle(featured)
     items.forEach(toggle)
-
-    if (countEl) countEl.textContent = String(visible)
 
     const url = new URL(window.location.href)
     cat ? url.searchParams.set('category', cat) : url.searchParams.delete('category')
