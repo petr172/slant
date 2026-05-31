@@ -363,7 +363,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
           }
         })
         tl.to([items, footer], { y: 10, opacity: 0, duration: 0.2, ease: 'power2.in' })
-          .to(inner, { y: '100%', duration: 0.4, ease: 'power4.in' }, '-=0.1')
+          .to(inner, { y: '-100%', duration: 0.4, ease: 'power4.in' }, '-=0.1')
       }
 
       toggle?.addEventListener('click', () => isOpen ? closeMenu() : openMenu())
@@ -618,20 +618,20 @@ main { padding-top: 5rem; }
 
 .mobile-menu__inner {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0.75rem;
   right: 0.75rem;
-  padding: var(--sp-xl) var(--sp-lg) calc(var(--sp-xl) + env(safe-area-inset-bottom));
-  border-radius: 1.5rem 1.5rem 0 0;
+  padding: var(--sp-xl) var(--sp-lg);
+  border-radius: 0 0 1.5rem 1.5rem;
   background: color-mix(in srgb, var(--clr-bg) 92%, transparent);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--clr-border);
-  border-bottom: none;
+  border-top: none;
   display: flex;
   flex-direction: column;
   gap: var(--sp-xl);
-  transform: translateY(100%);
+  transform: translateY(-100%);
 }
 
 .mobile-menu.is-open {
@@ -688,12 +688,12 @@ main { padding-top: 5rem; }
   .island-nav__hamburger { display: flex; }
   .mobile-menu           { display: block; }
 
-  /* Celý island nav přesunout dolů + full width */
+  /* Island nav nahoře na mobilu + full width */
   .island-nav-wrap {
-    top: auto;
-    bottom: 0;
-    padding: 0 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
-    align-items: flex-end;
+    top: 0;
+    bottom: auto;
+    padding: calc(0.75rem + env(safe-area-inset-top)) 0.75rem 0;
+    align-items: flex-start;
   }
 
   .island-nav,
@@ -703,11 +703,12 @@ main { padding-top: 5rem; }
     transition: none;
   }
 
-  /* Překryv menu musí být nad navem */
+  /* Menu se rozbalí shora, pod navem */
   .mobile-menu__inner {
-    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    top: calc(4.5rem + env(safe-area-inset-top));
+    bottom: auto;
     border-radius: 1.5rem;
-    border-bottom: 1px solid var(--clr-border);
+    border-top: 1px solid var(--clr-border);
   }
 }
 

@@ -146,22 +146,24 @@ function getSvgContent(logoUrl: string): string {
 
 .trust-wall__list {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--sp-sm);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-@media (max-width: 48em) {
+/* Tablet: 3 across (→ 3 + 3) */
+@media (max-width: 64em) {
   .trust-wall__list {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 30em) {
+/* Mobile: 2 across (→ 2 + 2 + 2) */
+@media (max-width: 40em) {
   .trust-wall__list {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -203,7 +205,10 @@ function getSvgContent(logoUrl: string): string {
   stroke: none;
 }
 
-@media (max-width: 48em) {
+@media (max-width: 64em) {
+  .trust-wall__svg { height: 22px; }
+}
+@media (max-width: 40em) {
   .trust-wall__svg { height: 20px; }
 }
 </style>

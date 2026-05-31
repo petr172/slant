@@ -132,7 +132,7 @@ const faqLd = {
     <!-- Spodní desc + CTA -->
     <div class="hero__bot container" id="js-hero-bot">
       <p class="hero__desc">{t('home.desc')}</p>
-      <a href={workUrl} class="hero__cta">
+      <a href={workUrl} class="hero__cta btn-secondary">
         {t('home.cta')}
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
           <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -149,8 +149,8 @@ const faqLd = {
     <section class="projects" id="js-projects">
       <div class="container">
         <div class="projects__header">
-          <span class="label">{t('home.selected')}</span>
-          <a href={workUrl} class="projects__all">{t('work.viewAll')}</a>
+          <h2 class="section-heading">{t('home.selected')}</h2>
+          <a href={workUrl} class="projects__all btn-secondary">{t('work.viewAll')}</a>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ const faqLd = {
                 }
               </div>
               <div class="project-item__info">
-                <h2 class="project-item__title">{cs.title}</h2>
+                <h3 class="project-item__title">{cs.title}</h3>
                 {cs.tagline && <p class="project-item__tagline">{cs.tagline}</p>}
               </div>
             </a>
@@ -190,7 +190,7 @@ const faqLd = {
       </div>
 
       <div class="projects__footer">
-        <a href={workUrl} class="projects__cta">
+        <a href={workUrl} class="projects__cta btn-secondary">
           {lang === 'cs' ? 'Všechny projekty' : 'All projects'}
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
             <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -203,7 +203,7 @@ const faqLd = {
 
   <!-- ─── Services ───────────────────────────────────────────────────────── -->
   <section class="services container" id="js-services">
-    <h2 class="services__heading">{lang === 'cs' ? 'Co děláme' : 'What we do'}</h2>
+    <h2 class="services__heading section-heading">{lang === 'cs' ? 'Co děláme' : 'What we do'}</h2>
     <div class="services__grid">
       {([
         { cs: 'Branding',        en: 'Branding',        tag: 'Branding',        desc_cs: 'Budujeme značky s jasnou osobností — od strategie a pojmenování po vizuální identitu a brand manuál.', desc_en: 'We build brands with clear personality — from strategy and naming to visual identity and brand guidelines.' },
@@ -230,7 +230,7 @@ const faqLd = {
     return (
       <section class="process" id="js-process">
         <div class="process__label container">
-          <span class="label">{lang === 'cs' ? 'Jak to děláme' : 'How we work'}</span>
+          <h2 class="section-heading">{lang === 'cs' ? 'Jak to děláme' : 'How we work'}</h2>
         </div>
         <div class="process__list">
           {steps.map((step: any, i: number) => {
@@ -256,7 +256,7 @@ const faqLd = {
   {blogPosts?.length > 0 && (
     <section class="blog-section" id="js-blog">
       <div class="blog-section__head container">
-        <span class="label">{lang === 'cs' ? 'Ze studia' : 'From the studio'}</span>
+        <h2 class="section-heading">{lang === 'cs' ? 'Ze studia' : 'From the studio'}</h2>
       </div>
 
       <div class="blog-scroll" id="js-blog-scroll">
@@ -291,7 +291,7 @@ const faqLd = {
       </div>
 
       <div class="blog-section__footer container">
-        <a href={lang === 'cs' ? '/blog' : '/en/blog'} class="blog-section__btn">
+        <a href={lang === 'cs' ? '/blog' : '/en/blog'} class="blog-section__btn btn-secondary">
           {lang === 'cs' ? 'Všechny články' : 'All articles'}
         </a>
         <div class="blog-section__arrows">
@@ -314,7 +314,7 @@ const faqLd = {
   <section class="faq container" id="js-faq">
     <div class="faq__header">
       <span class="faq__label">{lang === 'cs' ? 'Časté dotazy' : 'FAQ'}</span>
-      <h2 class="faq__title">{lang === 'cs' ? 'Co vás zajímá?' : 'Your questions, answered'}</h2>
+      <h2 class="faq__title section-heading">{lang === 'cs' ? 'Co vás zajímá?' : 'Your questions, answered'}</h2>
     </div>
 
     <div class="faq__list" id="js-faq-list">
@@ -552,6 +552,14 @@ gsap.from('#js-hero-bot', {
       .fromTo(title, { y: 28,  opacity: 0, clipPath: 'inset(0 0 100% 0)' },
                      { y: 0,   opacity: 1, clipPath: 'inset(0 0 0% 0)',   duration: 0.8, ease: 'power3.out' }, 0.15)
       .fromTo(desc,  { y: 16,  opacity: 0 }, { y: 0,  opacity: 1, duration: 0.7, ease: 'power3.out' }, 0.35)
+
+    // Tint the number accent only while the row sits in the viewport centre
+    ScrollTrigger.create({
+      trigger: row,
+      start: 'top 75%',
+      end: 'bottom 25%',
+      onToggle: self => num?.classList.toggle('is-active', self.isActive),
+    })
   })
 
   // ── Services stagger ─────────────────────────────────────────────────
@@ -766,19 +774,16 @@ gsap.from('#js-hero-bot', {
 
 /* On mobile: hide scattered chips, show as simple row below headline */
 @media (max-width: 48em) {
-  .hero__chips {
-    position: static;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: var(--sp-lg);
-    pointer-events: all;
+  /* Clear the fixed top nav so it doesn't cover the headline */
+  .hero__headline-wrap {
+    padding-top: calc(4.5rem + env(safe-area-inset-top));
   }
+  /* Keep chips floating over the typography like on desktop */
   .hero__chip {
-    position: static;
-    rotate: none !important;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
+    padding: 0.4em 0.8em 0.4em 0.65em;
   }
+  .hero__chip svg { width: 11px; height: 11px; }
 }
 
 /* Reel kontejner — sticky při scrollu */
@@ -857,15 +862,7 @@ gsap.from('#js-hero-bot', {
   max-width: 38ch;
 }
 
-.hero__cta {
-  display: inline-flex; align-items: center; gap: 0.6rem;
-  font-size: 0.875rem; letter-spacing: 0.03em;
-  white-space: nowrap; flex-shrink: 0;
-  padding-bottom: 2px;
-  border-bottom: 1px solid var(--clr-border);
-  transition: border-color .25s, gap .3s;
-}
-.hero__cta:hover { border-color: var(--clr-text); gap: 1rem; }
+.hero__cta { flex-shrink: 0; align-self: flex-start; }
 
 /* ── Projects ────────────────────────────────────────────────────────── */
 .projects { padding-block: var(--sp-3xl); }
@@ -881,30 +878,22 @@ gsap.from('#js-hero-bot', {
 
 .label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--clr-muted); }
 
-.projects__all { font-size: 0.8rem; opacity: 0.45; transition: opacity .2s; }
-.projects__all:hover { opacity: 1; }
+/* Unified section heading — every section title shares this */
+.section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--clr-text);
+  margin: 0;
+}
+
 
 .projects__footer {
   display: flex;
   justify-content: center;
   padding-top: var(--sp-xl);
-}
-
-.projects__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.875rem;
-  letter-spacing: 0.03em;
-  padding: 0.75em 1.75em;
-  border: 1px solid var(--clr-border);
-  border-radius: 999px;
-  transition: border-color .25s, background .25s, gap .3s;
-}
-.projects__cta:hover {
-  border-color: var(--clr-text);
-  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
-  gap: 1rem;
 }
 
 /* Alternating grid — 2 col s wide variantami */
@@ -1068,12 +1057,12 @@ gsap.from('#js-hero-bot', {
   color: var(--clr-border);
   user-select: none;
   will-change: transform, opacity;
+  transition: color 0.5s ease;
 }
 
-/* Hover: number tints to text colour */
-.process__row:hover .process__num {
-  color: var(--clr-muted);
-  transition: color 0.4s ease;
+/* Tints to accent while the row is scrolled into the viewport centre */
+.process__num.is-active {
+  color: var(--clr-accent);
 }
 
 .process__content {
@@ -1115,12 +1104,7 @@ gsap.from('#js-hero-bot', {
 }
 
 .services__heading {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  font-weight: 400;
-  letter-spacing: -0.03em;
   margin-bottom: var(--sp-2xl);
-  color: var(--clr-text);
 }
 
 .services__grid {
@@ -1148,6 +1132,13 @@ gsap.from('#js-hero-bot', {
 
 .service-item__tag {
   margin-bottom: var(--sp-sm);
+  color: var(--clr-accent);
+  border-color: var(--clr-accent);
+}
+.service-item__tag:hover {
+  color: #fff;
+  background: var(--clr-accent);
+  border-color: var(--clr-accent);
 }
 
 .service-item__desc {
@@ -1282,22 +1273,6 @@ gsap.from('#js-hero-bot', {
   align-items: center;
   justify-content: space-between;
   padding-top: var(--sp-lg);
-}
-
-.blog-section__btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.55em 1.25em;
-  border-radius: 999px;
-  border: 1px solid var(--clr-border);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--clr-text);
-  transition: border-color .2s, background .2s;
-}
-.blog-section__btn:hover {
-  border-color: var(--clr-text);
-  background: color-mix(in srgb, var(--clr-text) 5%, transparent);
 }
 
 .blog-section__arrows {
@@ -1473,15 +1448,6 @@ gsap.from('#js-hero-bot', {
   color: var(--clr-accent);
 }
 
-.faq__title {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  color: var(--clr-ink);
-  margin: 0;
-}
 
 .faq__list {
   border-top: 1px solid var(--clr-border);
