@@ -1,36 +1,97 @@
 ---
-// Google Analytics 4 — načítá se AŽ po souhlasu (GDPR / ePrivacy)
+// Google Analytics 4 — načítá se AŽ po aktivním souhlasu (GDPR / ePrivacy / ÚOOÚ).
+// Opt-in: žádné analytické cookies se nespustí před souhlasem.
 // Nastav PUBLIC_GA_MEASUREMENT_ID v .env souboru
 const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID
 const lang = Astro.currentLocale === 'en' ? 'en' : 'cs'
 
+const policyHref = lang === 'cs'
+  ? '/podminky/zasady-cookies'
+  : '/en/podminky/zasady-cookies'
+
 const t = {
   cs: {
-    text: 'Používáme cookies k anonymnímu měření návštěvnosti. Souhlasíte?',
-    accept: 'Přijmout',
-    decline: 'Odmítnout',
+    text: 'Pár cookies nám pomáhá vidět, co vás na webu baví — anonymně měříme návštěvnost přes Google Analytics. Žádné reklamy, žádné sledování napříč internetem. Vyberte si, co je vám příjemné.',
+    policy: 'Zásady cookies',
+    rejectAll: 'Odmítnout',
+    settings: 'Nastavit',
+    acceptAll: 'Přijmout vše',
+    prefsTitle: 'Vyberte si cookies',
+    necessary: 'Nezbytné',
+    necessaryTag: 'Vždy aktivní',
+    necessaryDesc: 'Nutné pro chod webu — zapamatují si třeba tuhle volbu. Bez nich to nejde a souhlas nepotřebují.',
+    analytics: 'Analytické',
+    analyticsDesc: 'Anonymní měření návštěvnosti (Google Analytics). Díky nim víme, co vás zajímá, a web zlepšujeme.',
+    save: 'Uložit výběr',
+    back: 'Zpět',
   },
   en: {
-    text: 'We use cookies for anonymous analytics. Is that okay?',
-    accept: 'Accept',
-    decline: 'Decline',
+    text: 'A few cookies help us see what you enjoy here — we measure traffic anonymously via Google Analytics. No ads, no cross-site tracking. Pick what feels right.',
+    policy: 'Cookie policy',
+    rejectAll: 'Decline',
+    settings: 'Customise',
+    acceptAll: 'Accept all',
+    prefsTitle: 'Choose your cookies',
+    necessary: 'Essential',
+    necessaryTag: 'Always on',
+    necessaryDesc: 'Required for the site to work — they remember things like this choice. They need no consent.',
+    analytics: 'Analytics',
+    analyticsDesc: 'Anonymous traffic measurement (Google Analytics). It tells us what you care about so we can improve.',
+    save: 'Save choice',
+    back: 'Back',
   },
 }[lang]
 ---
 
 {GA_ID && (
   <>
-    <div id="cookie-banner" class="cookie-banner" role="dialog" aria-live="polite" aria-label="Cookies" hidden>
-      <p class="cookie-banner__text">{t.text}</p>
-      <div class="cookie-banner__actions">
-        <button id="cookie-decline" class="cookie-banner__btn cookie-banner__btn--ghost">{t.decline}</button>
-        <button id="cookie-accept" class="cookie-banner__btn cookie-banner__btn--primary">{t.accept}</button>
+    <div id="cookie-banner" class="cookie-banner" role="dialog" aria-label="Cookies" hidden>
+      <!-- Layer 1: main -->
+      <div class="cookie-banner__view" data-view="main">
+        <p class="cookie-banner__text">
+          <span class="cookie-banner__emoji" aria-hidden="true">🍪</span>
+          {t.text} <a href={policyHref} class="cookie-banner__link">{t.policy}</a>
+        </p>
+        <div class="cookie-banner__actions">
+          <button id="cookie-reject" type="button" class="cookie-banner__btn cookie-banner__btn--solid">{t.rejectAll}</button>
+          <button id="cookie-settings" type="button" class="cookie-banner__btn cookie-banner__btn--ghost">{t.settings}</button>
+          <button id="cookie-accept" type="button" class="cookie-banner__btn cookie-banner__btn--solid cookie-banner__btn--accent">{t.acceptAll}</button>
+        </div>
+      </div>
+
+      <!-- Layer 2: preferences -->
+      <div class="cookie-banner__view" data-view="prefs" hidden>
+        <p class="cookie-banner__title">{t.prefsTitle}</p>
+        <ul class="cookie-cats" role="list">
+          <li class="cookie-cat">
+            <div class="cookie-cat__head">
+              <span class="cookie-cat__name">{t.necessary}</span>
+              <span class="cookie-cat__tag">{t.necessaryTag}</span>
+            </div>
+            <p class="cookie-cat__desc">{t.necessaryDesc}</p>
+          </li>
+          <li class="cookie-cat">
+            <label class="cookie-cat__head" for="cat-analytics">
+              <span class="cookie-cat__name">{t.analytics}</span>
+              <input type="checkbox" id="cat-analytics" class="cookie-cat__toggle" />
+            </label>
+            <p class="cookie-cat__desc">{t.analyticsDesc}</p>
+          </li>
+        </ul>
+        <div class="cookie-banner__actions">
+          <button id="cookie-back" type="button" class="cookie-banner__btn cookie-banner__btn--ghost">{t.back}</button>
+          <button id="cookie-save" type="button" class="cookie-banner__btn cookie-banner__btn--solid cookie-banner__btn--accent">{t.save}</button>
+        </div>
       </div>
     </div>
 
     <script define:vars={{ GA_ID }}>
       ;(function () {
         const KEY = 'slant-consent'
+        const banner    = document.getElementById('cookie-banner')
+        const viewMain  = banner?.querySelector('[data-view="main"]')
+        const viewPrefs = banner?.querySelector('[data-view="prefs"]')
+        const toggle    = document.getElementById('cat-analytics')
 
         function loadGA() {
           if (window.__gaLoaded) return
@@ -46,26 +107,69 @@ const t = {
           window.__gtag = gtag
         }
 
-        const stored = localStorage.getItem(KEY)
-        if (stored === 'granted') {
-          loadGA()
-        } else if (stored !== 'denied') {
-          // Zatím bez rozhodnutí → zobraz lištu
-          const banner = document.getElementById('cookie-banner')
-          banner?.removeAttribute('hidden')
-          requestAnimationFrame(() => banner?.classList.add('is-visible'))
+        // Read consent (supports legacy 'granted'/'denied' strings)
+        function getConsent() {
+          const raw = localStorage.getItem(KEY)
+          if (!raw) return null
+          if (raw === 'granted') return { analytics: true }
+          if (raw === 'denied')  return { analytics: false }
+          try { return JSON.parse(raw) } catch { return null }
+        }
+        function setConsent(analytics) {
+          localStorage.setItem(KEY, JSON.stringify({ analytics: !!analytics, ts: Date.now() }))
+        }
 
-          document.getElementById('cookie-accept')?.addEventListener('click', () => {
-            localStorage.setItem(KEY, 'granted')
-            banner?.classList.remove('is-visible')
-            setTimeout(() => banner?.setAttribute('hidden', ''), 300)
-            loadGA()
-          })
-          document.getElementById('cookie-decline')?.addEventListener('click', () => {
-            localStorage.setItem(KEY, 'denied')
-            banner?.classList.remove('is-visible')
-            setTimeout(() => banner?.setAttribute('hidden', ''), 300)
-          })
+        function showBanner(view) {
+          if (!banner) return
+          if (view === 'prefs') {
+            viewMain?.setAttribute('hidden', '')
+            viewPrefs?.removeAttribute('hidden')
+          } else {
+            viewPrefs?.setAttribute('hidden', '')
+            viewMain?.removeAttribute('hidden')
+          }
+          banner.removeAttribute('hidden')
+          requestAnimationFrame(() => banner.classList.add('is-visible'))
+        }
+        function hideBanner() {
+          if (!banner) return
+          banner.classList.remove('is-visible')
+          setTimeout(() => banner.setAttribute('hidden', ''), 300)
+        }
+
+        // Apply existing decision on load (closing/ignoring grants nothing)
+        const consent = getConsent()
+        if (consent) {
+          if (consent.analytics) loadGA()
+        } else {
+          showBanner('main')
+        }
+
+        // First layer — reject & accept equally easy
+        document.getElementById('cookie-accept')?.addEventListener('click', () => {
+          setConsent(true); loadGA(); hideBanner()
+        })
+        document.getElementById('cookie-reject')?.addEventListener('click', () => {
+          setConsent(false); hideBanner()
+        })
+        document.getElementById('cookie-settings')?.addEventListener('click', () => {
+          if (toggle) toggle.checked = !!getConsent()?.analytics // never pre-checked unless already granted
+          showBanner('prefs')
+        })
+
+        // Preferences layer
+        document.getElementById('cookie-back')?.addEventListener('click', () => showBanner('main'))
+        document.getElementById('cookie-save')?.addEventListener('click', () => {
+          const ok = !!toggle?.checked
+          setConsent(ok)
+          if (ok) loadGA()
+          hideBanner()
+        })
+
+        // Re-open from a footer link ("Nastavení cookies") — revoke as easy as grant
+        window.openCookieSettings = () => {
+          if (toggle) toggle.checked = !!getConsent()?.analytics
+          showBanner('prefs')
         }
       })()
     </script>
@@ -77,54 +181,146 @@ const t = {
         left: 1rem;
         right: 1rem;
         bottom: 1rem;
-        max-width: 30rem;
+        max-width: 32rem;
         margin-inline: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 0.85rem;
-        padding: 1.1rem 1.25rem;
+        padding: 1.25rem 1.4rem;
         background: color-mix(in srgb, var(--clr-bg) 92%, transparent);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid var(--clr-border);
-        border-radius: 1rem;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+        border-radius: 1.1rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.16);
         opacity: 0;
         transform: translateY(12px);
         transition: opacity 0.3s ease, transform 0.3s ease;
       }
       .cookie-banner.is-visible { opacity: 1; transform: translateY(0); }
 
+      .cookie-banner__view { display: flex; flex-direction: column; gap: 1rem; }
+
       .cookie-banner__text {
         margin: 0;
         font-size: 0.8125rem;
-        line-height: 1.5;
+        line-height: 1.55;
         color: var(--clr-text);
       }
+      .cookie-banner__emoji { margin-right: 0.3rem; }
+      .cookie-banner__link {
+        color: var(--clr-accent);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        white-space: nowrap;
+      }
+      .cookie-banner__title {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--clr-text);
+      }
+
       .cookie-banner__actions {
         display: flex;
         gap: 0.5rem;
         justify-content: flex-end;
+        flex-wrap: wrap;
       }
+
+      /* Reject & Accept share identical shape/size — equal prominence (ÚOOÚ) */
       .cookie-banner__btn {
-        padding: 0.45rem 1rem;
+        padding: 0.5rem 1.1rem;
         border-radius: 999px;
         font-size: 0.8125rem;
         font-weight: 600;
-        transition: opacity 0.2s, background 0.2s, color 0.2s;
+        line-height: 1;
+        cursor: pointer;
+        transition: opacity 0.2s, background 0.2s, color 0.2s, border-color 0.2s;
       }
-      .cookie-banner__btn--primary { background: var(--clr-accent); color: #fff; }
-      .cookie-banner__btn--primary:hover { opacity: 0.85; }
-      .cookie-banner__btn--ghost { color: var(--clr-muted); }
+      .cookie-banner__btn--solid {
+        border: 1px solid var(--clr-border);
+        background: color-mix(in srgb, var(--clr-text) 8%, transparent);
+        color: var(--clr-text);
+      }
+      .cookie-banner__btn--solid:hover {
+        background: color-mix(in srgb, var(--clr-text) 14%, transparent);
+        border-color: color-mix(in srgb, var(--clr-text) 25%, transparent);
+      }
+      .cookie-banner__btn--accent {
+        background: var(--clr-accent);
+        border-color: var(--clr-accent);
+        color: #fff;
+      }
+      .cookie-banner__btn--accent:hover { opacity: 0.88; }
+      .cookie-banner__btn--ghost {
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--clr-muted);
+      }
       .cookie-banner__btn--ghost:hover { color: var(--clr-text); }
+
+      /* Categories */
+      .cookie-cats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.85rem; }
+      .cookie-cat {
+        padding: 0.8rem 0.9rem;
+        border: 1px solid var(--clr-border);
+        border-radius: 0.7rem;
+        background: color-mix(in srgb, var(--clr-text) 3%, transparent);
+      }
+      .cookie-cat__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        cursor: pointer;
+      }
+      .cookie-cat__name { font-size: 0.85rem; font-weight: 600; color: var(--clr-text); }
+      .cookie-cat__tag {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--clr-muted);
+      }
+      .cookie-cat__desc { margin: 0.4rem 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--clr-muted); }
+
+      /* Toggle switch */
+      .cookie-cat__toggle {
+        appearance: none;
+        -webkit-appearance: none;
+        position: relative;
+        width: 2.2rem;
+        height: 1.25rem;
+        flex-shrink: 0;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--clr-text) 20%, transparent);
+        cursor: pointer;
+        transition: background 0.25s ease;
+      }
+      .cookie-cat__toggle::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: calc(1.25rem - 4px);
+        height: calc(1.25rem - 4px);
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.25s var(--ease-out-expo);
+      }
+      .cookie-cat__toggle:checked { background: var(--clr-accent); }
+      .cookie-cat__toggle:checked::after { transform: translateX(0.95rem); }
+      .cookie-cat__toggle:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 2px; }
 
       /* Na mobilu nad spodním island-navem */
       @media (max-width: 48em) {
         .cookie-banner { bottom: calc(5rem + env(safe-area-inset-bottom)); }
+        .cookie-banner__actions { justify-content: stretch; }
+        .cookie-banner__actions .cookie-banner__btn--solid { flex: 1; }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .cookie-banner { transition: none; }
+        .cookie-banner, .cookie-cat__toggle, .cookie-cat__toggle::after { transition: none; }
       }
     </style>
   </>

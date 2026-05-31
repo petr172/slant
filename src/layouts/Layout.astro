@@ -284,6 +284,9 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
             <a href={lang === 'cs' ? '/podminky/vseobecne-obchodni-podminky' : '/en/podminky/vseobecne-obchodni-podminky'}>
               {lang === 'cs' ? 'Obchodní podmínky' : 'Terms & Conditions'}
             </a>
+            <button type="button" class="site-footer__legal-btn" onclick="window.openCookieSettings?.()">
+              {lang === 'cs' ? 'Nastavení cookies' : 'Cookie settings'}
+            </button>
             <span>© Slant s.r.o. <span id="footer-year">{new Date().getFullYear()}</span></span>
           </div>
         </div>
@@ -843,6 +846,16 @@ main { padding-top: 5rem; }
   text-underline-offset: 3px;
 }
 .site-footer__legal a:hover { color: var(--clr-accent); }
+.site-footer__legal-btn {
+  color: color-mix(in srgb, var(--clr-bg) 60%, transparent);
+  transition: color 0.2s;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font: inherit;
+  text-align: right;
+}
+.site-footer__legal-btn:hover { color: var(--clr-accent); }
 
 /* ── Copy-to-clipboard chips ──────────────────────────────────────────────── */
 .copy-chip {
