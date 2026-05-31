@@ -138,8 +138,8 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
               const readMin = Math.max(1, Math.round(chars / 1100))
               return (
                 <li class="blog-list__item" data-list-item data-category={post.category ?? ''}>
-                  <a href={postHref} class="blog-list__thumb" aria-label={postTitle(post)} tabindex="-1">
-                    {post.coverImage && (
+                  {post.coverImage && (
+                    <a href={postHref} class="blog-list__thumb" aria-label={postTitle(post)} tabindex="-1">
                       <SanityImage
                         image={post.coverImage}
                         alt={post.coverImage.alt ?? postTitle(post)}
@@ -149,8 +149,8 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
                         sizes="(max-width: 48em) 35vw, 220px"
                         class="blog-list__thumb-img"
                       />
-                    )}
-                  </a>
+                    </a>
+                  )}
                   <div class="blog-list__body">
                     {post.category && (
                       <a href={`${blogUrl}?category=${encodeURIComponent(post.category)}`} class="chip blog-list__tag">{post.category}</a>
