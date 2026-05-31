@@ -9,11 +9,15 @@ interface Props {
   services?: string[]
   coverImage?: any
   featured?: boolean
+  cardVideo?: string
   lang?: 'cs' | 'en'
 }
 
 const { title, slug, tagline, year, services, coverImage, lang = 'cs' } = Astro.props
 const workBase = lang === 'en' ? '/en/work' : '/work'
+
+// Optional hover-play video (Sanity field later; local fallback for now)
+const cardVideo = Astro.props.cardVideo ?? (slug === 'jatvar' ? '/work/jatvar-hero.mp4' : undefined)
 ---
 
 <article class="case-card" data-fade>
@@ -31,6 +35,9 @@ const workBase = lang === 'en' ? '/en/work' : '/work'
           />
         : <div class="case-card__placeholder" aria-hidden="true" />
       }
+      {cardVideo && (
+        <video class="case-card__video" data-card-video src={cardVideo} muted loop playsinline preload="none" aria-hidden="true"></video>
+      )}
     </div>
     <div class="case-card__info">
       <h2 class="case-card__title">{title}</h2>
@@ -71,6 +78,19 @@ const workBase = lang === 'en' ? '/en/work' : '/work'
 
 .case-card__link:hover .case-card__img { transform: scale(1.04); }
 
+/* Hover-play video overlay */
+.case-card__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.case-card__link:hover .case-card__video { opacity: 1; }
+
 .case-card__placeholder { width: 100%; height: 100%; background: var(--clr-surface); }
 .case-card__info { padding-block: var(--sp-xs); }
 
@@ -103,3 +123,13 @@ const workBase = lang === 'en' ? '/en/work' : '/work'
 .case-card__services li::before { content: '·'; margin-right: 0.25rem; }
 .case-card__services li:first-child::before { content: ''; margin-right: 0; }
 </style>
+
+<script>
+  // Hover-play card videos (runs once for all cards)
+  document.querySelectorAll<HTMLVideoElement>('[data-card-video]').forEach(video => {
+    const card = video.closest('.case-card')
+    if (!card) return
+    card.addEventListener('mouseenter', () => { video.play().catch(() => {}) })
+    card.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0 })
+  })
+</script>
