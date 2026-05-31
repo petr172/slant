@@ -11,8 +11,11 @@ const t = {
   cs: {
     step1Heading1: 'Jak vám říkáme?',
     namePlaceholder: 'Vaše jméno',
-    step1Heading2: 'Na čem pracujeme?',
-    chips: ['Branding', 'Webdesign', 'Packaging', 'Jiné'],
+    step1Heading2: 'S čím potřebujete pomoci?',
+    chips: ['Branding', 'Webdesign', 'Obalový design', 'Grafický design', 'Animace', 'Naming'],
+    otherChip: 'Jiné',
+    otherTitle: 'Prosím popište nám, co potřebujete.',
+    otherPlaceholder: 'S čím vám můžeme pomoci?',
     next: 'Pokračovat',
     step2Heading: 'Jak vás kontaktujeme?',
     emailPlaceholder: 'váš@email.cz',
@@ -30,8 +33,11 @@ const t = {
   en: {
     step1Heading1: "What's your name?",
     namePlaceholder: 'Your name',
-    step1Heading2: 'What are we working on?',
-    chips: ['Branding', 'Web design', 'Packaging', 'Other'],
+    step1Heading2: 'What do you need help with?',
+    chips: ['Branding', 'Web design', 'Packaging', 'Graphic design', 'Motion', 'Naming'],
+    otherChip: 'Other',
+    otherTitle: 'Please describe what you need.',
+    otherPlaceholder: 'How can we help?',
     next: 'Continue',
     step2Heading: 'How do we reach you?',
     emailPlaceholder: 'your@email.com',
@@ -60,6 +66,12 @@ const t = {
       </svg>
     </button>
 
+    <!-- Progress -->
+    <div class="modal__progress" id="modal-progress">
+      <div class="modal__progress-track"><span class="modal__progress-fill" id="modal-progress-fill"></span></div>
+      <span class="modal__progress-count"><span id="modal-step-num">1</span>/2</span>
+    </div>
+
     <!-- Step 1 -->
     <div class="modal__step" data-step="1">
       <h2 class="modal__heading" id="modal-title">{t.step1Heading1}</h2>
@@ -77,12 +89,21 @@ const t = {
 
       <h2 class="modal__heading modal__heading--sm">{t.step1Heading2}</h2>
       <div class="modal__chips" role="group" aria-label={t.step1Heading2}>
-        {t.chips.map((chip, i) => (
+        {t.chips.map((chip) => (
           <label class="modal__chip">
             <input type="checkbox" name="service" value={chip} />
             <span>{chip}</span>
           </label>
         ))}
+        <label class="modal__chip">
+          <input type="checkbox" name="service" value={t.otherChip} id="modal-other-toggle" />
+          <span>{t.otherChip}</span>
+        </label>
+      </div>
+
+      <div class="modal__other" id="modal-other-wrap" hidden>
+        <label class="modal__label" for="modal-other">{t.otherTitle}</label>
+        <textarea class="modal__textarea modal__textarea--sm" id="modal-other" name="otherText" rows="3" placeholder={t.otherPlaceholder}></textarea>
       </div>
 
       <button class="modal__btn modal__btn--primary" id="modal-next">{t.next}</button>
@@ -217,7 +238,20 @@ const t = {
   ;(window as any).closeModal = closeModal
 
   // ── Step logic ────────────────────────────────────────────────────────────
+  const progress    = document.getElementById('modal-progress') as HTMLElement | null
+  const progressFill = document.getElementById('modal-progress-fill') as HTMLElement | null
+  const stepNum     = document.getElementById('modal-step-num') as HTMLElement | null
+
+  function updateProgress(n: number | 'thanks') {
+    if (!progress) return
+    if (n === 'thanks') { progress.setAttribute('hidden', ''); return }
+    progress.removeAttribute('hidden')
+    if (stepNum) stepNum.textContent = String(n)
+    if (progressFill) progressFill.style.width = n === 1 ? '50%' : '100%'
+  }
+
   function showStep(n: number | 'thanks', animate = true) {
+    updateProgress(n)
     steps?.forEach(el => {
       const stepAttr = el.dataset.step
       const isTarget = stepAttr === String(n)
@@ -234,6 +268,16 @@ const t = {
       }
     })
   }
+
+  // "Jiné/Other" chip reveals a description field
+  const otherToggle = document.getElementById('modal-other-toggle') as HTMLInputElement | null
+  const otherWrap   = document.getElementById('modal-other-wrap') as HTMLElement | null
+  const otherInput  = document.getElementById('modal-other') as HTMLTextAreaElement | null
+  otherToggle?.addEventListener('change', () => {
+    const on = otherToggle.checked
+    otherWrap?.toggleAttribute('hidden', !on)
+    if (on) requestAnimationFrame(() => otherInput?.focus())
+  })
 
   const nameInput  = document.getElementById('modal-name') as HTMLInputElement | null
   const emailInput = document.getElementById('modal-email') as HTMLInputElement | null
@@ -291,6 +335,11 @@ const t = {
       modal.querySelectorAll<HTMLInputElement>('input[name="service"]:checked')
     ).map(c => c.value)
 
+    // Fold the "other" description into the message
+    const otherText = otherToggle?.checked ? (otherInput?.value.trim() ?? '') : ''
+    const message = [otherText && `Jiné: ${otherText}`, msgInput?.value.trim()]
+      .filter(Boolean).join('\n\n')
+
     const labelSend    = submitBtn.dataset.labelSend ?? submitBtn.textContent ?? 'Odeslat'
     const labelSending = submitBtn.dataset.labelSending ?? '…'
     submitBtn.disabled = true
@@ -304,7 +353,7 @@ const t = {
           name: nameInput?.value.trim(),
           email: emailInput?.value.trim(),
           services,
-          message: msgInput?.value.trim() || '',
+          message,
           lang: document.documentElement.lang?.startsWith('en') ? 'en' : 'cs',
           botcheck: botcheck?.checked ?? false,
         }),
@@ -392,6 +441,48 @@ const t = {
   color: var(--clr-text);
   background: color-mix(in srgb, var(--clr-text) 6%, transparent);
 }
+
+/* ── Progress ────────────────────────────────────────────────────────────── */
+.modal__progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.modal__progress[hidden] { display: none; }
+.modal__progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--clr-text) 10%, transparent);
+  overflow: hidden;
+}
+.modal__progress-fill {
+  display: block;
+  height: 100%;
+  width: 50%;
+  border-radius: 999px;
+  background: var(--clr-accent);
+  transition: width 0.4s var(--ease-out-expo);
+}
+.modal__progress-count {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--clr-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Label (other description) ───────────────────────────────────────────── */
+.modal__label {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--clr-text);
+  margin-bottom: 0.5rem;
+}
+.modal__other[hidden] { display: none; }
+.modal__textarea--sm { min-height: 4.5rem; }
 
 /* ── Headings ────────────────────────────────────────────────────────────── */
 .modal__heading {
