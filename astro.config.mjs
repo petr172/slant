@@ -3,12 +3,12 @@ import sitemap from '@astrojs/sitemap'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import compress from 'astro-compress'
-import vercel from '@astrojs/vercel'
+import cloudflare from '@astrojs/cloudflare'
 
 export default defineConfig({
   site: 'https://slant.cz',
   output: 'static',
-  adapter: vercel(),
+  adapter: cloudflare({ imageService: 'passthrough' }),
 
   // Prefetch všech interních odkazů při hover
   prefetch: {

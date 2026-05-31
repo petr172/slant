@@ -219,18 +219,14 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (!name) return json({ success: false, message: 'Name is required.' }, 400)
   if (!EMAIL_RE.test(email)) return json({ success: false, message: 'Valid email is required.' }, 400)
 
-  // Příloha (volitelná) — base64, limit kvůli Vercel body size
-  let attachments: { filename: string; content: Buffer }[] | undefined
+  // Příloha (volitelná) — base64 string přímo (Workers-safe, bez Buffer); limit kvůli body size
+  let attachments: { filename: string; content: string }[] | undefined
   const att = body.attachment
   if (att?.data && att.filename) {
     if (att.data.length > MAX_ATTACH_BYTES * 1.4) {
       return json({ success: false, message: 'Attachment too large.' }, 413)
     }
-    try {
-      attachments = [{ filename: att.filename.slice(0, 200), content: Buffer.from(att.data, 'base64') }]
-    } catch {
-      // ignoruj neplatnou přílohu, e-mail pošli bez ní
-    }
+    attachments = [{ filename: att.filename.slice(0, 200), content: att.data }]
   }
 
   const resend = new Resend(RESEND_API_KEY)
