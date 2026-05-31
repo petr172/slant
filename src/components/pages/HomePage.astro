@@ -584,7 +584,10 @@ gsap.from('#js-hero-bot', {
   if (ctaSvg) {
     const mq = window.matchMedia('(max-width: 40em)')
     const applyViewBox = () => {
-      ctaSvg.setAttribute('viewBox', mq.matches ? '0 10 990 451' : '0 0 1410 471')
+      const mobile = mq.matches
+      ctaSvg.setAttribute('viewBox', mobile ? '0 10 990 451' : '0 0 1410 471')
+      // On mobile the shapes scale up to cover the taller card (cropping excess)
+      ctaSvg.setAttribute('preserveAspectRatio', mobile ? 'xMidYMid slice' : 'xMidYMid meet')
     }
     applyViewBox()
     mq.addEventListener('change', applyViewBox)
@@ -1377,17 +1380,30 @@ gsap.from('#js-hero-bot', {
     padding-inline: var(--sp-sm);
   }
 
+  /* Taller card — shapes scale up (slice) to fill it */
+  .cta-brutal__card {
+    min-height: 18rem;
+  }
+  .cta-brutal__svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Centred content over the solid overlapping middle of the shapes */
   .cta-brutal__content {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    gap: var(--sp-sm);
-    padding-inline: clamp(2.75rem, 13vw, 4rem);
+    text-align: center;
+    gap: var(--sp-md);
+    padding-inline: var(--sp-md);
   }
 
   .cta-brutal__text {
-    font-size: clamp(1rem, 4.6vw, 1.45rem);
-    max-width: 13ch;
+    font-size: clamp(1.05rem, 5vw, 1.6rem);
+    max-width: 16ch;
   }
 }
 
