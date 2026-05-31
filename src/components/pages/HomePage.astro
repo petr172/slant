@@ -584,7 +584,7 @@ gsap.from('#js-hero-bot', {
   if (ctaSvg) {
     const mq = window.matchMedia('(max-width: 40em)')
     const applyViewBox = () => {
-      ctaSvg.setAttribute('viewBox', mq.matches ? '-10 0 1020 471' : '0 0 1410 471')
+      ctaSvg.setAttribute('viewBox', mq.matches ? '0 10 990 451' : '0 0 1410 471')
     }
     applyViewBox()
     mq.addEventListener('change', applyViewBox)
@@ -1370,6 +1370,11 @@ gsap.from('#js-hero-bot', {
 @media (max-width: 40em) {
   .cta-pill:nth-child(n + 5) {
     display: none;
+  }
+
+  /* Break the card out of the page gutter so shapes use the full width */
+  .cta-brutal .container {
+    padding-inline: var(--sp-sm);
   }
 
   .cta-brutal__content {
