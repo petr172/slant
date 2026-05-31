@@ -75,10 +75,10 @@ const tagCount = (tag: string) =>
               title={lang === 'en' ? (cs.titleEn || cs.title) : cs.title}
               slug={cs.slug}
               tagline={lang === 'en' ? (cs.taglineEn || cs.tagline) : cs.tagline}
-              year={cs.year}
               services={cs.services}
               coverImage={cs.coverImage}
-              featured={cs.featured}
+              variant="default"
+              headingLevel={2}
               {lang}
             />
           </div>
