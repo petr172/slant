@@ -3,3 +3,7 @@ dist/
 .vercel/
 .env
 .DS_Store
+
+# Local design assets (never deploy)
+Assets/
+.astro/
