@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro'
 import PortableText from '../PortableText.astro'
 import SanityImage from '../SanityImage.astro'
+import ContactCta from '../ContactCta.astro'
 import { urlFor } from '../../lib/imageUrl'
 import { useTranslations, type Lang } from '../../i18n/ui'
 
@@ -22,7 +23,6 @@ const brief  = lang === 'en' ? (cs?.briefEn    || cs?.brief)    : cs?.brief
 const result = lang === 'en' ? (cs?.vysledekEn || cs?.vysledek) : cs?.vysledek
 
 // Gallery — z Sanity: každá položka je obrázek nebo video
-import { urlFor } from '../../lib/imageUrl'
 const galleryItems = (cs?.gallery ?? []).map((g: any) => {
   const thumb = g.image ? urlFor(g.image).width(900).fit('max').format('webp').quality(82).url() : undefined
   const full  = g.image ? urlFor(g.image).width(1600).fit('max').format('webp').quality(85).url() : undefined
@@ -246,6 +246,9 @@ const caseStudyLd = {
           <p class="text-small" style="color: var(--clr-muted)">{credits}</p>
         </footer>
       )}
+
+      <!-- ─── CTA ─────────────────────────────────────────────────────── -->
+      <ContactCta {lang} />
 
       <!-- ─── Case study nav ─────────────────────────────────────────── -->
       <nav class="cs-nav container" aria-label="Další projekty">

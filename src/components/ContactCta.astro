@@ -1,0 +1,131 @@
+---
+import type { Lang } from '../i18n/ui'
+
+interface Props {
+  lang?: Lang
+  id?: string
+}
+const { lang = 'cs', id = 'contact' } = Astro.props
+---
+
+<section class="cta-brutal" id={id}>
+  <div class="container">
+    <div class="cta-brutal__card">
+      <svg class="cta-brutal__svg js-cta-svg" viewBox="0 0 1410 471" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 187.624 0)" fill="var(--clr-accent)"/></g>
+        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 394.817 0)" fill="var(--clr-accent)"/></g>
+        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 602.011 0)" fill="var(--clr-accent)"/></g>
+        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 809.205 0)" fill="var(--clr-accent)"/></g>
+        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1016.4 0)" fill="var(--clr-accent)"/></g>
+        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1223.59 0)" fill="var(--clr-accent)"/></g>
+      </svg>
+      <div class="cta-brutal__content">
+        <p class="cta-brutal__text">
+          {lang === 'cs' ? 'Mám projekt. Pojďme si promluvit.' : 'I have a project. Let’s talk.'}
+        </p>
+        <button class="cta-brutal__btn" data-open-modal onclick="window.openModal?.()">
+          {lang === 'cs' ? 'Napište nám' : 'Get in touch'}
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap } from 'gsap'
+  import { ScrollTrigger } from 'gsap/ScrollTrigger'
+  gsap.registerPlugin(ScrollTrigger)
+
+  const ctaSvg  = document.querySelector<SVGSVGElement>('.cta-brutal__svg')
+  const ctaPills = ctaSvg?.querySelectorAll<SVGGElement>('.cta-pill')
+
+  // Responsive shape count: 6 on desktop/tablet, 4 on mobile (crop the viewBox)
+  if (ctaSvg) {
+    const mq = window.matchMedia('(max-width: 40em)')
+    const applyViewBox = () => {
+      const mobile = mq.matches
+      ctaSvg.setAttribute('viewBox', mobile ? '0 10 990 451' : '0 0 1410 471')
+      ctaSvg.setAttribute('preserveAspectRatio', mobile ? 'xMidYMid slice' : 'xMidYMid meet')
+    }
+    applyViewBox()
+    mq.addEventListener('change', applyViewBox)
+  }
+
+  if (ctaSvg && ctaPills?.length) {
+    gsap.from(ctaPills, {
+      scale: 0.9,
+      transformOrigin: '50% 50%',
+      duration: 1.0,
+      ease: 'expo.out',
+      stagger: { amount: 0.3, from: 'start' },
+      scrollTrigger: { trigger: ctaSvg, start: 'top 88%' },
+    })
+    ctaSvg.addEventListener('mouseenter', () => {
+      gsap.to(ctaPills, { rotation: 10, transformOrigin: '50% 100%', duration: 0.4, stagger: { amount: 0.18, from: 'start' }, ease: 'power2.out', overwrite: 'auto' })
+    })
+    ctaSvg.addEventListener('mouseleave', () => {
+      gsap.to(ctaPills, { rotation: 0, transformOrigin: '50% 100%', duration: 0.5, stagger: { amount: 0.12, from: 'start' }, ease: 'power2.inOut', overwrite: 'auto' })
+    })
+  }
+</script>
+
+<style>
+.cta-brutal { padding-block: var(--sp-3xl); }
+.cta-brutal__card { position: relative; width: 100%; }
+.cta-brutal__svg { display: block; width: 100%; height: auto; }
+.cta-brutal__content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-xl);
+  padding-inline: clamp(3.5rem, 10vw, 8rem);
+}
+.cta-brutal__text {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 3vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #fff;
+  max-width: 16ch;
+}
+.cta-brutal__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  padding: 0.75em 1.5em;
+  border-radius: 999px;
+  background: var(--clr-text);
+  color: var(--clr-bg);
+  border: none;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: gap 0.3s, background 0.25s, color 0.25s;
+}
+.cta-brutal__btn:hover { gap: 1rem; background: #fff; color: #111; }
+
+@media (max-width: 40em) {
+  .cta-pill:nth-child(n + 5) { display: none; }
+  .cta-brutal .container { padding-inline: var(--sp-sm); }
+  .cta-brutal__card { min-height: 18rem; }
+  .cta-brutal__svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .cta-brutal__content {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: var(--sp-md);
+    padding-inline: var(--sp-md);
+  }
+  .cta-brutal__text { font-size: clamp(1.05rem, 5vw, 1.6rem); max-width: 16ch; }
+}
+</style>
