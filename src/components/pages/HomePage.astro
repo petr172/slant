@@ -424,8 +424,8 @@ const faqLd = {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
         chips.forEach((chip, i) => {
           gsap.to(chip, {
-            y: -10 - (i % 3) * 3,
-            duration: 2.6 + (i % 4) * 0.6,
+            y: -4 - (i % 3) * 1.5,
+            duration: 3.4 + (i % 4) * 0.7,
             ease: 'sine.inOut',
             repeat: -1,
             yoyo: true,
@@ -433,6 +433,12 @@ const faqLd = {
           })
         })
       },
+    })
+
+    // Float pauza na hover, ať chip neutíká myši
+    chips.forEach((chip) => {
+      chip.addEventListener('mouseenter', () => gsap.getTweensOf(chip).forEach(t => t.pause()))
+      chip.addEventListener('mouseleave', () => gsap.getTweensOf(chip).forEach(t => t.resume()))
     })
 
     // Hover náhled — karty se skládají na sebe (deck), desktop only
@@ -677,6 +683,8 @@ gsap.from('#js-hero-bot', {
   display: flex;
   flex-direction: column;
   background: var(--clr-bg);
+  /* Odstup od fixního navbaru (na .hero, ne na headline-wrap — chipy zůstanou nad textem) */
+  padding-top: clamp(3.5rem, 3rem + 2vw, 5rem);
 }
 
 @media (hover: hover) {
@@ -701,8 +709,7 @@ gsap.from('#js-hero-bot', {
   flex: 1;
   display: flex;
   align-items: center;
-  /* Větší odstup od fixního navbaru nahoře */
-  padding-block: clamp(5.5rem, 4rem + 5vw, 8rem) var(--sp-xl);
+  padding-block: var(--sp-lg);
 }
 
 .hero__headline {
@@ -802,8 +809,11 @@ gsap.from('#js-hero-bot', {
 /* On mobile: hide scattered chips, show as simple row below headline */
 @media (max-width: 48em) {
   /* Clear the fixed top nav so it doesn't cover the headline */
+  .hero {
+    padding-top: calc(3.5rem + env(safe-area-inset-top));
+  }
   .hero__headline-wrap {
-    padding-top: calc(6rem + env(safe-area-inset-top));
+    padding-top: var(--sp-lg);
   }
   /* Keep chips floating over the typography like on desktop */
   .hero__chip {
