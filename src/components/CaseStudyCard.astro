@@ -99,10 +99,11 @@ const dims = variant === 'wide'
   transition: transform 0.6s var(--ease-out-expo);
 }
 
-/* Slight zoom on hover — only when there's no hover video */
-.case-card:not(.case-card--has-video) .case-card__link:hover .case-card__img { transform: scale(1.04); }
+/* Scénář B — bez videa: plynulý zoom obrázku o 10 % na hover */
+.case-card:not(.case-card--has-video) .case-card__link:hover .case-card__img { transform: scale(1.1); }
 
-/* Hover-play video overlay */
+/* Scénář A — s videem: default obrázek, hover přehraje video ve smyčce.
+   Video se zviditelní až když opravdu hraje (žádné bliknutí černé). */
 .case-card__video {
   position: absolute;
   inset: 0;
@@ -113,7 +114,7 @@ const dims = variant === 'wide'
   transition: opacity 0.4s ease;
   pointer-events: none;
 }
-.case-card__link:hover .case-card__video { opacity: 1; }
+.case-card__video.is-playing { opacity: 1; }
 
 .case-card__placeholder { width: 100%; height: 100%; background: var(--clr-surface); }
 
@@ -164,7 +165,13 @@ const dims = variant === 'wide'
   document.querySelectorAll<HTMLVideoElement>('[data-card-video]').forEach(video => {
     const card = video.closest('.case-card')
     if (!card) return
+    // Fade in only once frames are actually rendering → no black flash
+    video.addEventListener('playing', () => video.classList.add('is-playing'))
     card.addEventListener('mouseenter', () => { video.play().catch(() => {}) })
-    card.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0 })
+    card.addEventListener('mouseleave', () => {
+      video.classList.remove('is-playing')
+      video.pause()
+      video.currentTime = 0
+    })
   })
 </script>
