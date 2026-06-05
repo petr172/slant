@@ -58,6 +58,10 @@ const faqItems = lang === 'cs' ? [
   { q: 'Jak probíhá spolupráce krok po kroku?', a: 'Začínáme úvodní schůzkou, kde pochopíme váš byznys a cíle. Následuje discovery fáze, návrh konceptů, prezentace a iterace na základě vaší zpětné vazby. Finální výstupy předáme v dohodnutých formátech.' },
   { q: 'Dodáváte i webové stránky, nebo jen design?', a: 'Primárně se věnujeme designu — strategii, vizuální identitě a UX/UI. U webu spolupracujeme s prověřenými vývojáři, takže zvládneme i kompletní dodávku od návrhu po spuštění.' },
   { q: 'Co potřebujete od nás na začátku?', a: 'Stačí základní brief — co děláte, pro koho, jaké máte cíle a případně příklady vizuálů, které se vám líbí. Zbytek dobereme společně na úvodní schůzce.' },
+  { q: 'Můžu u vás poptat jen logo?', a: 'Jasně. Nejvíc nás baví budovat značky komplexně, ale samostatné logo uděláme rádi — i tak ale začneme krátkým briefem, ať dává smysl a vydrží roky.' },
+  { q: 'Nabíráte zaměstnance nebo stážisty?', a: 'Tým rozšiřujeme spíš výjimečně, ale šikovných lidí si všímáme rádi. Pokud tě baví branding nebo UX, ozvi se nám s portfoliem — dáme vědět, až bude místo.' },
+  { q: 'Jak probíhá projekt?', a: 'Začínáme úvodní schůzkou a nabídkou, pak následuje rešerše, moodboard, stylescape a finální brand manuál. Celý proces máme rozepsaný v sekci „Jak to děláme".' },
+  { q: 'Registrujete ochranné známky?', a: 'Registraci sami nepodáváme, ale provedeme vás jí — pomůžeme s rešerší dostupnosti názvu i loga a propojíme vás s prověřeným patentovým zástupcem.' },
 ] : [
   { q: 'How much does a project cost?', a: 'Every project is unique, so we always price it individually. As a rough guide, branding starts at €3 500 and web design at €2 200. We\'ll work out an exact quote after our first meeting.' },
   { q: 'How long does a project take?', a: 'A branding project typically takes 6–10 weeks, web design 4–8 weeks. It depends on scope and how quickly you can give feedback. We always set deadlines upfront and stick to them.' },
@@ -65,6 +69,10 @@ const faqItems = lang === 'cs' ? [
   { q: 'How does the collaboration work?', a: 'We start with a kick-off meeting to understand your business and goals. Then comes a discovery phase, concept design, presentation and iteration based on your feedback. Final assets are delivered in agreed formats.' },
   { q: 'Do you also deliver websites, or just design?', a: 'Our core is design — strategy, visual identity and UX/UI. For websites we work with trusted developers, so we can handle the full delivery from design to launch.' },
   { q: 'What do you need from us at the start?', a: 'A basic brief is enough — what you do, who for, what your goals are and any visual references you like. We\'ll figure out the rest together at the kick-off.' },
+  { q: 'Can I order just a logo?', a: 'Sure. We love building brands end-to-end, but we\'re happy to design a standalone logo too — we\'ll still start with a short brief so it makes sense and lasts.' },
+  { q: 'Are you hiring or taking interns?', a: 'We grow the team only occasionally, but we always keep an eye out for talented people. If you\'re into branding or UX, send us your portfolio — we\'ll reach out when there\'s room.' },
+  { q: 'How does a project work?', a: 'We start with a kick-off meeting and a quote, then research, moodboard, stylescape and the final brand manual. The whole flow is laid out in the “How we work” section.' },
+  { q: 'Do you register trademarks?', a: 'We don\'t file registrations ourselves, but we\'ll guide you through it — we help check name and logo availability and connect you with a trusted trademark attorney.' },
 ]
 
 const faqLd = {
@@ -340,9 +348,8 @@ const faqLd = {
           <button class="faq__question" aria-expanded="false" data-faq-btn>
             <span class="faq__q-text">{item.q}</span>
             <span class="faq__icon" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <path d="M5 14h18M14 5v18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-              </svg>
+              <span class="faq__icon-bar faq__icon-bar--h"></span>
+              <span class="faq__icon-bar faq__icon-bar--v"></span>
             </span>
           </button>
           <div class="faq__answer" data-faq-answer>
@@ -1316,20 +1323,28 @@ gsap.from('#js-hero-bot', {
 .faq__item.is-open { position: relative; z-index: 1; }  /* otevřená navrch, ať radius nepřekrývá soused */
 
 .faq__question {
+  position: relative;
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: center;          /* otázka vystředěná */
   gap: 1.25rem;
-  padding: clamp(1rem, 2vw, 1.4rem) clamp(1rem, 2.5vw, 1.5rem);
+  padding: clamp(1rem, 2vw, 1.4rem) 3.75rem;
+  border-radius: var(--radius-md);
   background: none;
   border: none;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   color: var(--clr-text);
-  transition: color 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
-.faq__question:hover { color: var(--clr-accent); }
+/* Hover celé položky jako tlačítka v navbaru (desktop) */
+@media (hover: hover) {
+  .faq__question:hover {
+    color: var(--clr-text);
+    background: color-mix(in srgb, var(--clr-text) 6%, transparent);
+  }
+}
 
 .faq__q-text {
   font-family: var(--font-display);
@@ -1339,21 +1354,39 @@ gsap.from('#js-hero-bot', {
   line-height: 1.15;
 }
 
-/* + v podbarveném čtverečku (light grey bg + radius) */
+/* + v podbarveném čtverečku (light grey bg + radius), symbol černý */
 .faq__icon {
+  position: absolute;
+  right: clamp(0.6rem, 1.5vw, 0.9rem);
+  top: 50%;
   flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.4rem;
+  height: 2.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--clr-surface);
   border-radius: var(--radius-sm);
-  color: var(--clr-accent);
-  transition: transform 0.3s var(--ease-out-expo), background 0.2s;
+  color: var(--clr-text);
+  transform: translateY(-50%);
+  transition: background 0.25s ease;
 }
-.faq__icon svg { display: block; }
-.faq__item.is-open .faq__icon { transform: rotate(45deg); }
+/* Mikroanimace křížku — dvě linky, vertikála se „zavře" do × s lehkým overshootem */
+.faq__icon-bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 13px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.faq__icon-bar--h { transform: translate(-50%, -50%); }
+.faq__icon-bar--v { transform: translate(-50%, -50%) rotate(90deg); }
+.faq__item.is-open .faq__icon { background: color-mix(in srgb, var(--clr-text) 12%, transparent); }
+.faq__item.is-open .faq__icon-bar--h { transform: translate(-50%, -50%) rotate(135deg); }
+.faq__item.is-open .faq__icon-bar--v { transform: translate(-50%, -50%) rotate(45deg); }
 
 .faq__answer { overflow: hidden; }
 .faq__answer-text {
