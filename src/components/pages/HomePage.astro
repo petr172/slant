@@ -706,7 +706,8 @@ gsap.from('#js-hero-bot', {
   flex: 1;
   display: flex;
   align-items: center;
-  padding-block: var(--sp-lg);
+  /* Větší odstup od fixního navbaru nahoře */
+  padding-block: clamp(5.5rem, 4rem + 5vw, 8rem) var(--sp-xl);
 }
 
 .hero__headline {
@@ -807,7 +808,7 @@ gsap.from('#js-hero-bot', {
 @media (max-width: 48em) {
   /* Clear the fixed top nav so it doesn't cover the headline */
   .hero__headline-wrap {
-    padding-top: calc(4.5rem + env(safe-area-inset-top));
+    padding-top: calc(6rem + env(safe-area-inset-top));
   }
   /* Keep chips floating over the typography like on desktop */
   .hero__chip {
@@ -815,6 +816,15 @@ gsap.from('#js-hero-bot', {
     padding: 0.4em 0.8em 0.4em 0.65em;
   }
   .hero__chip svg { width: 11px; height: 11px; }
+
+  /* Mobilní rozmístění chipů, ať se všechny vejdou do view (přepisuje inline styl).
+     Široké tagy vlevo, krátké vpravo. */
+  .hero__chip:nth-child(1) { top: 3%  !important; left: 5%  !important; }  /* Branding */
+  .hero__chip:nth-child(2) { top: 17% !important; left: 58% !important; }  /* Naming */
+  .hero__chip:nth-child(3) { top: 42% !important; left: 6%  !important; }  /* Webdesign */
+  .hero__chip:nth-child(4) { top: 56% !important; left: 60% !important; }  /* Animace */
+  .hero__chip:nth-child(5) { top: 80% !important; left: 4%  !important; }  /* Obalový design */
+  .hero__chip:nth-child(6) { top: 91% !important; left: 4%  !important; }  /* Grafický design */
 }
 
 /* Reel kontejner — sticky při scrollu */
