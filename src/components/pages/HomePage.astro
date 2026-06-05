@@ -338,11 +338,10 @@ const faqLd = {
       {faqItems.map((item, i) => (
         <div class="faq__item" data-faq-item>
           <button class="faq__question" aria-expanded="false" data-faq-btn>
-            <span class="faq__q-num">0{i + 1}</span>
             <span class="faq__q-text">{item.q}</span>
             <span class="faq__icon" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M5 10h10M10 5v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <path d="M5 14h18M14 5v18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
               </svg>
             </span>
           </button>
@@ -1281,7 +1280,9 @@ gsap.from('#js-hero-bot', {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  margin-bottom: clamp(3rem, 6vw, 5rem);
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  max-width: 52rem;
+  margin-inline: auto;
 }
 
 .faq__label {
@@ -1292,84 +1293,62 @@ gsap.from('#js-hero-bot', {
   color: var(--clr-accent);
 }
 
-
+/* ── Brutalist FAQ ──────────────────────────────────────────────────── */
 .faq__list {
-  border-top: 1px solid var(--clr-border);
+  max-width: 52rem;
+  margin-inline: auto;
+  border-top: 2px solid var(--clr-text);
 }
 
 .faq__item {
-  border-bottom: 1px solid var(--clr-border);
+  border-bottom: 2px solid color-mix(in srgb, var(--clr-text) 18%, transparent);
 }
+.faq__item:last-child { border-bottom: 2px solid var(--clr-text); }
 
 .faq__question {
   width: 100%;
   display: grid;
-  grid-template-columns: 2.5rem 1fr auto;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 1rem;
-  padding-block: 1.4rem;
+  gap: 1.5rem;
+  padding-block: clamp(1.25rem, 2.5vw, 1.85rem);
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
-  color: var(--clr-ink);
+  color: var(--clr-text);
   transition: color 0.2s;
 }
-
 .faq__question:hover { color: var(--clr-accent); }
 
-.faq__q-num {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--clr-muted, #999);
-  letter-spacing: 0.06em;
-  font-variant-numeric: tabular-nums;
-}
-
 .faq__q-text {
-  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.4vw, 1.85rem);
   font-weight: 500;
-  line-height: 1.3;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
 }
 
+/* Chunky + → × toggle */
 .faq__icon {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--clr-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, border-color 0.2s;
+  color: var(--clr-accent);
+  transition: transform 0.3s var(--ease-out-expo);
 }
+.faq__icon svg { display: block; }
+.faq__item.is-open .faq__icon { transform: rotate(45deg); }
 
-.faq__item.is-open .faq__icon {
-  background: var(--clr-accent);
-  border-color: var(--clr-accent);
-  color: #fff;
-}
-
-/* Rotate + → × when open */
-.faq__item.is-open .faq__icon svg {
-  transform: rotate(45deg);
-  transition: transform 0.3s ease;
-}
-.faq__icon svg {
-  transition: transform 0.3s ease;
-}
-
-.faq__answer {
-  overflow: hidden;
-}
-
+.faq__answer { overflow: hidden; }
 .faq__answer-text {
-  padding-block: 0.2rem 1.6rem;
-  padding-inline-start: 3.5rem;
-  font-size: 0.95rem;
+  padding-block: 0.2rem clamp(1.4rem, 3vw, 2rem);
+  padding-inline-end: clamp(0rem, 4vw, 3rem);
+  font-size: clamp(0.95rem, 1.3vw, 1.05rem);
   line-height: 1.7;
-  color: var(--clr-muted, #666);
-  max-width: 65ch;
+  color: var(--clr-muted);
+  max-width: 60ch;
   margin: 0;
 }
 
