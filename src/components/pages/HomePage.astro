@@ -5,6 +5,7 @@ import CaseStudyCard from '../CaseStudyCard.astro'
 import ContactCta from '../ContactCta.astro'
 import TrustWall from '../TrustWall.astro'
 import { client } from '../../lib/sanity'
+import { urlFor } from '../../lib/imageUrl'
 import { ALL_CASE_STUDIES_QUERY, SITE_SETTINGS_QUERY, FEATURED_BLOG_POSTS_QUERY } from '../../lib/queries'
 import { useTranslations, type Lang } from '../../i18n/ui'
 
@@ -27,6 +28,16 @@ const projects = allProjects.map((cs: any, i: number) => ({
   href:     `${workUrl}/${cs.slug}`,
   isLarge:  i === 0 || i === 3,
 }))
+
+// Hero chip hover náhledy — cover obrázky case studies podle kategorie (16:9)
+const previewsByTag: Record<string, string[]> = {}
+for (const cs of allProjects as any[]) {
+  if (!cs.coverImage) continue
+  const src = urlFor(cs.coverImage).width(480).height(270).fit('crop').format('webp').quality(80).url()
+  for (const svc of (cs.services ?? [])) {
+    (previewsByTag[svc] ??= []).push(src)
+  }
+}
 
 // ─── FAQ — jeden zdroj pravdy pro render i JSON-LD ──────────────────────────
 const faqItems = lang === 'cs' ? [
@@ -88,6 +99,13 @@ const faqLd = {
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" set:html={chip.icon} />
             {chip.label}
+            {previewsByTag[chip.tag]?.length ? (
+              <span class="hero__chip-preview" aria-hidden="true">
+                {previewsByTag[chip.tag].slice(0, 6).map((src) => (
+                  <img class="hero__chip-preview-img" src={src} alt="" loading="lazy" decoding="async" />
+                ))}
+              </span>
+            ) : null}
           </a>
         ))}
       </div>
@@ -396,6 +414,37 @@ const faqLd = {
       },
     })
 
+    // Hover náhled — rychlé cyklení obrázků kategorie (desktop only)
+    if (window.matchMedia('(min-width: 64.0625em)').matches) {
+      chips.forEach((chip) => {
+        const imgs = Array.from(chip.querySelectorAll<HTMLImageElement>('.hero__chip-preview-img'))
+        if (!imgs.length) return
+        let idx = 0
+        let timer: number | undefined
+        gsap.set(imgs[0], { opacity: 1, scale: 1 })
+
+        chip.addEventListener('mouseenter', () => {
+          gsap.set(imgs, { opacity: 0, scale: 1 })
+          idx = 0
+          gsap.set(imgs[0], { opacity: 1 })
+          if (imgs.length < 2) return
+          timer = window.setInterval(() => {
+            const prev = imgs[idx]
+            idx = (idx + 1) % imgs.length
+            const cur = imgs[idx]
+            gsap.fromTo(cur, { opacity: 0, scale: 1.08, rotate: 1.5 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.4, ease: 'power2.out' })
+            gsap.to(prev, { opacity: 0, duration: 0.3 })
+          }, 480)
+        })
+        chip.addEventListener('mouseleave', () => {
+          if (timer) clearInterval(timer)
+          gsap.to(imgs, { opacity: 0, duration: 0.2 })
+          gsap.set(imgs[0], { opacity: 1, scale: 1, rotate: 0, delay: 0.2 })
+          idx = 0
+        })
+      })
+    }
+
   }
 
 gsap.from('#js-hero-bot', {
@@ -684,6 +733,41 @@ gsap.from('#js-hero-bot', {
 .hero__chip--solid {
   background: var(--clr-accent);
   color: #fff;
+}
+
+/* Hover náhled kategorie (desktop) — 16:9 s cyklením obrázků */
+.hero__chip-preview {
+  position: absolute;
+  bottom: calc(100% + 0.6rem);
+  left: 50%;
+  width: 220px;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--clr-surface);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px) scale(0.92);
+  transform-origin: bottom center;
+  transition: opacity 0.25s ease, transform 0.4s var(--ease-out-expo);
+  pointer-events: none;
+  z-index: 6;
+}
+.hero__chip:hover .hero__chip-preview {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+.hero__chip-preview-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+@media (max-width: 64em) {
+  .hero__chip-preview { display: none; }
 }
 
 .hero__chip:hover {
