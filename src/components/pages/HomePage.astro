@@ -617,38 +617,26 @@ gsap.from('#js-hero-bot', {
     })
   }
 
-  // ── FAQ accordion ─────────────────────────────────────────────────────
-  document.querySelectorAll<HTMLElement>('[data-faq-item]').forEach((item) => {
+  // ── FAQ — nezávislé toggly (víc otevřených najednou), první otevřený ──
+  document.querySelectorAll<HTMLElement>('[data-faq-item]').forEach((item, i) => {
     const btn    = item.querySelector<HTMLElement>('[data-faq-btn]')!
     const answer = item.querySelector<HTMLElement>('[data-faq-answer]')!
-    const icon   = btn.querySelector<SVGPathElement>('svg path:last-child')
 
-    // Set initial height to 0
-    gsap.set(answer, { height: 0, overflow: 'hidden' })
+    // První položka otevřená by default, ostatní zavřené
+    const openByDefault = i === 0
+    gsap.set(answer, { height: openByDefault ? 'auto' : 0, overflow: 'hidden' })
+    btn.setAttribute('aria-expanded', openByDefault ? 'true' : 'false')
+    item.classList.toggle('is-open', openByDefault)
 
     btn.addEventListener('click', () => {
       const isOpen = btn.getAttribute('aria-expanded') === 'true'
-
-      // Close all others
-      document.querySelectorAll<HTMLElement>('[data-faq-item]').forEach((other) => {
-        if (other === item) return
-        const ob  = other.querySelector<HTMLElement>('[data-faq-btn]')!
-        const oa  = other.querySelector<HTMLElement>('[data-faq-answer]')!
-        ob.setAttribute('aria-expanded', 'false')
-        other.classList.remove('is-open')
-        gsap.to(oa, { height: 0, duration: 0.35, ease: 'power3.inOut' })
+      btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true')
+      item.classList.toggle('is-open', !isOpen)
+      gsap.to(answer, {
+        height: isOpen ? 0 : 'auto',
+        duration: isOpen ? 0.35 : 0.45,
+        ease: 'power3.inOut',
       })
-
-      // Toggle current
-      if (isOpen) {
-        btn.setAttribute('aria-expanded', 'false')
-        item.classList.remove('is-open')
-        gsap.to(answer, { height: 0, duration: 0.35, ease: 'power3.inOut' })
-      } else {
-        btn.setAttribute('aria-expanded', 'true')
-        item.classList.add('is-open')
-        gsap.to(answer, { height: 'auto', duration: 0.45, ease: 'power3.inOut' })
-      }
     })
   })
 
