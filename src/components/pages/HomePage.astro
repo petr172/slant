@@ -1286,13 +1286,12 @@ gsap.from('#js-hero-bot', {
   padding-block: clamp(5rem, 10vw, 9rem);
 }
 
+/* Nadpis ve stejné šířce jako ostatní sekce (celý container) */
 .faq__header {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
   margin-bottom: clamp(2.5rem, 5vw, 4rem);
-  max-width: 52rem;
-  margin-inline: auto;
 }
 
 .faq__label {
@@ -1303,25 +1302,26 @@ gsap.from('#js-hero-bot', {
   color: var(--clr-accent);
 }
 
-/* ── Brutalist FAQ ──────────────────────────────────────────────────── */
+/* ── FAQ — boxované položky ─────────────────────────────────────────── */
 .faq__list {
   max-width: 52rem;
-  margin-inline: auto;
-  border-top: 2px solid var(--clr-text);
 }
 
+/* Každá položka = obal s plným strokem + radius, položky nalepené na sebe */
 .faq__item {
-  border-bottom: 2px solid color-mix(in srgb, var(--clr-text) 18%, transparent);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
 }
-.faq__item:last-child { border-bottom: 2px solid var(--clr-text); }
+.faq__item + .faq__item { margin-top: -1px; }   /* žádný spacing — sdílený stroke */
+.faq__item.is-open { position: relative; z-index: 1; }  /* otevřená navrch, ať radius nepřekrývá soused */
 
 .faq__question {
   width: 100%;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 1.5rem;
-  padding-block: clamp(1.25rem, 2.5vw, 1.85rem);
+  gap: 1.25rem;
+  padding: clamp(1rem, 2vw, 1.4rem) clamp(1rem, 2.5vw, 1.5rem);
   background: none;
   border: none;
   cursor: pointer;
@@ -1333,32 +1333,35 @@ gsap.from('#js-hero-bot', {
 
 .faq__q-text {
   font-family: var(--font-display);
-  font-size: clamp(1.2rem, 2.4vw, 1.85rem);
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
   font-weight: 500;
   letter-spacing: -0.02em;
-  line-height: 1.12;
+  line-height: 1.15;
 }
 
-/* Chunky + → × toggle */
+/* + v podbarveném čtverečku (light grey bg + radius) */
 .faq__icon {
   flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--clr-surface);
+  border-radius: var(--radius-sm);
   color: var(--clr-accent);
-  transition: transform 0.3s var(--ease-out-expo);
+  transition: transform 0.3s var(--ease-out-expo), background 0.2s;
 }
 .faq__icon svg { display: block; }
 .faq__item.is-open .faq__icon { transform: rotate(45deg); }
 
 .faq__answer { overflow: hidden; }
 .faq__answer-text {
-  padding-block: 0.2rem clamp(1.4rem, 3vw, 2rem);
-  padding-inline-end: clamp(0rem, 4vw, 3rem);
+  padding: 0 clamp(1rem, 2.5vw, 1.5rem) clamp(1.1rem, 2.5vw, 1.5rem);
   font-size: clamp(0.95rem, 1.3vw, 1.05rem);
   line-height: 1.7;
   color: var(--clr-muted);
-  max-width: 60ch;
+  max-width: 56ch;
   margin: 0;
 }
 
