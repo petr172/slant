@@ -380,6 +380,20 @@ const faqLd = {
       ease: 'back.out(1.8)',
       stagger: { amount: 0.5, from: 'random' },
       delay: 1.0,
+      onComplete: () => {
+        // Jemné, pomalé plování nahoru a dolů (každý chip trochu jinak)
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        chips.forEach((chip, i) => {
+          gsap.to(chip, {
+            y: -10 - (i % 3) * 3,
+            duration: 2.6 + (i % 4) * 0.6,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+            delay: i * 0.18,
+          })
+        })
+      },
     })
 
   }
@@ -663,7 +677,7 @@ gsap.from('#js-hero-bot', {
   color: var(--clr-accent);
   background: transparent;
   backdrop-filter: blur(4px);
-  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s;
   will-change: transform;
 }
 
