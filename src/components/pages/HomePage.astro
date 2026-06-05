@@ -29,12 +29,23 @@ const projects = allProjects.map((cs: any, i: number) => ({
   isLarge:  i === 0 || i === 3,
 }))
 
-// Hero chip hover náhledy — cover obrázky case studies podle kategorie (16:9)
+// Hero chip hover náhledy (16:9). Primárně kurátorská kolekce ze Sanity
+// (siteSettings.chipPreviews), fallback = cover obrázky projektů dané kategorie.
+const img169 = (src: any) => urlFor(src).width(480).height(270).fit('crop').format('webp').quality(80).url()
 const previewsByTag: Record<string, string[]> = {}
+
+// 1) Kurátorská kolekce ze Sanity
+for (const cp of (siteSettings?.chipPreviews ?? []) as any[]) {
+  if (!cp?.category || !cp.images?.length) continue
+  previewsByTag[cp.category] = cp.images.filter((im: any) => im?.asset).map(img169)
+}
+
+// 2) Fallback z coverů projektů (jen pro kategorie bez kurátorské kolekce)
 for (const cs of allProjects as any[]) {
   if (!cs.coverImage) continue
-  const src = urlFor(cs.coverImage).width(480).height(270).fit('crop').format('webp').quality(80).url()
+  const src = img169(cs.coverImage)
   for (const svc of (cs.services ?? [])) {
+    if (previewsByTag[svc]?.length) continue
     (previewsByTag[svc] ??= []).push(src)
   }
 }

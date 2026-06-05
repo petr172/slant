@@ -1,5 +1,8 @@
 import { defineField, defineType } from 'sanity'
 
+// Musí sedět s tagy chipů v hero sekci (HomePage)
+const SERVICES = ['Branding', 'Webdesign', 'Obalový design', 'Grafický design', 'Animace', 'Naming']
+
 export default defineType({
   name: 'siteSettings',
   title: 'Site Settings',
@@ -109,6 +112,44 @@ export default defineType({
           preview: {
             select: { title: 'name' },
             prepare({ title }) { return { title: title ?? 'Client logo' } },
+          },
+        },
+      ],
+    }),
+
+    defineField({
+      name: 'chipPreviews',
+      title: 'Hero chip — náhledy kategorií',
+      description:
+        'Obrázky, které se rychle střídají v náhledu po najetí na chip v hero nadpisu (na desktopu). Pro každou kategorii přidej ~5 obrázků. ' +
+        'DOPORUČENÁ VELIKOST: poměr 16:9, ideálně 1280×720 px (min. 640×360), JPG/WebP do ~300 KB. Obrázek se ořízne na 16:9.',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'chipPreview',
+          fields: [
+            defineField({
+              name: 'category',
+              title: 'Kategorie',
+              type: 'string',
+              validation: (R) => R.required(),
+              options: {
+                list: SERVICES.map((s) => ({ title: s, value: s })),
+              },
+            }),
+            defineField({
+              name: 'images',
+              title: 'Obrázky (16:9, cca 5 ks)',
+              type: 'array',
+              of: [{ type: 'image', options: { hotspot: true } }],
+            }),
+          ],
+          preview: {
+            select: { title: 'category', images: 'images' },
+            prepare({ title, images }) {
+              return { title: title ?? 'Kategorie', subtitle: `${images?.length ?? 0} obrázků` }
+            },
           },
         },
       ],

@@ -60,6 +60,10 @@ export const SITE_SETTINGS_QUERY = `
       name,
       logoUrl,
       url
+    },
+    chipPreviews[] {
+      category,
+      images[] { asset->, hotspot, crop }
     }
 
   }
