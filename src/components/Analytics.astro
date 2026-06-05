@@ -3,6 +3,9 @@
 // Opt-in: žádné analytické cookies se nespustí před souhlasem.
 // Nastav PUBLIC_GA_MEASUREMENT_ID v .env souboru
 const GA_ID = import.meta.env.PUBLIC_GA_MEASUREMENT_ID
+// PostHog (heatmapy + session replay) — také až po souhlasu
+const POSTHOG_KEY  = import.meta.env.PUBLIC_POSTHOG_KEY ?? ''
+const POSTHOG_HOST = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com'
 const lang = Astro.currentLocale === 'en' ? 'en' : 'cs'
 
 const policyHref = lang === 'cs'
@@ -21,7 +24,7 @@ const t = {
     necessaryTag: 'Vždy aktivní',
     necessaryDesc: 'Nutné pro chod webu — zapamatují si třeba tuhle volbu. Bez nich to nejde a souhlas nepotřebují.',
     analytics: 'Analytické',
-    analyticsDesc: 'Anonymní měření návštěvnosti (Google Analytics). Díky nim víme, co vás zajímá, a web zlepšujeme.',
+    analyticsDesc: 'Anonymní měření návštěvnosti a chování (Google Analytics, PostHog heatmapy). Díky nim víme, co vás zajímá, a web zlepšujeme.',
     save: 'Uložit výběr',
     back: 'Zpět',
   },
@@ -36,14 +39,14 @@ const t = {
     necessaryTag: 'Always on',
     necessaryDesc: 'Required for the site to work — they remember things like this choice. They need no consent.',
     analytics: 'Analytics',
-    analyticsDesc: 'Anonymous traffic measurement (Google Analytics). It tells us what you care about so we can improve.',
+    analyticsDesc: 'Anonymous traffic and behaviour measurement (Google Analytics, PostHog heatmaps). It tells us what you care about so we can improve.',
     save: 'Save choice',
     back: 'Back',
   },
 }[lang]
 ---
 
-{GA_ID && (
+{(GA_ID || POSTHOG_KEY) && (
   <>
     <div id="cookie-banner" class="cookie-banner" role="dialog" aria-label="Cookies" hidden>
       <!-- Layer 1: main -->
@@ -85,7 +88,7 @@ const t = {
       </div>
     </div>
 
-    <script define:vars={{ GA_ID }}>
+    <script define:vars={{ GA_ID, POSTHOG_KEY, POSTHOG_HOST }}>
       ;(function () {
         const KEY = 'slant-consent'
         const banner    = document.getElementById('cookie-banner')
@@ -94,7 +97,7 @@ const t = {
         const toggle    = document.getElementById('cat-analytics')
 
         function loadGA() {
-          if (window.__gaLoaded) return
+          if (!GA_ID || window.__gaLoaded) return
           window.__gaLoaded = true
           const s = document.createElement('script')
           s.async = true
@@ -106,6 +109,22 @@ const t = {
           gtag('config', GA_ID, { anonymize_ip: true })
           window.__gtag = gtag
         }
+
+        // PostHog — heatmapy + session replay (rrweb), s maskováním inputů
+        function loadPostHog() {
+          if (!POSTHOG_KEY || window.__phLoaded) return
+          window.__phLoaded = true
+          !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+          window.posthog.init(POSTHOG_KEY, {
+            api_host: POSTHOG_HOST,
+            person_profiles: 'identified_only',
+            capture_pageview: true,
+            autocapture: true,
+            session_recording: { maskAllInputs: true },
+          })
+        }
+
+        function loadAnalytics() { loadGA(); loadPostHog() }
 
         // Read consent (supports legacy 'granted'/'denied' strings)
         function getConsent() {
@@ -140,14 +159,14 @@ const t = {
         // Apply existing decision on load (closing/ignoring grants nothing)
         const consent = getConsent()
         if (consent) {
-          if (consent.analytics) loadGA()
+          if (consent.analytics) loadAnalytics()
         } else {
           showBanner('main')
         }
 
         // First layer — reject & accept equally easy
         document.getElementById('cookie-accept')?.addEventListener('click', () => {
-          setConsent(true); loadGA(); hideBanner()
+          setConsent(true); loadAnalytics(); hideBanner()
         })
         document.getElementById('cookie-reject')?.addEventListener('click', () => {
           setConsent(false); hideBanner()
@@ -162,7 +181,7 @@ const t = {
         document.getElementById('cookie-save')?.addEventListener('click', () => {
           const ok = !!toggle?.checked
           setConsent(ok)
-          if (ok) loadGA()
+          if (ok) loadAnalytics()
           hideBanner()
         })
 
