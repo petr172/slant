@@ -508,3 +508,14 @@
   /* Make sure GSAP-faded content is always visible if JS skips animation */
   [data-fade] { opacity: 1 !important; transform: none !important; }
 }
+
+/* ── Container — unlayered override ──────────────────────────────────────────
+   Tailwind v4 generuje vlastní `.container` utilitu s responzivními max-width
+   (až 96rem), která na širokých obrazovkách přebíjela náš 90rem container a
+   rozhazovala zarovnání sekcí. Unlayered pravidlo má přednost před @layer. */
+.container {
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
