@@ -309,15 +309,18 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
     const navWrap = document.querySelector('.island-nav-wrap') as HTMLElement | null
     const nav     = document.querySelector('.island-nav')     as HTMLElement | null
     const THRESHOLD = 40
+    // Shrink ostrova jen na desktopu — na tabletu/mobilu (≤64em) ne (skákalo to)
+    const desktopMq = window.matchMedia('(min-width: 64.0625em)')
 
     function updateNav() {
-      const scrolled = window.scrollY > THRESHOLD
+      const scrolled = desktopMq.matches && window.scrollY > THRESHOLD
       navWrap?.classList.toggle('is-scrolled', scrolled)
       nav?.classList.toggle('is-scrolled', scrolled)
     }
 
     updateNav()
     window.addEventListener('scroll', updateNav, { passive: true })
+    desktopMq.addEventListener('change', updateNav)
 
     const btn = document.getElementById('theme-toggle')
     btn?.addEventListener('click', () => {
