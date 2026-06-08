@@ -1139,6 +1139,7 @@ gsap.from('#js-hero-bot', {
   scrollbar-width: none;
   cursor: grab;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);   /* snap respektuje padding → 1. karta zarovnaná s nadpisem */
 }
 .blog-scroll::-webkit-scrollbar { display: none; }
 .blog-scroll:active { cursor: grabbing; }
