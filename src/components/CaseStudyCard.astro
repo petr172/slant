@@ -71,8 +71,20 @@ const dims = variant === 'wide'
 </article>
 
 <style>
-.case-card { position: relative; display: flex; flex-direction: column; }
+.case-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-sm);
+  border-radius: var(--radius-md);
+  transition: background 0.25s ease;
+}
 .case-card--wide { grid-column: 1 / -1; }
+
+/* Hover celé karty jako u FAQ položek / navbar tlačítek */
+@media (hover: hover) {
+  .case-card:hover { background: color-mix(in srgb, var(--clr-text) 6%, transparent); }
+}
 
 .case-card__link { display: block; text-decoration: none; color: inherit; }
 
