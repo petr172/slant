@@ -76,14 +76,18 @@ const dims = variant === 'wide'
   display: flex;
   flex-direction: column;
   padding: var(--sp-sm);
+  border: 1px solid color-mix(in srgb, var(--clr-text) 10%, transparent);
   border-radius: var(--radius-md);
-  transition: background 0.25s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 .case-card--wide { grid-column: 1 / -1; }
 
 /* Hover celé karty jako u FAQ položek / navbar tlačítek */
 @media (hover: hover) {
-  .case-card:hover { background: color-mix(in srgb, var(--clr-text) 6%, transparent); }
+  .case-card:hover {
+    background: color-mix(in srgb, var(--clr-text) 6%, transparent);
+    border-color: color-mix(in srgb, var(--clr-text) 14%, transparent);
+  }
 }
 
 .case-card__link { display: block; text-decoration: none; color: inherit; }
