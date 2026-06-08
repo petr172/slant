@@ -297,6 +297,49 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
 
   <AnimationInit />
 
+  <!-- Globální follow-kurzor (šipka) — na hover nad kartami na desktopu -->
+  <div class="cursor-follow" id="js-cursor-follow" aria-hidden="true">
+    <span class="cursor-follow__dot">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+  </div>
+
+  <style is:global>
+    .cursor-follow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 600;
+      pointer-events: none;
+      transform: translate3d(var(--cx, -100px), var(--cy, -100px), 0);
+      transition: transform 0.12s ease-out;
+      will-change: transform;
+    }
+    .cursor-follow__dot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      margin: -28px 0 0 -28px;          /* vycentrovat na bod */
+      border-radius: 50%;
+      background: var(--clr-accent);
+      color: #fff;
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.28s var(--ease-out-expo), opacity 0.2s ease;
+    }
+    .cursor-follow.is-on .cursor-follow__dot { transform: scale(1); opacity: 1; }
+    @media (hover: none), (pointer: coarse) { .cursor-follow { display: none; } }
+
+    /* Skrýt nativní kurzor nad kartami (jen desktop / přesné ukazovátko) */
+    @media (hover: hover) and (pointer: fine) {
+      .case-card, .case-card a, .blog-card, .blog-card a { cursor: none; }
+    }
+  </style>
+
   <!-- Sanity Visual Editing — loads only inside Presentation iframe -->
   <script>
     if (window.self !== window.top) {
@@ -327,6 +370,23 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
       const isDark = document.documentElement.classList.toggle('dark')
       localStorage.setItem('slant-theme', isDark ? 'dark' : 'light')
     })
+
+    // ── Follow-kurzor (šipka) nad kartami — jen desktop / hover zařízení ──
+    const cursorEl = document.getElementById('js-cursor-follow') as HTMLElement | null
+    if (cursorEl && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      const CARD_SEL = '.case-card, .blog-card'
+      window.addEventListener('pointermove', (e) => {
+        cursorEl.style.setProperty('--cx', e.clientX + 'px')
+        cursorEl.style.setProperty('--cy', e.clientY + 'px')
+      }, { passive: true })
+      document.addEventListener('mouseover', (e) => {
+        if ((e.target as Element)?.closest?.(CARD_SEL)) cursorEl.classList.add('is-on')
+      })
+      document.addEventListener('mouseout', (e) => {
+        const to = e.relatedTarget as Element | null
+        if (!to || !to.closest?.(CARD_SEL)) cursorEl.classList.remove('is-on')
+      })
+    }
 
     // Mobile menu
     ;(async () => {
