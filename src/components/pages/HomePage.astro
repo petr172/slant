@@ -1132,14 +1132,16 @@ gsap.from('#js-hero-bot', {
   width: 100%;
   max-width: 90rem;
   margin-inline: auto;
-  padding-inline: var(--gutter);
+  /* karty mají vlastní padding (sp-sm) kvůli hover tintu → odečteme ho,
+     ať obrázek karty lícuje s nadpisem sekce */
+  padding-inline: calc(var(--gutter) - var(--sp-sm));
   overflow-x: auto;
   overflow-y: visible;
   padding-bottom: var(--sp-lg);
   scrollbar-width: none;
   cursor: grab;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--gutter);   /* snap respektuje padding → 1. karta zarovnaná s nadpisem */
+  scroll-padding-inline: calc(var(--gutter) - var(--sp-sm));
 }
 .blog-scroll::-webkit-scrollbar { display: none; }
 .blog-scroll:active { cursor: grabbing; }
@@ -1159,6 +1161,13 @@ gsap.from('#js-hero-bot', {
   text-decoration: none;
   color: inherit;
   scroll-snap-align: start;
+  /* Hover jako u karet projektů, ale bez defaultního stroku */
+  padding: var(--sp-sm);
+  border-radius: var(--radius-md);
+  transition: background 0.3s ease;
+}
+@media (hover: hover) {
+  .blog-card:hover { background: color-mix(in srgb, var(--clr-text) 6%, transparent); }
 }
 
 .blog-card__image {
