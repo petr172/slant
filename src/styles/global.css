@@ -515,7 +515,7 @@
    rozhazovala zarovnání sekcí. Unlayered pravidlo má přednost před @layer. */
 .container {
   width: 100%;
-  max-width: 90rem;
+  max-width: 90rem !important;   /* přebít Tailwind responsive container (40–96rem) */
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
