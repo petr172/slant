@@ -192,7 +192,10 @@ const faqLd = {
     <section class="projects" id="js-projects">
       <div class="container">
         <div class="projects__header">
-          <h2 class="section-heading">{t('home.selected')}</h2>
+          <div class="section-head">
+            <span class="section-eyebrow">Work</span>
+            <h2 class="section-heading">{lang === 'cs' ? 'Naše vybrané práce' : 'Our selected work'}</h2>
+          </div>
           <a href={workUrl} class="projects__all btn-secondary">{t('work.viewAll')}</a>
         </div>
       </div>
@@ -228,6 +231,7 @@ const faqLd = {
 
   <!-- ─── Services ───────────────────────────────────────────────────────── -->
   <section class="services container" id="js-services">
+    <span class="section-eyebrow">{lang === 'cs' ? 'Služby' : 'Services'}</span>
     <h2 class="services__heading section-heading">{lang === 'cs' ? 'Co děláme' : 'What we do'}</h2>
     <div class="services__grid">
       {([
@@ -255,6 +259,7 @@ const faqLd = {
     return (
       <section class="process" id="js-process">
         <div class="process__label container">
+          <span class="section-eyebrow">{lang === 'cs' ? 'Proces' : 'Process'}</span>
           <h2 class="section-heading">{lang === 'cs' ? 'Jak to děláme' : 'How we work'}</h2>
         </div>
         <div class="process__list">
@@ -338,7 +343,7 @@ const faqLd = {
   <!-- ─── FAQ ─────────────────────────────────────────────────────────── -->
   <section class="faq container" id="js-faq">
     <div class="faq__header">
-      <span class="faq__label">{lang === 'cs' ? 'Časté dotazy' : 'FAQ'}</span>
+      <span class="section-eyebrow">{lang === 'cs' ? 'Časté dotazy' : 'FAQ'}</span>
       <h2 class="faq__title section-heading">{lang === 'cs' ? 'Co vás zajímá?' : 'Your questions, answered'}</h2>
     </div>
 
@@ -915,7 +920,8 @@ gsap.from('#js-hero-bot', {
 .projects__header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  gap: var(--sp-md);
   margin-bottom: var(--sp-xl);
 }
 
@@ -931,6 +937,19 @@ gsap.from('#js-hero-bot', {
   color: var(--clr-text);
   margin: 0;
 }
+
+/* Unified section eyebrow — grey, like the trust wall label */
+.section-eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  margin-bottom: 0.6rem;
+}
+/* Eyebrow + heading stacked (e.g. work header next to the button) */
+.section-head { display: flex; flex-direction: column; }
 
 
 .projects__footer {
