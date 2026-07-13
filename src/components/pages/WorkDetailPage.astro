@@ -335,39 +335,39 @@ const caseStudyLd = {
               if (!items.length) return
 
               grid.classList.add('js-anim')
-              gsap.set(items, { y: 48 })
+              gsap.set(items, { y: 40, scale: 0.98 })
 
-              // Reveal staggeru po viditelných dávkách (řádcích)
+              // Reveal staggeru po viditelných dávkách (řádcích) — compositor-only
               ScrollTrigger.batch(items, {
-                start: 'top 88%',
+                start: 'top 90%',
                 onEnter: (batch: Element[]) => {
                   gsap.to(batch, {
                     opacity: 1,
                     y: 0,
-                    clipPath: 'inset(0 0 0% 0)',
-                    duration: 1.05,
-                    ease: 'power4.out',
-                    stagger: { each: 0.09, from: 'start' },
+                    scale: 1,
+                    duration: 0.9,
+                    ease: 'power3.out',
+                    stagger: { each: 0.08, from: 'start' },
                   })
                 },
                 once: true,
               })
 
-              // Parallax média uvnitř každé dlaždice (scrub k scrollu)
+              // Parallax média uvnitř dlaždice — vyhlazený scrub, jen transform
               items.forEach((item) => {
                 const media = item.querySelector('.cs-gallery__media')
                 if (!media) return
                 gsap.fromTo(media,
-                  { yPercent: -6, scale: 1.12 },
+                  { yPercent: -5, scale: 1.12 },
                   {
-                    yPercent: 6,
+                    yPercent: 5,
                     scale: 1.12,
                     ease: 'none',
                     scrollTrigger: {
                       trigger: item,
                       start: 'top bottom',
                       end: 'bottom top',
-                      scrub: true,
+                      scrub: 0.6,
                     },
                   }
                 )
@@ -700,8 +700,7 @@ const caseStudyLd = {
 /* Skryto jen když převezme GSAP reveal (js-anim). Bez JS = plně viditelné. */
 .cs-gallery__grid.js-anim .cs-gallery__item {
   opacity: 0;
-  clip-path: inset(0 0 100% 0);
-  will-change: clip-path, transform, opacity;
+  will-change: transform, opacity;
 }
 
 @media (max-width: 48em) {
