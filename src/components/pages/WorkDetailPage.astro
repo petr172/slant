@@ -180,8 +180,8 @@ const caseStudyLd = {
       </header>
 
       {galleryItems.length > 0 && (
-        <section class="cs-gallery container" data-fade>
-          <div class="cs-gallery__grid">
+        <section class="cs-gallery container">
+          <div class="cs-gallery__grid" id="cs-gallery-grid">
             {galleryItems.map((item, i) => (
               <button class="cs-gallery__item" type="button" data-lightbox-index={i} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
                 {item.type === 'video' ? (
@@ -317,6 +317,68 @@ const caseStudyLd = {
         </div>
 
         <script type="application/json" id="cs-gallery-json" set:html={JSON.stringify(galleryItems)}></script>
+
+        <script>
+          // ── Galerie: scroll-choreografie (reveal + parallax) ──────────────
+          ;(function () {
+            const grid = document.getElementById('cs-gallery-grid')
+            if (!grid) return
+
+            function boot() {
+              const gsap = (window as any).__gsap
+              const ScrollTrigger = (window as any).__ScrollTrigger
+              // GSAP/ScrollTrigger ještě nemusí být hotové — počkej frame
+              if (!gsap || !ScrollTrigger) { requestAnimationFrame(boot); return }
+              if ((window as any).__reducedMotion) return
+
+              const items = Array.from(grid.querySelectorAll('.cs-gallery__item'))
+              if (!items.length) return
+
+              grid.classList.add('js-anim')
+              gsap.set(items, { y: 48 })
+
+              // Reveal staggeru po viditelných dávkách (řádcích)
+              ScrollTrigger.batch(items, {
+                start: 'top 88%',
+                onEnter: (batch: Element[]) => {
+                  gsap.to(batch, {
+                    opacity: 1,
+                    y: 0,
+                    clipPath: 'inset(0 0 0% 0)',
+                    duration: 1.05,
+                    ease: 'power4.out',
+                    stagger: { each: 0.09, from: 'start' },
+                  })
+                },
+                once: true,
+              })
+
+              // Parallax média uvnitř každé dlaždice (scrub k scrollu)
+              items.forEach((item) => {
+                const media = item.querySelector('.cs-gallery__media')
+                if (!media) return
+                gsap.fromTo(media,
+                  { yPercent: -6, scale: 1.12 },
+                  {
+                    yPercent: 6,
+                    scale: 1.12,
+                    ease: 'none',
+                    scrollTrigger: {
+                      trigger: item,
+                      start: 'top bottom',
+                      end: 'bottom top',
+                      scrub: true,
+                    },
+                  }
+                )
+              })
+
+              ScrollTrigger.refresh()
+            }
+
+            boot()
+          })()
+        </script>
 
         <script>
           import { gsap } from 'gsap'
@@ -609,9 +671,12 @@ const caseStudyLd = {
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s var(--ease-out-expo);
+  will-change: transform;
+  transition: filter 0.4s var(--ease-out-expo);
+  /* Parallax + base scale 1.12 řídí GSAP (js-parallax). Bez JS = statické. */
+  transform: scale(1.12);
 }
-.cs-gallery__item:hover .cs-gallery__media { transform: scale(1.04); }
+.cs-gallery__item:hover .cs-gallery__media { filter: brightness(1.06); }
 .cs-gallery__zoom {
   position: absolute;
   top: 0.6rem;
@@ -631,6 +696,13 @@ const caseStudyLd = {
   transition: opacity 0.25s, transform 0.25s;
 }
 .cs-gallery__item:hover .cs-gallery__zoom { opacity: 1; transform: scale(1); }
+
+/* Skryto jen když převezme GSAP reveal (js-anim). Bez JS = plně viditelné. */
+.cs-gallery__grid.js-anim .cs-gallery__item {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  will-change: clip-path, transform, opacity;
+}
 
 @media (max-width: 48em) {
   .cs-gallery__grid { grid-template-columns: repeat(2, 1fr); }
