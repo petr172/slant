@@ -316,13 +316,17 @@ const caseStudyLd = {
           </button>
         </div>
 
-        <script define:vars={{ galleryItems }}>
+        <script type="application/json" id="cs-gallery-json" set:html={JSON.stringify(galleryItems)}></script>
+
+        <script>
           import { gsap } from 'gsap'
           ;(function () {
             const lb    = document.getElementById('cs-lightbox')
             const stage = document.getElementById('cs-lightbox-stage')
-            if (!lb || !stage) return
-            const items = galleryItems
+            const dataEl = document.getElementById('cs-gallery-json')
+            if (!lb || !stage || !dataEl) return
+            const items = JSON.parse(dataEl.textContent || '[]')
+            if (!items.length) return
             let idx = 0
             let current = null
             let animating = false
