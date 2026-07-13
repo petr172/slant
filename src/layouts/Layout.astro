@@ -144,6 +144,14 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
     })()
   </script>
 
+  <script is:inline>
+    // Page-wipe: přišli jsme přes závěs → zakryj stránku PŘED prvním paintem
+    // (bundlovaný skript běží až po parsování a stránka by probleskla).
+    if (sessionStorage.getItem('page-wipe') === '1') {
+      document.documentElement.classList.add('wipe-arrive')
+    }
+  </script>
+
   <Analytics />
 </head>
 <body>
@@ -491,18 +499,22 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
     const wipe = document.getElementById('page-wipe')
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+    if (!wipe || reduced) {
+      // Nikdy nenech stránku zakrytou (head skript mohl přidat wipe-arrive)
+      sessionStorage.removeItem('page-wipe')
+      document.documentElement.classList.remove('wipe-arrive')
+    }
+
     if (wipe && !reduced) {
-      // ── Vstup: přišli jsme přes wipe → závěs je nahoře a odjede ──────────
+      // ── Vstup: přišli jsme přes wipe → závěs kryje od prvního paintu
+      // (html.wipe-arrive z inline head skriptu) a tady ho necháme odjet.
       if (sessionStorage.getItem('page-wipe') === '1') {
         sessionStorage.removeItem('page-wipe')
-        // Bez transition ho okamžitě polož přes viewport…
-        wipe.style.transition = 'none'
         wipe.classList.add('is-covering')
-        void wipe.offsetHeight // reflow
-        wipe.style.transition = ''
-        // …a nech ho odjet nahoru
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
+            // Sundej pre-paint zámek a rozjeď transition nahoru
+            document.documentElement.classList.remove('wipe-arrive')
             wipe.classList.remove('is-covering')
             wipe.classList.add('is-up')
             // Po doběhnutí vrať do základní (spodní) polohy BEZ transition,
@@ -515,11 +527,14 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
             }, 700)
           })
         })
+      } else {
+        document.documentElement.classList.remove('wipe-arrive')
       }
 
       // bfcache návrat (šipka zpět) — závěs schovej okamžitě
       window.addEventListener('pageshow', (e) => {
         if ((e as PageTransitionEvent).persisted) {
+          document.documentElement.classList.remove('wipe-arrive')
           wipe.style.transition = 'none'
           wipe.classList.remove('is-covering', 'is-up')
           void wipe.offsetHeight
@@ -569,6 +584,8 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
 }
 .page-wipe.is-covering { transform: translateY(0); }
 .page-wipe.is-up { transform: translateY(-101%); }
+/* Příchod přes závěs: zakryto od prvního paintu (class na <html> z head skriptu) */
+:global(html.wipe-arrive) .page-wipe { transform: translateY(0); transition: none; }
 
 /* ── Island nav ──────────────────────────────────────────────────────────── */
 .island-nav-wrap {
