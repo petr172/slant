@@ -95,7 +95,12 @@
   background: none;
   padding: 0;
   cursor: pointer;
+  /* Neaktivní vrstvy nesmí chytat kliky (opacity:0 je pořád klikatelné) */
+  pointer-events: none;
 }
+/* Aktivní vrstva chytá kliky: contact když není spodek, backtop na spodku */
+.float-badge:not(.is-bottom) .float-badge__img--contact { pointer-events: auto; }
+.float-badge.is-bottom .float-badge__img--backtop { pointer-events: auto; }
 
 /* Rotate only the default badge */
 .float-badge__img--default img {
