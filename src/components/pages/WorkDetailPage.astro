@@ -340,8 +340,8 @@ const caseStudyLd = {
                 el = document.createElement('img')
                 el.src = it.src; el.alt = it.alt || ''
                 el.draggable = false
-                el.style.touchAction = 'none'   // horizontální drag řídíme sami
               }
+              el.style.touchAction = 'none'   // horizontální drag/swipe řídíme sami (i u videa)
               el.className = 'cs-lightbox__media'
               return el
             }
@@ -399,23 +399,25 @@ const caseStudyLd = {
 
             // ── Drag / swipe s live následováním prstu (Tinder-style) ──
             let dragging = false, decided = false, horizontal = false
-            let startX = 0, startY = 0, dx = 0
+            let startX = 0, startY = 0, dx = 0, pid = -1
 
             stage.addEventListener('pointerdown', (e) => {
-              if (animating || !current || current.tagName === 'VIDEO') return
+              if (animating || !current) return
+              // Pointer nezachytáváme hned — tap na play/pauzu videa tak projde;
+              // capture se udělá až když je jasné, že jde o vodorovný tah.
               dragging = true; decided = false; horizontal = false
-              startX = e.clientX; startY = e.clientY; dx = 0
-              gsap.killTweensOf(current)
-              try { stage.setPointerCapture(e.pointerId) } catch {}
+              startX = e.clientX; startY = e.clientY; dx = 0; pid = e.pointerId
             })
             stage.addEventListener('pointermove', (e) => {
               if (!dragging) return
               const mx = e.clientX - startX, my = e.clientY - startY
               if (!decided) {
-                if (Math.abs(mx) < 6 && Math.abs(my) < 6) return
+                if (Math.abs(mx) < 8 && Math.abs(my) < 8) return
                 decided = true
                 horizontal = Math.abs(mx) > Math.abs(my)
                 if (!horizontal) { dragging = false; return }
+                gsap.killTweensOf(current)
+                try { stage.setPointerCapture(pid) } catch {}
               }
               dx = mx
               const fade = 1 - Math.min(Math.abs(dx) / (window.innerWidth * 0.85), 0.55)
