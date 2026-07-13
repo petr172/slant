@@ -31,10 +31,10 @@ const galleryItems = (cs?.gallery ?? []).map((g: any) => {
     : { type: 'image', src: full, thumb, alt: g.alt ?? '' }
 }).filter((g: any) => g.src || g.thumb)
 
-// Prev / next
+// Prev / next — kruhově (infinite): z prvního doleva = poslední, z posledního doprava = první
 const navIdx  = allNav.findIndex(p => p.slug === slug)
-const prevCs  = navIdx > 0 ? allNav[navIdx - 1] : null
-const nextCs  = navIdx < allNav.length - 1 ? allNav[navIdx + 1] : null
+const prevCs  = allNav.length > 1 ? allNav[(navIdx - 1 + allNav.length) % allNav.length] : null
+const nextCs  = allNav.length > 1 ? allNav[(navIdx + 1) % allNav.length] : null
 const prevTitle = prevCs ? (lang === 'en' ? (prevCs.titleEn || prevCs.title) : prevCs.title) : null
 const nextTitle = nextCs ? (lang === 'en' ? (nextCs.titleEn || nextCs.title) : nextCs.title) : null
 const t = useTranslations(lang)
