@@ -481,10 +481,95 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
 
   <FloatBadge />
   <ContactModal lang={lang} />
+
+  <!-- Page-wipe curtain (interní navigace) -->
+  <div id="page-wipe" class="page-wipe" aria-hidden="true"></div>
+
+  <script>
+    // Page-wipe závěs — čisté CSS transitions (žádný gsap: dvě instance na
+    // stránce si přepisovaly transform cache a závěs zůstával viset).
+    const wipe = document.getElementById('page-wipe')
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (wipe && !reduced) {
+      // ── Vstup: přišli jsme přes wipe → závěs je nahoře a odjede ──────────
+      if (sessionStorage.getItem('page-wipe') === '1') {
+        sessionStorage.removeItem('page-wipe')
+        // Bez transition ho okamžitě polož přes viewport…
+        wipe.style.transition = 'none'
+        wipe.classList.add('is-covering')
+        void wipe.offsetHeight // reflow
+        wipe.style.transition = ''
+        // …a nech ho odjet nahoru
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            wipe.classList.remove('is-covering')
+            wipe.classList.add('is-up')
+            // Po doběhnutí vrať do základní (spodní) polohy BEZ transition,
+            // jinak by závěs viditelně projel viewportem dolů.
+            setTimeout(() => {
+              wipe.style.transition = 'none'
+              wipe.classList.remove('is-up')
+              void wipe.offsetHeight
+              wipe.style.transition = ''
+            }, 700)
+          })
+        })
+      }
+
+      // bfcache návrat (šipka zpět) — závěs schovej okamžitě
+      window.addEventListener('pageshow', (e) => {
+        if ((e as PageTransitionEvent).persisted) {
+          wipe.style.transition = 'none'
+          wipe.classList.remove('is-covering', 'is-up')
+          void wipe.offsetHeight
+          wipe.style.transition = ''
+        }
+      })
+
+      // ── Odchod: interní kliky zachytíme a přejedeme závěsem ──────────────
+      let leaving = false
+      document.addEventListener('click', (e) => {
+        if (leaving || e.defaultPrevented) return
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+        const a = (e.target as Element).closest('a[href]') as HTMLAnchorElement | null
+        if (!a) return
+        if (a.target === '_blank' || a.hasAttribute('download') || a.hasAttribute('data-open-modal') || a.hasAttribute('data-no-wipe')) return
+        const href = a.getAttribute('href') ?? ''
+        if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return
+        const url = new URL(a.href, location.href)
+        if (url.origin !== location.origin) return
+        // Stejná stránka, jen hash → nech být
+        if (url.pathname === location.pathname && url.hash) return
+
+        e.preventDefault()
+        leaving = true
+        sessionStorage.setItem('page-wipe', '1')
+        const goNow = () => { location.href = url.href }
+        wipe.addEventListener('transitionend', goNow, { once: true })
+        setTimeout(goNow, 700) // pojistka, kdyby transitionend nedoběhl
+        wipe.classList.add('is-covering')
+      })
+    }
+  </script>
 </body>
 </html>
 
 <style>
+/* ── Page-wipe curtain ───────────────────────────────────────────────────── */
+.page-wipe {
+  position: fixed;
+  inset: -1px 0; /* přesah, ať při pohybu neprobleskne hrana */
+  z-index: 900;
+  background: var(--clr-bg);
+  transform: translateY(101%);
+  pointer-events: none;
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.page-wipe.is-covering { transform: translateY(0); }
+.page-wipe.is-up { transform: translateY(-101%); }
+
 /* ── Island nav ──────────────────────────────────────────────────────────── */
 .island-nav-wrap {
   position: fixed;
