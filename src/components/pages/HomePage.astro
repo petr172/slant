@@ -814,9 +814,9 @@ gsap.from('#js-hero-bot', {
 
 /* On mobile: hide scattered chips, show as simple row below headline */
 @media (max-width: 48em) {
-  /* Clear the fixed top nav so it doesn't cover the headline */
+  /* Odstup od navbaru teď řeší globálně main (Layout) — hero nepřidává nic */
   .hero {
-    padding-top: calc(3.5rem + env(safe-area-inset-top));
+    padding-top: 0;
   }
   .hero__headline-wrap {
     padding-top: var(--sp-lg);
