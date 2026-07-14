@@ -4,14 +4,10 @@
 ---
 
 <div id="float-badge" class="float-badge" aria-label="Contact or back to top">
-  <!-- Default state -->
-  <div class="float-badge__img float-badge__img--default">
+  <!-- Default state — klik otevře kontaktní modal, hover protočí o 360° -->
+  <button class="float-badge__img float-badge__img--default" aria-label="Napište nám" data-open-modal>
     <img src="/badge-default.svg" alt="Slant badge" width="88" height="86" />
-  </div>
-  <!-- Hover: contact -->
-  <a href="#" class="float-badge__img float-badge__img--contact" aria-label="Napište nám" data-open-modal onclick="window.openModal?.(); return false">
-    <img src="/badge-contact.svg" alt="Contact" width="88" height="86" />
-  </a>
+  </button>
   <!-- Bottom: back to top -->
   <button class="float-badge__img float-badge__img--backtop" aria-label="Zpět nahoru">
     <img src="/badge-back-top.svg" alt="Back to top" width="88" height="86" />
@@ -29,8 +25,28 @@
   let isHovered      = false
   let scrollingToTop = false
 
-  badge.addEventListener('mouseenter', () => { isHovered = true  })
+  badge.addEventListener('mouseenter', () => { isHovered = true; spin() })
   badge.addEventListener('mouseleave', () => { isHovered = false })
+
+  // ── Hover: smooth protočení o 360° doprava (mimo footer/backtop stav) ────
+  let spinning = false
+  function spin() {
+    if (spinning || badge.classList.contains('is-bottom')) return
+    spinning = true
+    const from = rotation
+    const to = rotation + 360
+    const dur = 900
+    const t0 = performance.now()
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+    function tick(now: number) {
+      const p = Math.min((now - t0) / dur, 1)
+      rotation = from + (to - from) * easeOutCubic(p)
+      badge.style.setProperty('--badge-rot', `${rotation}deg`)
+      if (p < 1) requestAnimationFrame(tick)
+      else spinning = false
+    }
+    requestAnimationFrame(tick)
+  }
 
   function onScroll() {
     const currentY  = window.scrollY
@@ -98,8 +114,8 @@
   /* Neaktivní vrstvy nesmí chytat kliky (opacity:0 je pořád klikatelné) */
   pointer-events: none;
 }
-/* Aktivní vrstva chytá kliky: contact když není spodek, backtop na spodku */
-.float-badge:not(.is-bottom) .float-badge__img--contact { pointer-events: auto; }
+/* Aktivní vrstva chytá kliky: default když není spodek, backtop na spodku */
+.float-badge:not(.is-bottom) .float-badge__img--default { pointer-events: auto; }
 .float-badge.is-bottom .float-badge__img--backtop { pointer-events: auto; }
 
 /* Rotate only the default badge */
@@ -119,8 +135,6 @@
 
 /* Default state: show default, hide others */
 .float-badge:not(.is-bottom) .float-badge__img--default { opacity: 1; }
-.float-badge:not(.is-bottom):not(.is-scrolling-to-top):hover .float-badge__img--default { opacity: 0; }
-.float-badge:not(.is-bottom):not(.is-scrolling-to-top):hover .float-badge__img--contact { opacity: 1; }
 
 /* Bottom state: show back-to-top */
 .float-badge.is-bottom .float-badge__img--backtop { opacity: 1; }
