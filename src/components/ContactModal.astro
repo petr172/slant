@@ -46,6 +46,19 @@ const t = {
     errCaptcha: 'Potvrďte prosím, že nejste robot.',
     errSend: 'Něco se pokazilo. Zkuste to prosím znovu nebo napište na hello@slant.cz.',
     none: '—',
+    modeWrite: 'Napište nám',
+    modeCall: 'Rezervovat call',
+    callHeading: 'Vyberte si termín',
+    callSub: '15 minut · Google Meet · Europe/Prague',
+    callLoading: 'Načítám volné termíny…',
+    callEmpty: 'Teď nemáme volný žádný termín. Napište nám — ozveme se.',
+    callError: 'Termíny se nepodařilo načíst. Zkuste to znovu, nebo nám napište.',
+    callTaken: 'Tenhle termín si někdo právě zabral. Vyberte prosím jiný.',
+    callDetailHeading: 'Kdo se s námi potká?',
+    callNotePlaceholder: 'O čem si chcete promluvit? (volitelné)',
+    callConfirm: 'Potvrdit rezervaci',
+    callBooking: 'Rezervuji…',
+    callThanks: 'Zarezervováno! Pozvánka s Google Meet odkazem vám právě letí do e-mailu.',
   },
   en: {
     step1Heading1: "What's your name?",
@@ -81,6 +94,19 @@ const t = {
     errCaptcha: 'Please confirm you are not a robot.',
     errSend: 'Something went wrong. Please try again or email hello@slant.cz.',
     none: '—',
+    modeWrite: 'Write to us',
+    modeCall: 'Book a call',
+    callHeading: 'Pick a time',
+    callSub: '15 minutes · Google Meet · Europe/Prague',
+    callLoading: 'Loading available times…',
+    callEmpty: 'No open slots right now. Drop us a line instead — we’ll get back to you.',
+    callError: 'Couldn’t load available times. Try again, or write to us.',
+    callTaken: 'Someone just grabbed that slot. Please pick another one.',
+    callDetailHeading: 'Who are we meeting?',
+    callNotePlaceholder: 'What would you like to talk about? (optional)',
+    callConfirm: 'Confirm booking',
+    callBooking: 'Booking…',
+    callThanks: 'Booked! An invite with a Google Meet link is on its way to your inbox.',
   },
 }[lang]
 ---
@@ -94,6 +120,12 @@ const t = {
         <line x1="13" y1="1" x2="1" y2="13"/>
       </svg>
     </button>
+
+    <!-- Přepínač: formulář × booking -->
+    <div class="modal__mode" id="modal-mode" role="tablist" aria-label="Kontakt">
+      <button type="button" class="modal__mode-btn is-active" id="modal-mode-write" role="tab" aria-selected="true">{t.modeWrite}</button>
+      <button type="button" class="modal__mode-btn" id="modal-mode-call" role="tab" aria-selected="false">{t.modeCall}</button>
+    </div>
 
     <!-- Step 1 -->
     <div class="modal__step" data-step="1">
@@ -177,6 +209,43 @@ const t = {
       </div>
     </div>
 
+    <!-- Booking: výběr termínu -->
+    <div class="modal__step" data-step="call" hidden>
+      <h2 class="modal__heading">{t.callHeading}</h2>
+      <p class="modal__call-sub">{t.callSub}</p>
+      <p class="modal__call-status" id="call-status" hidden></p>
+      <div class="modal__call-days" id="call-days" role="tablist" hidden></div>
+      <div class="modal__call-slots" id="call-slots" hidden></div>
+    </div>
+
+    <!-- Booking: údaje + potvrzení -->
+    <div class="modal__step" data-step="call-detail" hidden>
+      <p class="modal__greeting" id="call-picked"></p>
+      <h2 class="modal__heading">{t.callDetailHeading}</h2>
+      <input class="modal__input" type="text" id="call-name" name="name" placeholder={t.namePlaceholder} autocomplete="name" required aria-describedby="call-name-err" />
+      <p class="modal__error" id="call-name-err" hidden>{t.errName}</p>
+      <input class="modal__input" type="email" id="call-email" name="email" placeholder={t.emailPlaceholder} autocomplete="email" required aria-describedby="call-email-err" />
+      <p class="modal__error" id="call-email-err" hidden>{t.errEmail}</p>
+      <textarea class="modal__textarea modal__textarea--sm" id="call-note" rows="3" placeholder={t.callNotePlaceholder}></textarea>
+      <p class="modal__error" id="call-send-err" hidden>{t.errSend}</p>
+      <div class="modal__actions">
+        <button type="button" class="modal__back" id="call-back">{t.back}</button>
+        <button type="button" class="modal__btn modal__btn--primary" id="call-submit" data-label-send={t.callConfirm} data-label-sending={t.callBooking}>{t.callConfirm}</button>
+      </div>
+    </div>
+
+    <!-- Booking: hotovo -->
+    <div class="modal__step modal__step--thanks" data-step="call-thanks" hidden>
+      <div class="modal__thanks-icon">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="var(--clr-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="24" cy="24" r="22"/>
+          <path d="M14 24l7 7 13-14"/>
+        </svg>
+      </div>
+      <p class="modal__thanks-text">{t.callThanks}</p>
+      <button class="modal__btn modal__btn--outline" id="call-done">{t.close}</button>
+    </div>
+
     <!-- Thank you state -->
     <div class="modal__step modal__step--thanks" data-step="thanks" hidden>
       <div class="modal__thanks-icon">
@@ -238,6 +307,9 @@ const t = {
     if (!modal) return
     modal.removeAttribute('hidden')
     document.body.style.overflow = 'hidden'
+    // reset na výchozí režim „napište nám“
+    document.getElementById('modal-mode-write')?.classList.add('is-active')
+    document.getElementById('modal-mode-call')?.classList.remove('is-active')
     showStep(1, false)
     openedAt = Date.now()
     gsap.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' })
@@ -260,15 +332,18 @@ const t = {
   const progress = document.getElementById('modal-progress') as HTMLElement | null
   const progressFill = document.getElementById('modal-progress-fill') as HTMLElement | null
   const stepNum = document.getElementById('modal-step-num') as HTMLElement | null
-  function updateProgress(n: number | 'thanks') {
+  function updateProgress(n: number | string) {
     if (!progress) return
-    if (n === 'thanks') { progress.setAttribute('hidden', ''); return }
+    if (typeof n !== 'number') { progress.setAttribute('hidden', ''); return }
     progress.removeAttribute('hidden')
     if (stepNum) stepNum.textContent = String(n)
     if (progressFill) progressFill.style.width = `${(n / 3) * 100}%`
   }
-  function showStep(n: number | 'thanks', animate = true) {
+  function showStep(n: number | string, animate = true) {
     updateProgress(n)
+    // Přepínač režimů jen na vstupních obrazovkách
+    const modeBar = document.getElementById('modal-mode')
+    modeBar?.toggleAttribute('hidden', !(n === 1 || n === 'call'))
     steps?.forEach(el => {
       const isTarget = el.dataset.step === String(n)
       if (isTarget) {
@@ -438,6 +513,166 @@ const t = {
   closeBtn?.addEventListener('click', closeModal)
   backdrop?.addEventListener('click', closeModal)
 
+  // ── Booking (Google Calendar) ────────────────────────────────────────────
+  const modeWriteBtn = document.getElementById('modal-mode-write') as HTMLButtonElement | null
+  const modeCallBtn  = document.getElementById('modal-mode-call') as HTMLButtonElement | null
+  const callStatus = document.getElementById('call-status') as HTMLElement | null
+  const callDays   = document.getElementById('call-days') as HTMLElement | null
+  const callSlots  = document.getElementById('call-slots') as HTMLElement | null
+  const callPicked = document.getElementById('call-picked') as HTMLElement | null
+  const callName   = document.getElementById('call-name') as HTMLInputElement | null
+  const callEmail  = document.getElementById('call-email') as HTMLInputElement | null
+  const callNote   = document.getElementById('call-note') as HTMLTextAreaElement | null
+  const callNameErr  = document.getElementById('call-name-err') as HTMLElement | null
+  const callEmailErr = document.getElementById('call-email-err') as HTMLElement | null
+  const callSendErr  = document.getElementById('call-send-err') as HTMLElement | null
+  const callSubmit = document.getElementById('call-submit') as HTMLButtonElement | null
+  const callBack   = document.getElementById('call-back') as HTMLButtonElement | null
+  const callDone   = document.getElementById('call-done') as HTMLButtonElement | null
+
+  const ct = () => (isEn()
+    ? { loading: 'Loading available times…', empty: 'No open slots right now. Drop us a line instead — we’ll get back to you.', error: 'Couldn’t load available times. Try again, or write to us.', taken: 'Someone just grabbed that slot. Please pick another one.' }
+    : { loading: 'Načítám volné termíny…', empty: 'Teď nemáme volný žádný termín. Napište nám — ozveme se.', error: 'Termíny se nepodařilo načíst. Zkuste to znovu, nebo nám napište.', taken: 'Tenhle termín si někdo právě zabral. Vyberte prosím jiný.' })
+
+  type SlotDay = { date: string; slots: Array<{ start: string; label: string }> }
+  let slotDays: SlotDay[] = []
+  let slotsFetchedAt = 0
+  let selectedDay = 0
+  let selectedStart: string | null = null
+  let selectedLabel = ''
+
+  function setMode(mode: 'write' | 'call') {
+    modeWriteBtn?.classList.toggle('is-active', mode === 'write')
+    modeCallBtn?.classList.toggle('is-active', mode === 'call')
+    modeWriteBtn?.setAttribute('aria-selected', String(mode === 'write'))
+    modeCallBtn?.setAttribute('aria-selected', String(mode === 'call'))
+    if (mode === 'write') showStep(1)
+    else { showStep('call'); loadSlots() }
+  }
+  modeWriteBtn?.addEventListener('click', () => setMode('write'))
+  modeCallBtn?.addEventListener('click', () => setMode('call'))
+
+  function fmtDay(dateStr: string): string {
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const date = new Date(Date.UTC(y, m - 1, d, 12))
+    return new Intl.DateTimeFormat(isEn() ? 'en-GB' : 'cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric', timeZone: 'UTC' }).format(date)
+  }
+
+  function showCallStatus(text: string | null) {
+    if (!callStatus) return
+    if (!text) { callStatus.setAttribute('hidden', ''); return }
+    callStatus.textContent = text
+    callStatus.removeAttribute('hidden')
+  }
+
+  async function loadSlots(force = false) {
+    if (!callDays || !callSlots) return
+    if (!force && slotDays.length && Date.now() - slotsFetchedAt < 60_000) { renderDays(); return }
+    showCallStatus(ct().loading)
+    callDays.setAttribute('hidden', ''); callSlots.setAttribute('hidden', '')
+    try {
+      const res = await fetch('/api/booking')
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json()
+      slotDays = data.days ?? []
+      slotsFetchedAt = Date.now()
+      selectedDay = 0
+      if (!slotDays.length) { showCallStatus(ct().empty); return }
+      showCallStatus(null)
+      renderDays()
+    } catch {
+      showCallStatus(ct().error)
+    }
+  }
+
+  function renderDays() {
+    if (!callDays || !callSlots) return
+    if (!slotDays.length) { showCallStatus(ct().empty); return }
+    callDays.innerHTML = ''
+    slotDays.forEach((day, i) => {
+      const b = document.createElement('button')
+      b.type = 'button'
+      b.className = 'modal__day' + (i === selectedDay ? ' is-active' : '')
+      b.textContent = fmtDay(day.date)
+      b.addEventListener('click', () => { selectedDay = i; renderDays() })
+      callDays.appendChild(b)
+    })
+    callDays.removeAttribute('hidden')
+    renderSlots()
+  }
+
+  function renderSlots() {
+    if (!callSlots) return
+    callSlots.innerHTML = ''
+    const day = slotDays[selectedDay]
+    if (!day) return
+    day.slots.forEach(slot => {
+      const b = document.createElement('button')
+      b.type = 'button'
+      b.className = 'modal__slot'
+      b.textContent = slot.label
+      b.addEventListener('click', () => {
+        selectedStart = slot.start
+        selectedLabel = `${fmtDay(day.date)} · ${slot.label}`
+        if (callPicked) callPicked.textContent = selectedLabel
+        showStep('call-detail')
+        requestAnimationFrame(() => callName?.focus())
+      })
+      callSlots.appendChild(b)
+    })
+    callSlots.removeAttribute('hidden')
+  }
+
+  callBack?.addEventListener('click', () => showStep('call'))
+  callDone?.addEventListener('click', closeModal)
+  callName?.addEventListener('input', () => { if (callName.value.trim()) showErr(callNameErr, callName, false) })
+  callEmail?.addEventListener('input', () => { if (EMAIL_RE.test(callEmail.value.trim())) showErr(callEmailErr, callEmail, false) })
+
+  callSubmit?.addEventListener('click', async () => {
+    showErr(callSendErr, null, false)
+    if (!callName?.value.trim()) { showErr(callNameErr, callName, true); callName?.focus(); return }
+    showErr(callNameErr, callName, false)
+    if (!EMAIL_RE.test(callEmail?.value.trim() ?? '')) { showErr(callEmailErr, callEmail, true); callEmail?.focus(); return }
+    showErr(callEmailErr, callEmail, false)
+    if (!selectedStart) { showStep('call'); return }
+
+    const labelSend = callSubmit.dataset.labelSend ?? 'OK'
+    const labelSending = callSubmit.dataset.labelSending ?? '…'
+    callSubmit.disabled = true
+    callSubmit.textContent = labelSending
+    try {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          start: selectedStart,
+          name: callName.value.trim(),
+          email: callEmail!.value.trim(),
+          note: callNote?.value.trim() ?? '',
+          lang: isEn() ? 'en' : 'cs',
+          botcheck: botcheck?.checked ?? false,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.status === 409) {
+        // slot mezitím zabraný — zpět na výběr s čerstvými sloty
+        showStep('call')
+        await loadSlots(true)
+        showCallStatus(ct().taken)
+        return
+      }
+      if (!res.ok || !data.success) throw new Error(data.message || 'Booking failed')
+      showStep('call-thanks')
+      requestAnimationFrame(() => callDone?.focus())
+    } catch (err) {
+      console.error('[booking]', err)
+      showErr(callSendErr, null, true)
+    } finally {
+      callSubmit.disabled = false
+      callSubmit.textContent = labelSend
+    }
+  })
+
   document.querySelectorAll('[data-open-modal]').forEach(el => {
     el.addEventListener('click', (e) => { e.preventDefault(); openModal() })
   })
@@ -529,6 +764,31 @@ const t = {
 .modal__step--thanks { align-items: center; text-align: center; padding: 1rem 0 0.5rem; }
 .modal__thanks-icon { display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
 .modal__thanks-text { font-family: var(--font-display); font-size: clamp(1.35rem, 4vw, 1.75rem); font-weight: 400; letter-spacing: -0.03em; color: var(--clr-text); margin: 0 0 1.5rem; }
+
+/* ── Mode switcher (formulář × booking) ──────────────────────────────────── */
+.modal__mode { display: flex; gap: 0.25rem; padding: 0.25rem; border-radius: 999px; background: color-mix(in srgb, var(--clr-text) 6%, transparent); align-self: flex-start; }
+.modal__mode[hidden] { display: none; }
+.modal__mode-btn { padding: 0.45em 1.2em; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; color: var(--clr-muted); cursor: pointer; transition: color 0.2s, background 0.2s; }
+.modal__mode-btn:hover { color: var(--clr-text); }
+.modal__mode-btn.is-active { background: var(--clr-bg); color: var(--clr-text); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+
+/* ── Booking ─────────────────────────────────────────────────────────────── */
+.modal__call-sub { margin: -0.75rem 0 0; font-size: 0.8125rem; color: var(--clr-muted); }
+.modal__call-status { margin: 0; font-size: 0.875rem; color: var(--clr-muted); }
+.modal__call-status[hidden] { display: none; }
+.modal__call-days { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: thin; }
+.modal__call-days[hidden] { display: none; }
+.modal__day { flex-shrink: 0; padding: 0.4em 0.9em; border-radius: 999px; border: 1px solid var(--clr-border); font-size: 0.8125rem; font-weight: 500; color: var(--clr-muted); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; white-space: nowrap; }
+.modal__day:hover { border-color: var(--clr-text); color: var(--clr-text); }
+.modal__day.is-active { border-color: var(--clr-accent); background: color-mix(in srgb, var(--clr-accent) 10%, transparent); color: var(--clr-accent); }
+.modal__call-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; max-height: 14rem; overflow-y: auto; }
+.modal__call-slots[hidden] { display: none; }
+.modal__slot { padding: 0.55em 0; border-radius: 0.6rem; border: 1px solid var(--clr-border); font-size: 0.875rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--clr-text); cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s; }
+.modal__slot:hover { border-color: var(--clr-accent); background: color-mix(in srgb, var(--clr-accent) 10%, transparent); color: var(--clr-accent); }
+
+@media (max-width: 36em) {
+  .modal__call-slots { grid-template-columns: repeat(3, 1fr); }
+}
 
 /* ── Step visibility ─────────────────────────────────────────────────────── */
 .modal__step { display: flex; flex-direction: column; gap: 1rem; }
