@@ -778,13 +778,16 @@ const t = {
 .modal__call-status[hidden] { display: none; }
 .modal__call-days { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: thin; }
 .modal__call-days[hidden] { display: none; }
-.modal__day { flex-shrink: 0; padding: 0.4em 0.9em; border-radius: 999px; border: 1px solid var(--clr-border); font-size: 0.8125rem; font-weight: 500; color: var(--clr-muted); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; white-space: nowrap; }
-.modal__day:hover { border-color: var(--clr-text); color: var(--clr-text); }
-.modal__day.is-active { border-color: var(--clr-accent); background: color-mix(in srgb, var(--clr-accent) 10%, transparent); color: var(--clr-accent); }
 .modal__call-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; max-height: 14rem; overflow-y: auto; }
 .modal__call-slots[hidden] { display: none; }
-.modal__slot { padding: 0.55em 0; border-radius: 0.6rem; border: 1px solid var(--clr-border); font-size: 0.875rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--clr-text); cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s; }
-.modal__slot:hover { border-color: var(--clr-accent); background: color-mix(in srgb, var(--clr-accent) 10%, transparent); color: var(--clr-accent); }
+
+/* Dny i sloty se tvoří v JS (createElement) → nemají Astro scope atribut,
+   proto musí být pravidla global, jinak se vůbec neaplikují. */
+:global(.modal__day) { flex-shrink: 0; padding: 0.4em 0.9em; border-radius: 999px; border: 1px solid var(--clr-border); background: transparent; font-size: 0.8125rem; font-weight: 500; color: var(--clr-muted); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; white-space: nowrap; }
+:global(.modal__day:hover) { border-color: var(--clr-text); color: var(--clr-text); }
+:global(.modal__day.is-active) { border-color: var(--clr-accent); background: color-mix(in srgb, var(--clr-accent) 10%, transparent); color: var(--clr-accent); }
+:global(.modal__slot) { padding: 0.55em 0; border-radius: 0.6rem; border: 1px solid var(--clr-border); background: transparent; font-size: 0.875rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--clr-text); cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s; }
+:global(.modal__slot:hover) { border-color: var(--clr-accent); background: color-mix(in srgb, var(--clr-accent) 10%, transparent); color: var(--clr-accent); }
 
 @media (max-width: 36em) {
   .modal__call-slots { grid-template-columns: repeat(3, 1fr); }
