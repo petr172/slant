@@ -14,12 +14,29 @@ const CALENDAR_ID          = import.meta.env.GOOGLE_CALENDAR_ID ?? 'primary'
 
 // ── Pravidla bookingu ────────────────────────────────────────────────────────
 const TZ            = 'Europe/Prague'
-const WORK_START    = 9    // první slot 9:00 (lokální čas Prahy)
-const WORK_END      = 17   // poslední slot začíná před 17:00
 const SLOT_STEP_MIN = 30   // nabídka po 30 minutách
 const DURATION_MIN  = 15   // délka callu
 const LEAD_HOURS    = 12   // nejdřív za 12 h od teď
-const HORIZON_DAYS  = 14   // nabízej 14 dní dopředu
+const HORIZON_DAYS  = 21   // nabízej 3 týdny dopředu
+
+// Dostupnost podle dne v týdnu (0 = Ne … 6 = So). Zrcadlí Google
+// Appointment Schedule. Každý den = pole oken [začátekMin, konecMin]
+// (minuty od půlnoci, pražský čas). Konec = poslední slot musí skončit ≤ konec.
+const AVAILABILITY: Record<number, Array<[number, number]>> = {
+  1: [[11 * 60, 14 * 60]],                    // Po 11:00–14:00
+  3: [[9 * 60, 13 * 60], [15 * 60, 17 * 60]], // St 9:00–13:00 + 15:00–17:00
+  5: [[9 * 60, 17 * 60]],                     // Pá 9:00–17:00
+  // Út, Čt, So, Ne = zavřeno
+}
+const WEEKDAY_NUM: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+
+/** Je daný počet minut od půlnoci platný začátek slotu pro daný den v týdnu? */
+function slotAllowed(weekday: number, minsFromMidnight: number): boolean {
+  const windows = AVAILABILITY[weekday]
+  if (!windows) return false
+  if (minsFromMidnight % SLOT_STEP_MIN !== 0) return false
+  return windows.some(([s, e]) => minsFromMidnight >= s && minsFromMidnight + DURATION_MIN <= e)
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -93,10 +110,13 @@ function buildSlots(busy: Array<{ s: number; e: number }>) {
   for (let dayOffset = 0; dayOffset <= HORIZON_DAYS; dayOffset++) {
     const probe = new Date(now + dayOffset * 86400_000)
     const { y, m, d, wd } = pragueDate(probe)
-    if (wd === 'Sat' || wd === 'Sun') continue
+    const weekday = WEEKDAY_NUM[wd]
+    if (!AVAILABILITY[weekday]) continue
 
     const slots: Array<{ start: string; label: string }> = []
-    for (let mins = WORK_START * 60; mins + DURATION_MIN <= WORK_END * 60; mins += SLOT_STEP_MIN) {
+    const dayEnd = Math.max(...AVAILABILITY[weekday].map(w => w[1]))
+    for (let mins = 0; mins + DURATION_MIN <= dayEnd; mins += SLOT_STEP_MIN) {
+      if (!slotAllowed(weekday, mins)) continue
       const start = pragueTime(y, m, d, Math.floor(mins / 60), mins % 60)
       const s = start.getTime()
       const e = s + DURATION_MIN * 60_000
@@ -156,13 +176,11 @@ export const POST: APIRoute = async ({ request }) => {
   if (startMs > Date.now() + (HORIZON_DAYS + 1) * 86400_000) return json({ success: false, message: 'Slot too far' }, 400)
   const startDate = new Date(startMs)
   const { y, m, d, wd } = pragueDate(startDate)
-  if (wd === 'Sat' || wd === 'Sun') return json({ success: false, message: 'Weekend' }, 400)
   const dayStartMs = pragueTime(y, m, d, 0, 0).getTime()
   const minsFromMidnight = Math.round((startMs - dayStartMs) / 60_000)
-  const onGrid = minsFromMidnight % SLOT_STEP_MIN === 0
-    && minsFromMidnight >= WORK_START * 60
-    && minsFromMidnight + DURATION_MIN <= WORK_END * 60
-  if (!onGrid) return json({ success: false, message: 'Invalid slot' }, 400)
+  if (!slotAllowed(WEEKDAY_NUM[wd], minsFromMidnight)) {
+    return json({ success: false, message: 'Invalid slot' }, 400)
+  }
 
   const endMs = startMs + DURATION_MIN * 60_000
   try {
