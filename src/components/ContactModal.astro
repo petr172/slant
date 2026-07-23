@@ -598,8 +598,21 @@ const t = {
       callDays.appendChild(b)
     })
     callDays.removeAttribute('hidden')
+    requestAnimationFrame(updateDayFade)
     renderSlots()
   }
+
+  // Fade na krajích jen tam, kam se dá ještě scrollovat
+  function updateDayFade() {
+    if (!callDays) return
+    const { scrollLeft, scrollWidth, clientWidth } = callDays
+    const left = scrollLeft > 4
+    const right = scrollLeft + clientWidth < scrollWidth - 4
+    const mask = `linear-gradient(to right, ${left ? 'transparent' : '#000'}, #000 1.75rem, #000 calc(100% - 1.75rem), ${right ? 'transparent' : '#000'})`
+    ;(callDays.style as any).webkitMaskImage = mask
+    callDays.style.maskImage = mask
+  }
+  callDays?.addEventListener('scroll', updateDayFade, { passive: true })
 
   function renderSlots() {
     if (!callSlots) return
@@ -776,7 +789,8 @@ const t = {
 .modal__call-sub { margin: -0.75rem 0 0; font-size: 0.8125rem; color: var(--clr-muted); }
 .modal__call-status { margin: 0; font-size: 0.875rem; color: var(--clr-muted); }
 .modal__call-status[hidden] { display: none; }
-.modal__call-days { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: thin; }
+.modal__call-days { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.1rem; scrollbar-width: none; -ms-overflow-style: none; }
+.modal__call-days::-webkit-scrollbar { display: none; }
 .modal__call-days[hidden] { display: none; }
 .modal__call-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; max-height: 14rem; overflow-y: auto; }
 .modal__call-slots[hidden] { display: none; }
