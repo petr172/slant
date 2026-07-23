@@ -12,6 +12,15 @@ const GOOGLE_CLIENT_SECRET = import.meta.env.GOOGLE_CLIENT_SECRET ?? ''
 const GOOGLE_REFRESH_TOKEN = import.meta.env.GOOGLE_REFRESH_TOKEN ?? ''
 const CALENDAR_ID          = import.meta.env.GOOGLE_CALENDAR_ID ?? 'primary'
 
+// ── Resend (brandovaný potvrzovací mail; volitelné) ──────────────────────────
+const RESEND_API_KEY = import.meta.env.RESEND_API_KEY ?? ''
+const RESEND_FROM    = import.meta.env.RESEND_FROM ?? 'Slant <hello@slant.cz>'
+const CONTACT_TO     = import.meta.env.CONTACT_TO ?? 'hello@slant.cz'
+const BRAND          = '#FF5522' // = --clr-accent
+
+const esc = (s: string) => String(s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
 // ── Pravidla bookingu ────────────────────────────────────────────────────────
 const TZ            = 'Europe/Prague'
 const SLOT_STEP_MIN = 30   // nabídka po 30 minutách
@@ -150,6 +159,70 @@ export const GET: APIRoute = async () => {
   }
 }
 
+// ── E-maily ──────────────────────────────────────────────────────────────────
+/** „pátek 24. července 2026, 15:00–15:30" v pražském čase. */
+function fmtWhen(startMs: number, lang: 'cs' | 'en'): string {
+  const loc = lang === 'en' ? 'en-GB' : 'cs-CZ'
+  const date = new Intl.DateTimeFormat(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ }).format(new Date(startMs))
+  const tf = (ms: number) => new Intl.DateTimeFormat(loc, { hour: '2-digit', minute: '2-digit', timeZone: TZ, hour12: false }).format(new Date(ms))
+  return `${date}, ${tf(startMs)}–${tf(startMs + DURATION_MIN * 60_000)}`
+}
+
+function confirmEmailHtml(name: string, whenLabel: string, meetUrl: string | null, note: string, lang: 'cs' | 'en'): string {
+  const t = lang === 'en'
+    ? { hi: `Hi ${esc(name)},`, intro: 'your intro call with Slant is booked. Here are the details:', when: 'When', dur: `${DURATION_MIN} minutes · Google Meet`, join: 'Join the call', joinLead: 'The link will also be in your calendar invite:', note: 'Your note', reschedule: 'Need to reschedule? Just reply to the calendar invite or this email.', sign: 'See you soon,<br>The Slant team', tz: '(Times are in Europe/Prague.)' }
+    : { hi: `Dobrý den, ${esc(name)},`, intro: 'úvodní hovor se Slantem je zarezervovaný. Tady jsou detaily:', when: 'Kdy', dur: `${DURATION_MIN} minut · Google Meet`, join: 'Připojit se k hovoru', joinLead: 'Odkaz najdete i v kalendářové pozvánce:', note: 'Vaše poznámka', reschedule: 'Potřebujete termín přesunout? Stačí odpovědět na kalendářovou pozvánku nebo na tento e-mail.', sign: 'Těšíme se,<br>tým Slant', tz: '(Časy jsou v pásmu Europe/Prague.)' }
+  return `<!DOCTYPE html>
+<html lang="${lang}">
+<body style="margin:0;background:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 16px">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden">
+        <tr><td style="padding:40px 40px 8px">
+          <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1a1a1a">Slant</div>
+        </td></tr>
+        <tr><td style="padding:16px 40px 0">
+          <p style="margin:0 0 16px;font-size:18px;font-weight:600">${t.hi}</p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6">${t.intro}</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f7;border:1px solid #eee;border-radius:12px;margin:0 0 24px">
+            <tr><td style="padding:20px 24px">
+              <p style="margin:0 0 4px;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:#999">${t.when}</p>
+              <p style="margin:0 0 14px;font-size:16px;font-weight:600">${esc(whenLabel)}</p>
+              <p style="margin:0;font-size:14px;color:#666">${t.dur}</p>
+            </td></tr>
+          </table>
+          ${meetUrl ? `<p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#666">${t.joinLead}</p>
+          <p style="margin:0 0 24px">
+            <a href="${esc(meetUrl)}" style="display:inline-block;background:${BRAND};color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 28px;border-radius:999px">${t.join}</a>
+          </p>` : ''}
+          ${note ? `<p style="margin:0 0 4px;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:#999">${t.note}</p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;white-space:pre-wrap">${esc(note)}</p>` : ''}
+          <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#666">${t.reschedule}</p>
+          <p style="margin:0 0 4px;font-size:15px;line-height:1.6">${t.sign}</p>
+        </td></tr>
+        <tr><td style="padding:24px 40px 40px">
+          <hr style="border:none;border-top:1px solid #eee;margin:0 0 16px">
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#999">${t.tz}<br>Slant s.r.o. · Zborovská 940/2a, 616 00 Brno · <a href="https://slant.cz" style="color:#999">slant.cz</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+}
+
+async function sendEmail(payload: Record<string, unknown>) {
+  if (!RESEND_API_KEY) return
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!r.ok) console.error('[booking:email]', r.status, await r.text())
+  } catch (err) { console.error('[booking:email]', err) }
+}
+
 // ── POST /api/booking → vytvoř event + Meet ─────────────────────────────────
 interface BookPayload { start?: string; name?: string; email?: string; note?: string; lang?: string; botcheck?: boolean }
 
@@ -215,7 +288,31 @@ export const POST: APIRoute = async ({ request }) => {
     )
     if (!res.ok) throw new Error(`event create failed: ${res.status} ${await res.text()}`)
     const event = await res.json() as any
-    return json({ success: true, meetUrl: event.hangoutLink ?? null, htmlLink: event.htmlLink ?? null })
+    const meetUrl = event.hangoutLink ?? null
+
+    // Brandovaný potvrzovací mail klientovi + interní notifikace (nezablokují odpověď)
+    const whenLabel = fmtWhen(startMs, lang)
+    await Promise.allSettled([
+      sendEmail({
+        from: RESEND_FROM, to: email, reply_to: CONTACT_TO,
+        subject: lang === 'en' ? `Your call with Slant · ${whenLabel}` : `Váš hovor se Slantem · ${whenLabel}`,
+        html: confirmEmailHtml(name, whenLabel, meetUrl, note, lang),
+      }),
+      sendEmail({
+        from: RESEND_FROM, to: CONTACT_TO, reply_to: email,
+        subject: `📅 Nová rezervace: ${name} · ${whenLabel}`,
+        html: `<div style="font-family:-apple-system,sans-serif;font-size:14px;line-height:1.6;color:#1a1a1a">
+          <h2 style="margin:0 0 16px">Nová rezervace hovoru</h2>
+          <p style="margin:0 0 6px"><strong>Jméno:</strong> ${esc(name)}</p>
+          <p style="margin:0 0 6px"><strong>E-mail:</strong> <a href="mailto:${esc(email)}">${esc(email)}</a></p>
+          <p style="margin:0 0 6px"><strong>Kdy:</strong> ${esc(whenLabel)}</p>
+          ${meetUrl ? `<p style="margin:0 0 6px"><strong>Meet:</strong> <a href="${esc(meetUrl)}">${esc(meetUrl)}</a></p>` : ''}
+          ${note ? `<p style="margin:16px 0 4px"><strong>Poznámka:</strong></p><p style="margin:0;white-space:pre-wrap">${esc(note)}</p>` : ''}
+        </div>`,
+      }),
+    ])
+
+    return json({ success: true, meetUrl, htmlLink: event.htmlLink ?? null })
   } catch (err) {
     console.error('[booking:POST]', err)
     return json({ success: false, message: 'Booking failed' }, 502)
