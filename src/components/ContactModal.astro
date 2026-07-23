@@ -123,8 +123,8 @@ const t = {
 
     <!-- Přepínač: formulář × booking -->
     <div class="modal__mode" id="modal-mode" role="tablist" aria-label="Kontakt">
-      <button type="button" class="modal__mode-btn is-active" id="modal-mode-write" role="tab" aria-selected="true">{t.modeWrite}</button>
-      <button type="button" class="modal__mode-btn" id="modal-mode-call" role="tab" aria-selected="false">{t.modeCall}</button>
+      <button type="button" class="modal__mode-btn is-active" id="modal-mode-call" role="tab" aria-selected="true">{t.modeCall}</button>
+      <button type="button" class="modal__mode-btn" id="modal-mode-write" role="tab" aria-selected="false">{t.modeWrite}</button>
     </div>
 
     <!-- Step 1 -->
@@ -307,14 +307,11 @@ const t = {
     if (!modal) return
     modal.removeAttribute('hidden')
     document.body.style.overflow = 'hidden'
-    // reset na výchozí režim „napište nám“
-    document.getElementById('modal-mode-write')?.classList.add('is-active')
-    document.getElementById('modal-mode-call')?.classList.remove('is-active')
-    showStep(1, false)
     openedAt = Date.now()
+    // Výchozí režim = rezervace callu; formulář je druhý tab
+    setMode('call')
     gsap.fromTo(backdrop, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' })
     gsap.fromTo(dialog, { opacity: 0, y: 30, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: 'power3.out', delay: 0.05 })
-    requestAnimationFrame(() => nameInput?.focus())
     document.addEventListener('keydown', handleKey)
   }
   function closeModal() {
