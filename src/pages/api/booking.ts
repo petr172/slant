@@ -15,7 +15,7 @@ const CALENDAR_ID          = import.meta.env.GOOGLE_CALENDAR_ID ?? 'primary'
 // ── Pravidla bookingu ────────────────────────────────────────────────────────
 const TZ            = 'Europe/Prague'
 const SLOT_STEP_MIN = 30   // nabídka po 30 minutách
-const DURATION_MIN  = 15   // délka callu
+const DURATION_MIN  = 30   // délka callu
 const LEAD_HOURS    = 12   // nejdřív za 12 h od teď
 const HORIZON_DAYS  = 21   // nabízej 3 týdny dopředu
 
@@ -193,7 +193,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const summary = lang === 'en' ? `Discovery call — ${name} × Slant` : `Discovery call — ${name} × Slant`
     const description = [
-      lang === 'en' ? '15-minute intro call booked via slant.cz.' : '15minutový úvodní hovor rezervovaný přes slant.cz.',
+      lang === 'en' ? '30-minute intro call booked via slant.cz.' : '30minutový úvodní hovor rezervovaný přes slant.cz.',
       note ? `\n${lang === 'en' ? 'Note' : 'Poznámka'}: ${note}` : '',
     ].join('')
 
