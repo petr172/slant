@@ -214,6 +214,7 @@ const t = {
       <h2 class="modal__heading">{t.callHeading}</h2>
       <p class="modal__call-sub">{t.callSub}</p>
       <p class="modal__call-status" id="call-status" hidden></p>
+      <button type="button" class="modal__btn modal__btn--outline modal__call-fallback" id="call-fallback" hidden>{t.modeWrite}</button>
       <div class="modal__call-days" id="call-days" role="tablist" hidden></div>
       <div class="modal__call-slots" id="call-slots" hidden></div>
     </div>
@@ -261,7 +262,7 @@ const t = {
     <!-- Progress (bottom) -->
     <div class="modal__progress" id="modal-progress">
       <div class="modal__progress-track"><span class="modal__progress-fill" id="modal-progress-fill"></span></div>
-      <span class="modal__progress-count"><span id="modal-step-num">1</span>/3</span>
+      <span class="modal__progress-count"><span id="modal-step-num">1</span>/<span id="modal-step-total">3</span></span>
     </div>
   </div>
 </div>
@@ -329,12 +330,21 @@ const t = {
   const progress = document.getElementById('modal-progress') as HTMLElement | null
   const progressFill = document.getElementById('modal-progress-fill') as HTMLElement | null
   const stepNum = document.getElementById('modal-step-num') as HTMLElement | null
+  const stepTotal = document.getElementById('modal-step-total') as HTMLElement | null
+  // Pozice kroku v progressu: [aktuální, celkem]. Formulář = 3 kroky, booking = 2.
+  const STEP_META: Record<string, [number, number]> = {
+    '1': [1, 3], '2': [2, 3], '3': [3, 3],
+    'call': [1, 2], 'call-detail': [2, 2],
+  }
   function updateProgress(n: number | string) {
     if (!progress) return
-    if (typeof n !== 'number') { progress.setAttribute('hidden', ''); return }
+    const meta = STEP_META[String(n)]
+    if (!meta) { progress.setAttribute('hidden', ''); return }  // thanks / call-thanks
+    const [cur, total] = meta
     progress.removeAttribute('hidden')
-    if (stepNum) stepNum.textContent = String(n)
-    if (progressFill) progressFill.style.width = `${(n / 3) * 100}%`
+    if (stepNum) stepNum.textContent = String(cur)
+    if (stepTotal) stepTotal.textContent = String(total)
+    if (progressFill) progressFill.style.width = `${(cur / total) * 100}%`
   }
   function showStep(n: number | string, animate = true) {
     updateProgress(n)
@@ -514,6 +524,7 @@ const t = {
   const modeWriteBtn = document.getElementById('modal-mode-write') as HTMLButtonElement | null
   const modeCallBtn  = document.getElementById('modal-mode-call') as HTMLButtonElement | null
   const callStatus = document.getElementById('call-status') as HTMLElement | null
+  const callFallback = document.getElementById('call-fallback') as HTMLButtonElement | null
   const callDays   = document.getElementById('call-days') as HTMLElement | null
   const callSlots  = document.getElementById('call-slots') as HTMLElement | null
   const callPicked = document.getElementById('call-picked') as HTMLElement | null
@@ -555,12 +566,15 @@ const t = {
     return new Intl.DateTimeFormat(isEn() ? 'en-GB' : 'cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric', timeZone: 'UTC' }).format(date)
   }
 
-  function showCallStatus(text: string | null) {
-    if (!callStatus) return
-    if (!text) { callStatus.setAttribute('hidden', ''); return }
-    callStatus.textContent = text
-    callStatus.removeAttribute('hidden')
+  function showCallStatus(text: string | null, showFallback = false) {
+    if (callStatus) {
+      if (!text) callStatus.setAttribute('hidden', '')
+      else { callStatus.textContent = text; callStatus.removeAttribute('hidden') }
+    }
+    callFallback?.toggleAttribute('hidden', !(text && showFallback))
   }
+  // „Napište nám“ z prázdného/chybového stavu → přepne na formulář (krok 1)
+  callFallback?.addEventListener('click', () => setMode('write'))
 
   async function loadSlots(force = false) {
     if (!callDays || !callSlots) return
@@ -574,17 +588,17 @@ const t = {
       slotDays = data.days ?? []
       slotsFetchedAt = Date.now()
       selectedDay = 0
-      if (!slotDays.length) { showCallStatus(ct().empty); return }
+      if (!slotDays.length) { showCallStatus(ct().empty, true); return }
       showCallStatus(null)
       renderDays()
     } catch {
-      showCallStatus(ct().error)
+      showCallStatus(ct().error, true)
     }
   }
 
   function renderDays() {
     if (!callDays || !callSlots) return
-    if (!slotDays.length) { showCallStatus(ct().empty); return }
+    if (!slotDays.length) { showCallStatus(ct().empty, true); return }
     callDays.innerHTML = ''
     slotDays.forEach((day, i) => {
       const b = document.createElement('button')
@@ -786,6 +800,8 @@ const t = {
 .modal__call-sub { margin: -0.75rem 0 0; font-size: 0.8125rem; color: var(--clr-muted); }
 .modal__call-status { margin: 0; font-size: 0.875rem; color: var(--clr-muted); }
 .modal__call-status[hidden] { display: none; }
+.modal__call-fallback { align-self: flex-start; margin-top: 0.25rem; }
+.modal__call-fallback[hidden] { display: none; }
 .modal__call-days { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.1rem; scrollbar-width: none; -ms-overflow-style: none; }
 .modal__call-days::-webkit-scrollbar { display: none; }
 .modal__call-days[hidden] { display: none; }
