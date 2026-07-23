@@ -4,10 +4,10 @@ import type { APIRoute } from 'astro'
 export const prerender = false
 
 const RESEND_API_KEY = import.meta.env.RESEND_API_KEY ?? ''
-// Odesílatel — musí být na ověřené doméně v Resend (např. "Slant <hello@slant.cz>")
-const RESEND_FROM = import.meta.env.RESEND_FROM ?? 'Slant <hello@slant.cz>'
+// Odesílatel — musí být na ověřené doméně v Resend (např. "Slant <petr@slant.cz>")
+const RESEND_FROM = import.meta.env.RESEND_FROM ?? 'Slant <petr@slant.cz>'
 // Interní příjemce notifikací o nových poptávkách
-const CONTACT_TO = import.meta.env.CONTACT_TO ?? 'hello@slant.cz'
+const CONTACT_TO = import.meta.env.CONTACT_TO ?? 'petr@slant.cz'
 // Google Workspace Appointment Schedules — veřejný booking odkaz
 const BOOKING_URL = import.meta.env.BOOKING_URL ?? 'https://calendar.app.google/'
 // Cloudflare Turnstile — server-side secret (pokud prázdné, ověření se přeskočí)

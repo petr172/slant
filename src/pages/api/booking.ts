@@ -14,8 +14,8 @@ const CALENDAR_ID          = import.meta.env.GOOGLE_CALENDAR_ID ?? 'primary'
 
 // ── Resend (brandovaný potvrzovací mail; volitelné) ──────────────────────────
 const RESEND_API_KEY = import.meta.env.RESEND_API_KEY ?? ''
-const RESEND_FROM    = import.meta.env.RESEND_FROM ?? 'Slant <hello@slant.cz>'
-const CONTACT_TO     = import.meta.env.CONTACT_TO ?? 'hello@slant.cz'
+const RESEND_FROM    = import.meta.env.RESEND_FROM ?? 'Slant <petr@slant.cz>'
+const CONTACT_TO     = import.meta.env.CONTACT_TO ?? 'petr@slant.cz'
 const BRAND          = '#FF5522' // = --clr-accent
 
 const esc = (s: string) => String(s)
@@ -203,9 +203,9 @@ function confirmEmailHtml(name: string, whenLabel: string, meetUrl: string | nul
         <tr><td style="padding:24px 40px 40px">
           <hr style="border:none;border-top:1px solid #eee;margin:0 0 16px">
           <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#666">${t.reach}<br>
-            <a href="mailto:hello@slant.cz" style="color:${BRAND};text-decoration:none;font-weight:600">hello@slant.cz</a>
+            <a href="mailto:petr@slant.cz" style="color:${BRAND};text-decoration:none;font-weight:600">petr@slant.cz</a>
             &nbsp;·&nbsp;
-            <a href="tel:+420774252025" style="color:${BRAND};text-decoration:none;font-weight:600">+420 774 252 025</a>
+            <a href="tel:+420605437045" style="color:${BRAND};text-decoration:none;font-weight:600">+420 605 437 045</a>
           </p>
           <p style="margin:0;font-size:12px;line-height:1.5;color:#999">${t.tz}<br>Slant s.r.o. · Zborovská 940/2a, 616 00 Brno · <a href="https://slant.cz" style="color:#999">slant.cz</a></p>
         </td></tr>
