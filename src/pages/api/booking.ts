@@ -170,8 +170,8 @@ function fmtWhen(startMs: number, lang: 'cs' | 'en'): string {
 
 function confirmEmailHtml(name: string, whenLabel: string, meetUrl: string | null, note: string, lang: 'cs' | 'en'): string {
   const t = lang === 'en'
-    ? { hi: `Hi ${esc(name)},`, intro: 'your intro call with Slant is booked. Here are the details:', when: 'When', dur: `${DURATION_MIN} minutes · Google Meet`, join: 'Join the call', joinLead: 'The link will also be in your calendar invite:', note: 'Your note', reschedule: 'Need to reschedule? Just reply to the calendar invite or this email.', sign: 'See you soon,<br>The Slant team', tz: '(Times are in Europe/Prague.)' }
-    : { hi: `Dobrý den, ${esc(name)},`, intro: 'úvodní hovor se Slantem je zarezervovaný. Tady jsou detaily:', when: 'Kdy', dur: `${DURATION_MIN} minut · Google Meet`, join: 'Připojit se k hovoru', joinLead: 'Odkaz najdete i v kalendářové pozvánce:', note: 'Vaše poznámka', reschedule: 'Potřebujete termín přesunout? Stačí odpovědět na kalendářovou pozvánku nebo na tento e-mail.', sign: 'Těšíme se,<br>tým Slant', tz: '(Časy jsou v pásmu Europe/Prague.)' }
+    ? { hi: `Hi ${esc(name)},`, intro: 'your intro call with Slant is booked. Here are the details:', when: 'When', dur: `${DURATION_MIN} minutes · Google Meet`, join: 'Join the call', joinLead: 'The link will also be in your calendar invite:', note: 'Your note', reschedule: 'Need to reschedule? Just reply to the calendar invite or this email.', sign: 'See you soon,<br>The Slant team', reach: 'Questions? Reach us anytime:', tz: '(Times are in Europe/Prague.)' }
+    : { hi: `Dobrý den, ${esc(name)},`, intro: 'úvodní hovor se Slantem je zarezervovaný. Tady jsou detaily:', when: 'Kdy', dur: `${DURATION_MIN} minut · Google Meet`, join: 'Připojit se k hovoru', joinLead: 'Odkaz najdete i v kalendářové pozvánce:', note: 'Vaše poznámka', reschedule: 'Potřebujete termín přesunout? Stačí odpovědět na kalendářovou pozvánku nebo na tento e-mail.', sign: 'Těšíme se,<br>tým Slant', reach: 'Máte otázku? Ozvěte se nám kdykoliv:', tz: '(Časy jsou v pásmu Europe/Prague.)' }
   return `<!DOCTYPE html>
 <html lang="${lang}">
 <body style="margin:0;background:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a">
@@ -179,7 +179,7 @@ function confirmEmailHtml(name: string, whenLabel: string, meetUrl: string | nul
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden">
         <tr><td style="padding:40px 40px 8px">
-          <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1a1a1a">Slant</div>
+          <img src="https://slant.cz/email-logo-slant.png" alt="Slant" width="110" height="34" style="display:block;border:0;height:34px;width:auto">
         </td></tr>
         <tr><td style="padding:16px 40px 0">
           <p style="margin:0 0 16px;font-size:18px;font-weight:600">${t.hi}</p>
@@ -202,6 +202,11 @@ function confirmEmailHtml(name: string, whenLabel: string, meetUrl: string | nul
         </td></tr>
         <tr><td style="padding:24px 40px 40px">
           <hr style="border:none;border-top:1px solid #eee;margin:0 0 16px">
+          <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#666">${t.reach}<br>
+            <a href="mailto:hello@slant.cz" style="color:${BRAND};text-decoration:none;font-weight:600">hello@slant.cz</a>
+            &nbsp;·&nbsp;
+            <a href="tel:+420774252025" style="color:${BRAND};text-decoration:none;font-weight:600">+420 774 252 025</a>
+          </p>
           <p style="margin:0;font-size:12px;line-height:1.5;color:#999">${t.tz}<br>Slant s.r.o. · Zborovská 940/2a, 616 00 Brno · <a href="https://slant.cz" style="color:#999">slant.cz</a></p>
         </td></tr>
       </table>
