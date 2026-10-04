@@ -7,3 +7,4 @@ dist/
 # Local design assets (never deploy)
 Assets/
 .astro/
+_archiv/
