@@ -159,6 +159,7 @@ export const CASE_STUDY_BY_SLUG_QUERY = `
     gallery[] {
       image,
       videoUrl,
+      size,
       alt,
       caption
     },

@@ -143,13 +143,29 @@ export const caseStudy = defineType({
           fields: [
             defineField({ name: 'image', title: 'Obrázek', type: 'image', options: { hotspot: true } }),
             defineField({ name: 'videoUrl', title: 'Video (cesta/URL k .mp4)', type: 'string', description: 'Vyplň pro video. Obrázek výše pak slouží jako poster.' }),
+            defineField({
+              name: 'size',
+              title: 'Velikost v galerii',
+              type: 'string',
+              description: 'Jak velký blok obrázek zabере. „Půlka" se skládá po dvou vedle sebe.',
+              options: {
+                list: [
+                  { title: '◼︎ Full-bleed (přes celou šířku okna)', value: 'full' },
+                  { title: '▭ Široký (šířka obsahu)', value: 'wide' },
+                  { title: '◧ Půlka (dva vedle sebe)', value: 'half' },
+                ],
+                layout: 'radio',
+              },
+              initialValue: 'wide',
+            }),
             defineField({ name: 'alt', title: 'Alt text', type: 'string' }),
             defineField({ name: 'caption', title: 'Popisek', type: 'string' }),
           ],
           preview: {
-            select: { media: 'image', alt: 'alt', videoUrl: 'videoUrl' },
-            prepare({ media, alt, videoUrl }) {
-              return { title: alt || (videoUrl ? 'Video' : 'Obrázek'), subtitle: videoUrl ? '🎬 video' : '🖼 obrázek', media }
+            select: { media: 'image', alt: 'alt', videoUrl: 'videoUrl', size: 'size' },
+            prepare({ media, alt, videoUrl, size }) {
+              const sz = size === 'full' ? '◼︎ full' : size === 'half' ? '◧ půlka' : '▭ široký'
+              return { title: alt || (videoUrl ? 'Video' : 'Obrázek'), subtitle: `${videoUrl ? '🎬' : '🖼'} · ${sz}`, media }
             },
           },
         },

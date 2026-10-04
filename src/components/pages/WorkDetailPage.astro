@@ -32,10 +32,31 @@ const galleryItems = (cs?.gallery ?? []).map((g: any) => {
   const thumb = g.image ? urlFor(g.image).width(900).fit('max').format('webp').quality(82).url() : undefined
   const full  = g.image ? urlFor(g.image).width(1600).fit('max').format('webp').quality(85).url() : undefined
   const { w, h } = dimsFromRef(g.image?.asset?._ref)
+  const size = ['full', 'wide', 'half'].includes(g.size) ? g.size : 'wide'
   return g.videoUrl
-    ? { type: 'video', src: g.videoUrl, thumb, alt: g.alt ?? '', w, h }
-    : { type: 'image', src: full, thumb, alt: g.alt ?? '', w, h }
+    ? { type: 'video', src: g.videoUrl, thumb, alt: g.alt ?? '', w, h, size }
+    : { type: 'image', src: full, thumb, alt: g.alt ?? '', w, h, size }
 }).filter((g: any) => g.src || g.thumb)
+
+// Editoriální skládání: full = vlastní full-bleed řádek, wide = vlastní řádek v šířce
+// obsahu, half = dva vedle sebe. Držíme původní index kvůli lightboxu.
+type GalleryEntry = (typeof galleryItems)[number] & { idx: number }
+const galleryRows: Array<{ kind: 'full' | 'wide' | 'pair'; items: GalleryEntry[] }> = []
+{
+  let i = 0
+  const withIdx: GalleryEntry[] = galleryItems.map((it: any, idx: number) => ({ ...it, idx }))
+  while (i < withIdx.length) {
+    const it = withIdx[i]
+    if (it.size === 'half') {
+      const pair = [it]
+      if (withIdx[i + 1]?.size === 'half') { pair.push(withIdx[i + 1]); i++ }
+      galleryRows.push({ kind: 'pair', items: pair })
+    } else {
+      galleryRows.push({ kind: it.size === 'full' ? 'full' : 'wide', items: [it] })
+    }
+    i++
+  }
+}
 
 // Prev / next — kruhově (infinite): z prvního doleva = poslední, z posledního doprava = první
 const navIdx  = allNav.findIndex(p => p.slug === slug)
@@ -185,24 +206,33 @@ const caseStudyLd = {
         )}
       </header>
 
-      {galleryItems.length > 0 && (
-        <section class="cs-gallery container">
-          <div class="cs-gallery__grid" id="cs-gallery-grid">
-            {galleryItems.map((item, i) => (
-              <button class="cs-gallery__item" type="button" data-lightbox-index={i} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
-                {item.type === 'video' ? (
-                  <video class="cs-gallery__media" src={item.src} poster={item.thumb} width={item.w} height={item.h} autoplay loop muted playsinline preload="metadata"></video>
-                ) : (
-                  <img class="cs-gallery__media" src={item.thumb} alt={item.alt} width={item.w} height={item.h} loading="lazy" />
-                )}
-                <span class="cs-gallery__zoom" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/>
-                  </svg>
-                </span>
-              </button>
-            ))}
-          </div>
+      {galleryRows.length > 0 && (
+        <section class="cs-gallery" id="cs-gallery-grid">
+          {galleryRows.map((row) => {
+            const isFull = row.kind === 'full'
+            const itemSize = row.kind === 'pair' ? 'half' : row.kind
+            const rowClass = isFull
+              ? 'cs-gallery__row cs-gallery__row--full'
+              : `cs-gallery__row container${row.kind === 'pair' ? ' cs-gallery__row--pair' : ''}`
+            return (
+              <div class={rowClass}>
+                {row.items.map((item) => (
+                  <button class={`cs-gallery__item cs-gallery__item--${itemSize}`} type="button" data-lightbox-index={item.idx} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
+                    {item.type === 'video' ? (
+                      <video class="cs-gallery__media" src={item.src} poster={item.thumb} width={item.w} height={item.h} autoplay loop muted playsinline preload="metadata"></video>
+                    ) : (
+                      <img class="cs-gallery__media" src={item.thumb} alt={item.alt} width={item.w} height={item.h} loading="lazy" />
+                    )}
+                    <span class="cs-gallery__zoom" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/>
+                      </svg>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )
+          })}
         </section>
       )}
 
@@ -637,31 +667,39 @@ const caseStudyLd = {
 /* ── Gallery ─────────────────────────────────────────────────────────── */
 .cs-gallery { padding-block: var(--sp-2xl); }
 /* Masonry přes CSS columns — dlaždice si drží přirozený poměr fotky */
-.cs-gallery__grid {
-  column-count: 3;
-  column-gap: var(--sp-sm);
+/* Editoriální skládání: řádky full-bleed / šířka obsahu / dvojice */
+.cs-gallery__row { margin-bottom: var(--sp-sm); }
+/* Full-bleed: vylom z šířky obsahu na celé okno (bez vodorovného scrollu) */
+.cs-gallery__row--full {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+}
+.cs-gallery__row--pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-sm);
+  align-items: start;
 }
 .cs-gallery__item {
   position: relative;
   display: block;
   width: 100%;
+  margin: 0;
   padding: 0;
   border: none;
   border-radius: var(--radius-md);
   overflow: hidden;
-  margin-bottom: var(--sp-sm);
-  break-inside: avoid;           /* dlaždice se nerozdělí mezi sloupce */
   background: var(--clr-surface);
   cursor: pointer;
 }
+.cs-gallery__item--full { border-radius: 0; }  /* full-bleed = bez zaoblení */
 .cs-gallery__media {
   width: 100%;
   height: auto;                  /* přirozená výška = respektuje poměr stran */
   display: block;
   transition: filter 0.4s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
 }
-.cs-gallery__item:hover .cs-gallery__media { transform: scale(1.03); }
-.cs-gallery__item:hover .cs-gallery__media { filter: brightness(1.06); }
+.cs-gallery__item:hover .cs-gallery__media { transform: scale(1.03); filter: brightness(1.06); }
 .cs-gallery__zoom {
   position: absolute;
   top: 0.6rem;
@@ -683,16 +721,14 @@ const caseStudyLd = {
 .cs-gallery__item:hover .cs-gallery__zoom { opacity: 1; transform: scale(1); }
 
 /* Skryto jen když převezme GSAP reveal (js-anim). Bez JS = plně viditelné. */
-.cs-gallery__grid.js-anim .cs-gallery__item {
+.cs-gallery.js-anim .cs-gallery__item {
   opacity: 0;
   will-change: transform, opacity;
 }
 
-@media (max-width: 48em) {
-  .cs-gallery__grid { column-count: 2; }
-}
-@media (max-width: 30em) {
-  .cs-gallery__grid { column-count: 1; }
+/* Na mobilu se dvojice složí pod sebe */
+@media (max-width: 40em) {
+  .cs-gallery__row--pair { grid-template-columns: 1fr; }
 }
 
 /* ── Lightbox ────────────────────────────────────────────────────────── */
