@@ -23,12 +23,18 @@ const brief  = lang === 'en' ? (cs?.briefEn    || cs?.brief)    : cs?.brief
 const result = lang === 'en' ? (cs?.vysledekEn || cs?.vysledek) : cs?.vysledek
 
 // Gallery — z Sanity: každá položka je obrázek nebo video
+// Přirozené rozměry z asset refu (image-<id>-<w>x<h>-<ext>) → rezervace výšky, bez CLS
+const dimsFromRef = (ref?: string): { w: number; h: number } => {
+  const m = /-(\d+)x(\d+)-/.exec(ref ?? '')
+  return m ? { w: Number(m[1]), h: Number(m[2]) } : { w: 1600, h: 1000 }
+}
 const galleryItems = (cs?.gallery ?? []).map((g: any) => {
   const thumb = g.image ? urlFor(g.image).width(900).fit('max').format('webp').quality(82).url() : undefined
   const full  = g.image ? urlFor(g.image).width(1600).fit('max').format('webp').quality(85).url() : undefined
+  const { w, h } = dimsFromRef(g.image?.asset?._ref)
   return g.videoUrl
-    ? { type: 'video', src: g.videoUrl, thumb, alt: g.alt ?? '' }
-    : { type: 'image', src: full, thumb, alt: g.alt ?? '' }
+    ? { type: 'video', src: g.videoUrl, thumb, alt: g.alt ?? '', w, h }
+    : { type: 'image', src: full, thumb, alt: g.alt ?? '', w, h }
 }).filter((g: any) => g.src || g.thumb)
 
 // Prev / next — kruhově (infinite): z prvního doleva = poslední, z posledního doprava = první
@@ -185,9 +191,9 @@ const caseStudyLd = {
             {galleryItems.map((item, i) => (
               <button class="cs-gallery__item" type="button" data-lightbox-index={i} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
                 {item.type === 'video' ? (
-                  <video class="cs-gallery__media" src={item.src} poster={item.thumb} autoplay loop muted playsinline preload="metadata"></video>
+                  <video class="cs-gallery__media" src={item.src} poster={item.thumb} width={item.w} height={item.h} autoplay loop muted playsinline preload="metadata"></video>
                 ) : (
-                  <img class="cs-gallery__media" src={item.thumb} alt={item.alt} loading="lazy" />
+                  <img class="cs-gallery__media" src={item.thumb} alt={item.alt} width={item.w} height={item.h} loading="lazy" />
                 )}
                 <span class="cs-gallery__zoom" aria-hidden="true">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -351,26 +357,6 @@ const caseStudyLd = {
                   })
                 },
                 once: true,
-              })
-
-              // Parallax média uvnitř dlaždice — vyhlazený scrub, jen transform
-              items.forEach((item) => {
-                const media = item.querySelector('.cs-gallery__media')
-                if (!media) return
-                gsap.fromTo(media,
-                  { yPercent: -5, scale: 1.12 },
-                  {
-                    yPercent: 5,
-                    scale: 1.12,
-                    ease: 'none',
-                    scrollTrigger: {
-                      trigger: item,
-                      start: 'top bottom',
-                      end: 'bottom top',
-                      scrub: 0.6,
-                    },
-                  }
-                )
               })
 
               ScrollTrigger.refresh()
@@ -650,32 +636,31 @@ const caseStudyLd = {
 
 /* ── Gallery ─────────────────────────────────────────────────────────── */
 .cs-gallery { padding-block: var(--sp-2xl); }
+/* Masonry přes CSS columns — dlaždice si drží přirozený poměr fotky */
 .cs-gallery__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-sm);
+  column-count: 3;
+  column-gap: var(--sp-sm);
 }
 .cs-gallery__item {
   position: relative;
   display: block;
+  width: 100%;
   padding: 0;
   border: none;
   border-radius: var(--radius-md);
   overflow: hidden;
-  aspect-ratio: 4 / 5;
+  margin-bottom: var(--sp-sm);
+  break-inside: avoid;           /* dlaždice se nerozdělí mezi sloupce */
   background: var(--clr-surface);
   cursor: pointer;
 }
 .cs-gallery__media {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;                  /* přirozená výška = respektuje poměr stran */
   display: block;
-  will-change: transform;
-  transition: filter 0.4s var(--ease-out-expo);
-  /* Parallax + base scale 1.12 řídí GSAP (js-parallax). Bez JS = statické. */
-  transform: scale(1.12);
+  transition: filter 0.4s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
 }
+.cs-gallery__item:hover .cs-gallery__media { transform: scale(1.03); }
 .cs-gallery__item:hover .cs-gallery__media { filter: brightness(1.06); }
 .cs-gallery__zoom {
   position: absolute;
@@ -704,7 +689,10 @@ const caseStudyLd = {
 }
 
 @media (max-width: 48em) {
-  .cs-gallery__grid { grid-template-columns: repeat(2, 1fr); }
+  .cs-gallery__grid { column-count: 2; }
+}
+@media (max-width: 30em) {
+  .cs-gallery__grid { column-count: 1; }
 }
 
 /* ── Lightbox ────────────────────────────────────────────────────────── */

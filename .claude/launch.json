@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd '/Users/petermojzisek/Library/CloudStorage/GoogleDrive-petr@slant.cz/.shortcut-targets-by-id/1UIS9vwywxHUb9ExofUnJPZdsRoqr0oEK/slant/marketing/slant-web' && npm run dev -- --port 4399"],
+      "port": 4399
+    }
+  ]
+}
