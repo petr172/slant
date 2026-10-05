@@ -166,7 +166,15 @@ export const CASE_STUDY_BY_SLUG_QUERY = `
       caption,
       body, bodyEn,
       "lottieUrl": coalesce(file.asset->url, url),
-      ratio, loop, autoplay, bg
+      ratio, loop, autoplay, bg,
+      // galleryRow (nový model)
+      layout,
+      items[] {
+        _type, _key,
+        image, videoUrl, alt, caption,
+        "lottieUrl": coalesce(file.asset->url, url),
+        ratio, loop, autoplay, bg
+      }
     },
     sections[] {
       heading, headingEn,

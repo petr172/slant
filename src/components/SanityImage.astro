@@ -38,7 +38,8 @@ const {
   style,
 } = Astro.props
 
-if (!image) return
+// Prázdný slot (obrázek bez nahraného assetu) → nic nevykresluj (jinak urlFor spadne)
+if (!image?.asset) return
 
 // Výchozí aspect ratio 3:2 pokud není height zadán
 const displayHeight = height ?? Math.round(width * (2 / 3))

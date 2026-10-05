@@ -34,57 +34,82 @@ const ratioToPct = (r?: string): number => {
   return m ? (Number(m[2]) / Number(m[1])) * 100 : 56.25 // default 16:9
 }
 
-// Média (obrázky/videa) pro lightbox — jen tyto bloky mají lightbox index
+// Média (obrázky/videa) pro lightbox — jen tyto bloky mají lightbox index.
+// Lightbox dostane média v pořadí, v jakém se v dokumentu objeví.
 let mediaIdx = 0
-const entries = (cs?.gallery ?? []).map((g: any) => {
-  if (g._type === 'galleryText') {
-    const body = lang === 'en' && g.bodyEn?.length ? g.bodyEn : g.body
-    if (!body?.length) return null
-    return { kind: 'text', size: sizeOf(g.size, ['full', 'wide']), body }
-  }
-  if (g._type === 'galleryLottie') {
-    if (!g.lottieUrl) return null
-    return {
-      kind: 'lottie', size: sizeOf(g.size),
-      src: `/api/lottie?u=${encodeURIComponent(g.lottieUrl)}`, pt: ratioToPct(g.ratio),
-      loop: g.loop !== false, autoplay: g.autoplay !== false,
-      bg: g.bg || 'transparent', alt: g.alt ?? '',
-    }
-  }
-  // galleryItem (default)
-  const thumb = g.image ? urlFor(g.image).width(900).fit('max').format('webp').quality(82).url() : undefined
-  const full  = g.image ? urlFor(g.image).width(1600).fit('max').format('webp').quality(85).url() : undefined
-  if (!g.videoUrl && !thumb) return null
-  const { w, h } = dimsFromRef(g.image?.asset?._ref)
-  const media = g.videoUrl
-    ? { kind: 'media', type: 'video', src: g.videoUrl, thumb, alt: g.alt ?? '', w, h, size: sizeOf(g.size), lbIndex: mediaIdx }
-    : { kind: 'media', type: 'image', src: full, thumb, alt: g.alt ?? '', w, h, size: sizeOf(g.size), lbIndex: mediaIdx }
-  mediaIdx++
-  return media
-}).filter(Boolean) as any[]
+const galleryItems: Array<{ type: string; src: string; thumb?: string; alt: string }> = []
 
-// Lightbox dostane jen média, ve stejném pořadí
-const galleryItems = entries
-  .filter((e) => e.kind === 'media')
-  .map((e) => ({ type: e.type, src: e.src, thumb: e.thumb, alt: e.alt }))
-
-// Editoriální skládání: full = vlastní full-bleed řádek, wide = řádek v šířce obsahu,
-// half = dva vedle sebe (párují se sousední „half" bez ohledu na typ bloku).
-const galleryRows: Array<{ kind: 'full' | 'wide' | 'pair'; items: any[] }> = []
-{
-  let i = 0
-  while (i < entries.length) {
-    const it = entries[i]
-    if (it.size === 'half') {
-      const pair = [it]
-      if (entries[i + 1]?.size === 'half') { pair.push(entries[i + 1]); i++ }
-      galleryRows.push({ kind: 'pair', items: pair })
-    } else {
-      galleryRows.push({ kind: it.size === 'full' ? 'full' : 'wide', items: [it] })
-    }
-    i++
+const resolveMedia = (m: any) => {
+  const hasImg = !!m.image?.asset
+  const thumb = hasImg ? urlFor(m.image).width(900).fit('max').format('webp').quality(82).url() : undefined
+  const full  = hasImg ? urlFor(m.image).width(1600).fit('max').format('webp').quality(85).url() : undefined
+  if (!m.videoUrl && !thumb) return null
+  const { w, h } = dimsFromRef(m.image?.asset?._ref)
+  const type = m.videoUrl ? 'video' : 'image'
+  const src  = m.videoUrl || full
+  const lbIndex = mediaIdx++
+  galleryItems.push({ type, src, thumb, alt: m.alt ?? '' })
+  return { kind: 'media', type, src, thumb, alt: m.alt ?? '', w, h, lbIndex }
+}
+const resolveLottie = (l: any) => {
+  if (!l.lottieUrl) return null
+  return {
+    kind: 'lottie', src: `/api/lottie?u=${encodeURIComponent(l.lottieUrl)}`, pt: ratioToPct(l.ratio),
+    loop: l.loop !== false, autoplay: l.autoplay !== false, bg: l.bg || 'transparent', alt: l.alt ?? '',
   }
 }
+
+// Zvolený preset zkoriguj podle skutečného počtu položek (ať se nic „nerozsype").
+const normLayout = (layout: any, n: number): string => {
+  let l = ['single', 'full', 'two', 'three', 'big-left', 'big-right'].includes(layout) ? layout : 'single'
+  if ((l === 'big-left' || l === 'big-right' || l === 'three') && n < 3) l = n === 2 ? 'two' : 'single'
+  if (l === 'two' && n < 2) l = 'single'
+  return l
+}
+
+// Řádky v pořadí dokumentu. Nový model: galleryRow (explicitní preset).
+// Legacy: galleryItem / galleryLottie se size (full/wide/half) se párují jako dřív; galleryText = text přes šířku.
+type GRow = { layout: string; items: any[] }
+const galleryRows: GRow[] = []
+let halfBuf: any[] = []
+const flushHalf = () => {
+  while (halfBuf.length) {
+    if (halfBuf.length >= 2) galleryRows.push({ layout: 'two', items: halfBuf.splice(0, 2) })
+    else galleryRows.push({ layout: 'single', items: halfBuf.splice(0, 1) })
+  }
+}
+
+for (const g of (cs?.gallery ?? [])) {
+  if (g._type === 'galleryRow') {
+    flushHalf()
+    const items = (g.items ?? [])
+      .map((it: any) => (it._type === 'mediaLottie' ? resolveLottie(it) : resolveMedia(it)))
+      .filter(Boolean)
+    if (items.length) galleryRows.push({ layout: normLayout(g.layout, items.length), items })
+    continue
+  }
+  if (g._type === 'galleryText') {
+    flushHalf()
+    const body = lang === 'en' && g.bodyEn?.length ? g.bodyEn : g.body
+    if (body?.length) galleryRows.push({ layout: g.size === 'full' ? 'text-full' : 'text', items: [{ kind: 'text', body }] })
+    continue
+  }
+  if (g._type === 'galleryLottie') {
+    const l = resolveLottie(g)
+    if (!l) continue
+    const size = sizeOf(g.size)
+    if (size === 'half') halfBuf.push(l)
+    else { flushHalf(); galleryRows.push({ layout: size === 'full' ? 'full' : 'single', items: [l] }) }
+    continue
+  }
+  // legacy galleryItem
+  const m = resolveMedia(g)
+  if (!m) continue
+  const size = sizeOf(g.size)
+  if (size === 'half') halfBuf.push(m)
+  else { flushHalf(); galleryRows.push({ layout: size === 'full' ? 'full' : 'single', items: [m] }) }
+}
+flushHalf()
 
 // Prev / next — kruhově (infinite): z prvního doleva = poslední, z posledního doprava = první
 const navIdx  = allNav.findIndex(p => p.slug === slug)
@@ -237,24 +262,25 @@ const caseStudyLd = {
       {galleryRows.length > 0 && (
         <section class="cs-gallery" id="cs-gallery-grid">
           {galleryRows.map((row) => {
-            const isFull = row.kind === 'full'
-            const itemSize = row.kind === 'pair' ? 'half' : row.kind
-            const rowClass = isFull
-              ? 'cs-gallery__row cs-gallery__row--full'
-              : `cs-gallery__row container${row.kind === 'pair' ? ' cs-gallery__row--pair' : ''}`
+            const isFullBleed = row.layout === 'full'
+            // Vícesloupcové presety dostanou cover ořez (mřížka má definovanou výšku).
+            const cover = row.layout === 'two' || row.layout === 'three' || row.layout === 'big-left' || row.layout === 'big-right'
+            const rowClass = isFullBleed
+              ? `cs-gallery__row cs-gallery__row--${row.layout}`
+              : `cs-gallery__row container cs-gallery__row--${row.layout}`
             return (
               <div class={rowClass}>
                 {row.items.map((item) => (
                   item.kind === 'text' ? (
-                    <div class={`cs-gallery__block cs-gallery__text cs-gallery__item--${itemSize}`}>
+                    <div class="cs-gallery__block cs-gallery__text">
                       <PortableText blocks={item.body} class="cs-gallery__text-inner" />
                     </div>
                   ) : item.kind === 'lottie' ? (
-                    <div class={`cs-gallery__block cs-gallery__lottie cs-gallery__item--${itemSize}`} style={`--lottie-pt:${item.pt}%;--lottie-bg:${item.bg}`}>
+                    <div class="cs-gallery__block cs-gallery__lottie" style={`--lottie-pt:${item.pt}%;--lottie-bg:${item.bg}`}>
                       <div class="cs-gallery__lottie-stage" data-lottie-src={item.src} data-lottie-loop={String(item.loop)} data-lottie-autoplay={String(item.autoplay)} role="img" aria-label={item.alt}></div>
                     </div>
                   ) : (
-                    <button class={`cs-gallery__item cs-gallery__item--${itemSize}`} type="button" data-lightbox-index={item.lbIndex} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
+                    <button class={`cs-gallery__item${cover ? ' cs-gallery__item--cover' : ''}`} type="button" data-lightbox-index={item.lbIndex} aria-label={lang === 'cs' ? 'Zvětšit' : 'Open'}>
                       {item.type === 'video' ? (
                         <video class="cs-gallery__media" src={item.src} poster={item.thumb} width={item.w} height={item.h} autoplay loop muted playsinline preload="metadata"></video>
                       ) : (
@@ -376,6 +402,83 @@ const caseStudyLd = {
 
       </nav>
 
+      {galleryRows.length > 0 && (
+        <>
+          <script>
+            // ── Galerie: scroll-choreografie (reveal + parallax) ──────────────
+            ;(function () {
+              const grid = document.getElementById('cs-gallery-grid')
+              if (!grid) return
+
+              function boot() {
+                const gsap = (window as any).__gsap
+                const ScrollTrigger = (window as any).__ScrollTrigger
+                // GSAP/ScrollTrigger ještě nemusí být hotové — počkej frame
+                if (!gsap || !ScrollTrigger) { requestAnimationFrame(boot); return }
+                if ((window as any).__reducedMotion) return
+
+                const items = Array.from(grid.querySelectorAll('.cs-gallery__item, .cs-gallery__block'))
+                if (!items.length) return
+
+                grid.classList.add('js-anim')
+                gsap.set(items, { y: 40, scale: 0.98 })
+
+                // Reveal staggeru po viditelných dávkách (řádcích) — compositor-only
+                ScrollTrigger.batch(items, {
+                  start: 'top 90%',
+                  onEnter: (batch: Element[]) => {
+                    gsap.to(batch, {
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      duration: 0.9,
+                      ease: 'power3.out',
+                      stagger: { each: 0.08, from: 'start' },
+                    })
+                  },
+                  once: true,
+                })
+
+                ScrollTrigger.refresh()
+              }
+
+              boot()
+            })()
+          </script>
+
+          <script>
+            // ── Lottie animace v galerii (lazy — mount až při vstupu do viewportu) ──
+            import { DotLottie } from '@lottiefiles/dotlottie-web'
+            ;(function () {
+              const stages = Array.from(document.querySelectorAll('[data-lottie-src]')) as HTMLElement[]
+              if (!stages.length) return
+              // Self-hostovaný wasm (CSP blokuje jsdelivr/unpkg)
+              DotLottie.setWasmUrl('/dotlottie-player.wasm')
+              const reduced = (window as any).__reducedMotion
+              const mounted = new WeakSet<HTMLElement>()
+              function mount(el: HTMLElement) {
+                if (mounted.has(el)) return
+                mounted.add(el)
+                const canvas = document.createElement('canvas')
+                canvas.className = 'cs-gallery__lottie-canvas'
+                el.appendChild(canvas)
+                new DotLottie({
+                  canvas,
+                  src: el.dataset.lottieSrc,
+                  loop: el.dataset.lottieLoop !== 'false',
+                  autoplay: !reduced && el.dataset.lottieAutoplay !== 'false',
+                })
+              }
+              if (!('IntersectionObserver' in window)) { stages.forEach(mount); return }
+              const io = new IntersectionObserver((ents) => {
+                ents.forEach((e) => { if (e.isIntersecting) { mount(e.target as HTMLElement); io.unobserve(e.target) } })
+              }, { rootMargin: '200px' })
+              stages.forEach((s) => io.observe(s))
+            })()
+          </script>
+        </>
+      )}
+
       {galleryItems.length > 0 && (
         <div id="cs-lightbox" class="cs-lightbox" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Galerie">
           <button class="cs-lightbox__close" type="button" aria-label={lang === 'cs' ? 'Zavřít' : 'Close'}>
@@ -391,79 +494,6 @@ const caseStudyLd = {
         </div>
 
         <script type="application/json" id="cs-gallery-json" set:html={JSON.stringify(galleryItems)}></script>
-
-        <script>
-          // ── Galerie: scroll-choreografie (reveal + parallax) ──────────────
-          ;(function () {
-            const grid = document.getElementById('cs-gallery-grid')
-            if (!grid) return
-
-            function boot() {
-              const gsap = (window as any).__gsap
-              const ScrollTrigger = (window as any).__ScrollTrigger
-              // GSAP/ScrollTrigger ještě nemusí být hotové — počkej frame
-              if (!gsap || !ScrollTrigger) { requestAnimationFrame(boot); return }
-              if ((window as any).__reducedMotion) return
-
-              const items = Array.from(grid.querySelectorAll('.cs-gallery__item, .cs-gallery__block'))
-              if (!items.length) return
-
-              grid.classList.add('js-anim')
-              gsap.set(items, { y: 40, scale: 0.98 })
-
-              // Reveal staggeru po viditelných dávkách (řádcích) — compositor-only
-              ScrollTrigger.batch(items, {
-                start: 'top 90%',
-                onEnter: (batch: Element[]) => {
-                  gsap.to(batch, {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    duration: 0.9,
-                    ease: 'power3.out',
-                    stagger: { each: 0.08, from: 'start' },
-                  })
-                },
-                once: true,
-              })
-
-              ScrollTrigger.refresh()
-            }
-
-            boot()
-          })()
-        </script>
-
-        <script>
-          // ── Lottie animace v galerii (lazy — mount až při vstupu do viewportu) ──
-          import { DotLottie } from '@lottiefiles/dotlottie-web'
-          ;(function () {
-            const stages = Array.from(document.querySelectorAll('[data-lottie-src]')) as HTMLElement[]
-            if (!stages.length) return
-            // Self-hostovaný wasm (CSP blokuje jsdelivr/unpkg)
-            DotLottie.setWasmUrl('/dotlottie-player.wasm')
-            const reduced = (window as any).__reducedMotion
-            const mounted = new WeakSet<HTMLElement>()
-            function mount(el: HTMLElement) {
-              if (mounted.has(el)) return
-              mounted.add(el)
-              const canvas = document.createElement('canvas')
-              canvas.className = 'cs-gallery__lottie-canvas'
-              el.appendChild(canvas)
-              new DotLottie({
-                canvas,
-                src: el.dataset.lottieSrc,
-                loop: el.dataset.lottieLoop !== 'false',
-                autoplay: !reduced && el.dataset.lottieAutoplay !== 'false',
-              })
-            }
-            if (!('IntersectionObserver' in window)) { stages.forEach(mount); return }
-            const io = new IntersectionObserver((ents) => {
-              ents.forEach((e) => { if (e.isIntersecting) { mount(e.target as HTMLElement); io.unobserve(e.target) } })
-            }, { rootMargin: '200px' })
-            stages.forEach((s) => io.observe(s))
-          })()
-        </script>
 
         <script>
           import { gsap } from 'gsap'
@@ -736,18 +766,42 @@ const caseStudyLd = {
 /* ── Gallery ─────────────────────────────────────────────────────────── */
 .cs-gallery { padding-block: var(--sp-2xl); }
 /* Masonry přes CSS columns — dlaždice si drží přirozený poměr fotky */
-/* Editoriální skládání: řádky full-bleed / šířka obsahu / dvojice */
+/* Editoriální skládání: řádky s presety rozložení */
 .cs-gallery__row { margin-bottom: var(--sp-sm); }
 /* Full-bleed: vylom z šířky obsahu na celé okno (bez vodorovného scrollu) */
 .cs-gallery__row--full {
   width: 100vw;
   margin-inline: calc(50% - 50vw);
 }
-.cs-gallery__row--pair {
+.cs-gallery__row--full .cs-gallery__item,
+.cs-gallery__row--full .cs-gallery__lottie { border-radius: 0; }
+
+/* 2 / 3 vedle sebe — stejná výška, cover ořez */
+.cs-gallery__row--two,
+.cs-gallery__row--three { display: grid; gap: var(--sp-sm); align-items: stretch; }
+.cs-gallery__row--two   { grid-template-columns: 1fr 1fr; }
+.cs-gallery__row--three { grid-template-columns: 1fr 1fr 1fr; }
+
+/* 1 velká + 2 malé (a zrcadlo) — velká přes oba řádky vedle dvou menších pod sebou */
+.cs-gallery__row--big-left,
+.cs-gallery__row--big-right {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: var(--sp-sm);
-  align-items: start;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 3 / 2;
+}
+.cs-gallery__row--big-left  { grid-template-columns: 2fr 1fr; }
+.cs-gallery__row--big-right { grid-template-columns: 1fr 2fr; }
+.cs-gallery__row--big-left  > :first-child  { grid-column: 1; grid-row: 1 / span 2; }
+.cs-gallery__row--big-right > :nth-child(3) { grid-column: 2; grid-row: 1 / span 2; }
+
+/* Cover položky vyplní buňku mřížky na výšku */
+.cs-gallery__item--cover { height: 100%; }
+.cs-gallery__item--cover .cs-gallery__media { height: 100%; object-fit: cover; }
+
+/* Text přes plnou šířku = širší, vycentrovaný (ne edge-to-edge) */
+.cs-gallery__row--text-full .cs-gallery__text-inner {
+  max-width: 60rem; margin-inline: auto; text-align: center;
 }
 .cs-gallery__item {
   position: relative;
@@ -761,7 +815,6 @@ const caseStudyLd = {
   background: var(--clr-surface);
   cursor: pointer;
 }
-.cs-gallery__item--full { border-radius: 0; }  /* full-bleed = bez zaoblení */
 .cs-gallery__media {
   width: 100%;
   height: auto;                  /* přirozená výška = respektuje poměr stran */
@@ -793,8 +846,6 @@ const caseStudyLd = {
 .cs-gallery__block { margin: 0; }
 .cs-gallery__text { padding-block: clamp(1.5rem, 5vw, 4rem); }
 .cs-gallery__text .cs-gallery__text-inner { max-width: 48rem; }
-.cs-gallery__text--full .cs-gallery__text-inner,
-.cs-gallery__text.cs-gallery__item--full .cs-gallery__text-inner { max-width: 60rem; margin-inline: auto; text-align: center; }
 /* Velké prohlášení (h3) uvnitř galerijního textu */
 .cs-gallery__text :global(.portable-text h3) {
   font-family: var(--font-display);
@@ -814,7 +865,6 @@ const caseStudyLd = {
   overflow: hidden;
   background: var(--lottie-bg, transparent);
 }
-.cs-gallery__lottie.cs-gallery__item--full { border-radius: 0; }
 .cs-gallery__lottie-stage,
 .cs-gallery__lottie :global(.cs-gallery__lottie-canvas) {
   position: absolute;
@@ -831,9 +881,20 @@ const caseStudyLd = {
   will-change: transform, opacity;
 }
 
-/* Na mobilu se dvojice složí pod sebe */
+/* Na mobilu se všechny vícesloupcové řádky složí pod sebe (bez ořezu) */
 @media (max-width: 40em) {
-  .cs-gallery__row--pair { grid-template-columns: 1fr; }
+  .cs-gallery__row--two,
+  .cs-gallery__row--three,
+  .cs-gallery__row--big-left,
+  .cs-gallery__row--big-right {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    aspect-ratio: auto;
+  }
+  .cs-gallery__row--big-left  > :first-child,
+  .cs-gallery__row--big-right > :nth-child(3) { grid-column: auto; grid-row: auto; }
+  .cs-gallery__item--cover { height: auto; }
+  .cs-gallery__item--cover .cs-gallery__media { height: auto; }
 }
 
 /* ── Lightbox ────────────────────────────────────────────────────────── */
