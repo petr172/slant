@@ -19,7 +19,7 @@ export const previewClient = createClient({
   useCdn: false,
   stega: {
     enabled: true,
-    studioUrl: 'http://localhost:3333',
+    studioUrl: 'https://slant.sanity.studio',
   },
 })
 
