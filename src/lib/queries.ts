@@ -157,11 +157,16 @@ export const CASE_STUDY_BY_SLUG_QUERY = `
     brief, briefEn,
     vysledek, vysledekEn,
     gallery[] {
+      _type,
+      _key,
       image,
       videoUrl,
       size,
       alt,
-      caption
+      caption,
+      body, bodyEn,
+      "lottieUrl": coalesce(file.asset->url, url),
+      ratio, loop, autoplay, bg
     },
     sections[] {
       heading, headingEn,

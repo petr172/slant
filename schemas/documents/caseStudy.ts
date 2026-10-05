@@ -169,6 +169,81 @@ export const caseStudy = defineType({
             },
           },
         },
+        {
+          type: 'object',
+          name: 'galleryText',
+          title: 'Text',
+          fields: [
+            defineField({
+              name: 'body', title: 'Text (CZ)', type: 'array',
+              of: [{
+                type: 'block',
+                styles: [
+                  { title: 'Odstavec', value: 'normal' },
+                  { title: 'Velké prohlášení', value: 'h3' },
+                ],
+                lists: [],
+                marks: {
+                  decorators: [{ title: 'Tučně', value: 'strong' }, { title: 'Kurzíva', value: 'em' }],
+                  annotations: [{ name: 'link', type: 'object', title: 'Odkaz', fields: [{ name: 'href', type: 'url', title: 'URL' }] }],
+                },
+              }],
+            }),
+            defineField({
+              name: 'bodyEn', title: 'Text (EN)', type: 'array',
+              of: [{
+                type: 'block',
+                styles: [
+                  { title: 'Paragraph', value: 'normal' },
+                  { title: 'Big statement', value: 'h3' },
+                ],
+                lists: [],
+                marks: {
+                  decorators: [{ title: 'Bold', value: 'strong' }, { title: 'Italic', value: 'em' }],
+                  annotations: [{ name: 'link', type: 'object', title: 'Link', fields: [{ name: 'href', type: 'url', title: 'URL' }] }],
+                },
+              }],
+            }),
+            defineField({
+              name: 'size', title: 'Šířka bloku', type: 'string',
+              options: { list: [{ title: '▭ Široký (šířka obsahu)', value: 'wide' }, { title: '◼︎ Full (širší, vycentrovaný)', value: 'full' }], layout: 'radio' },
+              initialValue: 'wide',
+            }),
+          ],
+          preview: {
+            select: { body: 'body' },
+            prepare({ body }) {
+              const txt = (body ?? []).map((b: any) => (b.children ?? []).map((c: any) => c.text).join('')).join(' ')
+              return { title: txt || 'Text', subtitle: '📝 text' }
+            },
+          },
+        },
+        {
+          type: 'object',
+          name: 'galleryLottie',
+          title: 'Lottie animace',
+          fields: [
+            defineField({ name: 'file', title: 'Soubor (.lottie / .json)', type: 'file', options: { accept: '.lottie,.json,application/json' }, description: 'Nahraj Lottie animaci. Nebo níže vlož URL.' }),
+            defineField({ name: 'url', title: 'Nebo URL (.lottie / .json)', type: 'url' }),
+            defineField({
+              name: 'size', title: 'Velikost v galerii', type: 'string',
+              options: { list: [{ title: '◼︎ Full-bleed', value: 'full' }, { title: '▭ Široký', value: 'wide' }, { title: '◧ Půlka', value: 'half' }], layout: 'radio' },
+              initialValue: 'wide',
+            }),
+            defineField({ name: 'ratio', title: 'Poměr stran (např. 16:9)', type: 'string', description: 'Rezervuje výšku. Výchozí 16:9.', initialValue: '16:9' }),
+            defineField({ name: 'loop', title: 'Smyčka', type: 'boolean', initialValue: true }),
+            defineField({ name: 'autoplay', title: 'Přehrát automaticky', type: 'boolean', initialValue: true }),
+            defineField({ name: 'bg', title: 'Barva pozadí (např. #0c0c0b nebo transparent)', type: 'string', initialValue: 'transparent' }),
+            defineField({ name: 'alt', title: 'Popis', type: 'string' }),
+          ],
+          preview: {
+            select: { alt: 'alt', size: 'size' },
+            prepare({ alt, size }) {
+              const sz = size === 'full' ? '◼︎ full' : size === 'half' ? '◧ půlka' : '▭ široký'
+              return { title: alt || 'Lottie animace', subtitle: `✨ lottie · ${sz}` }
+            },
+          },
+        },
       ],
     }),
 
