@@ -40,27 +40,26 @@ let mediaIdx = 0
 const galleryItems: Array<{ type: string; src: string; thumb?: string; alt: string }> = []
 
 // ── Kvalita obrázků v galerii — laděná „rovina": malé, ale ostré ───────────
-// Zvyš pro ostřejší (větší soubory), sniž pro menší. WebP 86 ≈ AVIF 72.
+// Zvyš pro ostřejší (větší soubory), sniž pro menší. (Sanity umí jen webp/jpg/png,
+// AVIF nepodporuje → používáme WebP.)
 const IMG_Q_WEBP = 86
-const IMG_Q_AVIF = 72
 // Šířky, které Sanity vygeneruje; browser vybere nejmenší dostačující (i pro retinu).
 const IMG_LADDER = [480, 768, 1080, 1440, 1920, 2560]
-const buildSrcset = (img: any, fmt: 'webp' | 'avif', q: number) =>
-  IMG_LADDER.map((w) => `${urlFor(img).width(w).fit('max').format(fmt).quality(q).url()} ${w}w`).join(', ')
+const buildSrcset = (img: any, q: number) =>
+  IMG_LADDER.map((w) => `${urlFor(img).width(w).fit('max').format('webp').quality(q).url()} ${w}w`).join(', ')
 
 const resolveMedia = (m: any) => {
   const hasImg = !!m.image?.asset
   const thumb = hasImg ? urlFor(m.image).width(1200).fit('max').format('webp').quality(IMG_Q_WEBP).url() : undefined
   const full  = hasImg ? urlFor(m.image).width(2400).fit('max').format('webp').quality(88).url() : undefined
-  const srcsetWebp = hasImg ? buildSrcset(m.image, 'webp', IMG_Q_WEBP) : undefined
-  const srcsetAvif = hasImg ? buildSrcset(m.image, 'avif', IMG_Q_AVIF) : undefined
+  const srcset = hasImg ? buildSrcset(m.image, IMG_Q_WEBP) : undefined
   if (!m.videoUrl && !thumb) return null
   const { w, h } = dimsFromRef(m.image?.asset?._ref)
   const type = m.videoUrl ? 'video' : 'image'
   const src  = m.videoUrl || full
   const lbIndex = mediaIdx++
   galleryItems.push({ type, src, thumb, alt: m.alt ?? '' })
-  return { kind: 'media', type, src, thumb, srcsetWebp, srcsetAvif, alt: m.alt ?? '', w, h, lbIndex }
+  return { kind: 'media', type, src, thumb, srcset, alt: m.alt ?? '', w, h, lbIndex }
 }
 const resolveLottie = (l: any) => {
   if (!l.lottieUrl) return null
@@ -306,11 +305,7 @@ const caseStudyLd = {
                       {item.type === 'video' ? (
                         <video class="cs-gallery__media" src={item.src} poster={item.thumb} width={item.w} height={item.h} autoplay loop muted playsinline preload="metadata"></video>
                       ) : (
-                        <picture>
-                          <source type="image/avif" srcset={item.srcsetAvif} sizes={sizesFor(idx)} />
-                          <source type="image/webp" srcset={item.srcsetWebp} sizes={sizesFor(idx)} />
-                          <img class="cs-gallery__media" src={item.thumb} alt={item.alt} width={item.w} height={item.h} loading="lazy" decoding="async" />
-                        </picture>
+                        <img class="cs-gallery__media" src={item.thumb} srcset={item.srcset} sizes={sizesFor(idx)} alt={item.alt} width={item.w} height={item.h} loading="lazy" decoding="async" />
                       )}
                       <span class="cs-gallery__zoom" aria-hidden="true">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
