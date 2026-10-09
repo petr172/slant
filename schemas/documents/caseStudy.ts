@@ -173,15 +173,17 @@ export const caseStudy = defineType({
                   name: 'mediaImage',
                   title: 'Obrázek / video',
                   fields: [
-                    defineField({ name: 'image', title: 'Obrázek', type: 'image', options: { hotspot: true } }),
-                    defineField({ name: 'videoUrl', title: 'Video (cesta/URL k .mp4)', type: 'string', description: 'Vyplň pro video. Obrázek výše pak slouží jako poster.' }),
+                    defineField({ name: 'image', title: 'Obrázek / poster', type: 'image', options: { hotspot: true }, description: 'Statický obrázek. U videa slouží jako poster (náhled, než se video načte).' }),
+                    defineField({ name: 'videoFile', title: 'Video — nahrát soubor (.mp4)', type: 'file', options: { accept: 'video/mp4,video/webm' }, description: 'Nahraj .mp4 přímo. NEDÁVEJ video do pole „Obrázek" výše — to bere jen obrázky.' }),
+                    defineField({ name: 'videoUrl', title: 'Nebo video přes URL (.mp4)', type: 'string', description: 'Alternativa k nahrání — vlož externí URL na .mp4.' }),
                     defineField({ name: 'alt', title: 'Alt text', type: 'string' }),
                     defineField({ name: 'caption', title: 'Popisek', type: 'string' }),
                   ],
                   preview: {
-                    select: { media: 'image', alt: 'alt', videoUrl: 'videoUrl' },
-                    prepare({ media, alt, videoUrl }) {
-                      return { title: alt || (videoUrl ? 'Video' : 'Obrázek'), subtitle: videoUrl ? '🎬 video' : '🖼 obrázek', media }
+                    select: { media: 'image', alt: 'alt', videoUrl: 'videoUrl', videoFile: 'videoFile.asset' },
+                    prepare({ media, alt, videoUrl, videoFile }) {
+                      const isVideo = !!(videoUrl || videoFile)
+                      return { title: alt || (isVideo ? 'Video' : 'Obrázek'), subtitle: isVideo ? '🎬 video' : '🖼 obrázek', media }
                     },
                   },
                 },
@@ -228,8 +230,9 @@ export const caseStudy = defineType({
           name: 'galleryItem',
           title: 'Obrázek (starý)',
           fields: [
-            defineField({ name: 'image', title: 'Obrázek', type: 'image', options: { hotspot: true } }),
-            defineField({ name: 'videoUrl', title: 'Video (cesta/URL k .mp4)', type: 'string', description: 'Vyplň pro video. Obrázek výše pak slouží jako poster.' }),
+            defineField({ name: 'image', title: 'Obrázek / poster', type: 'image', options: { hotspot: true }, description: 'Statický obrázek. U videa slouží jako poster.' }),
+            defineField({ name: 'videoFile', title: 'Video — nahrát soubor (.mp4)', type: 'file', options: { accept: 'video/mp4,video/webm' }, description: 'Nahraj .mp4 přímo. NEDÁVEJ video do pole „Obrázek" výše.' }),
+            defineField({ name: 'videoUrl', title: 'Nebo video přes URL (.mp4)', type: 'string', description: 'Alternativa — externí URL na .mp4.' }),
             defineField({
               name: 'size',
               title: 'Velikost v galerii',
@@ -249,10 +252,11 @@ export const caseStudy = defineType({
             defineField({ name: 'caption', title: 'Popisek', type: 'string' }),
           ],
           preview: {
-            select: { media: 'image', alt: 'alt', videoUrl: 'videoUrl', size: 'size' },
-            prepare({ media, alt, videoUrl, size }) {
+            select: { media: 'image', alt: 'alt', videoUrl: 'videoUrl', videoFile: 'videoFile.asset', size: 'size' },
+            prepare({ media, alt, videoUrl, videoFile, size }) {
               const sz = size === 'full' ? '◼︎ full' : size === 'half' ? '◧ půlka' : '▭ široký'
-              return { title: alt || (videoUrl ? 'Video' : 'Obrázek'), subtitle: `${videoUrl ? '🎬' : '🖼'} · ${sz}`, media }
+              const isVideo = !!(videoUrl || videoFile)
+              return { title: alt || (isVideo ? 'Video' : 'Obrázek'), subtitle: `${isVideo ? '🎬' : '🖼'} · ${sz}`, media }
             },
           },
         },

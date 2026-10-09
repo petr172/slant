@@ -160,7 +160,7 @@ export const CASE_STUDY_BY_SLUG_QUERY = `
       _type,
       _key,
       image,
-      videoUrl,
+      "videoUrl": coalesce(videoFile.asset->url, videoUrl),
       size,
       alt,
       caption,
@@ -171,7 +171,9 @@ export const CASE_STUDY_BY_SLUG_QUERY = `
       layout,
       items[] {
         _type, _key,
-        image, videoUrl, alt, caption,
+        image,
+        "videoUrl": coalesce(videoFile.asset->url, videoUrl),
+        alt, caption,
         "lottieUrl": coalesce(file.asset->url, url),
         ratio, loop, autoplay, bg
       }
