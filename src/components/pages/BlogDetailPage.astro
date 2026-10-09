@@ -40,6 +40,20 @@ function formatDate(dateStr: string) {
   )
 }
 
+// Odhad doby čtení z délky textu (≈200 slov/min).
+function readingTime(blocks: any[]): number {
+  if (!Array.isArray(blocks)) return 0
+  const words = blocks
+    .filter((b) => b?._type === 'block')
+    .flatMap((b) => (b.children ?? []).map((c: any) => c.text ?? ''))
+    .join(' ')
+    .split(/\s+/)
+    .filter(Boolean).length
+  return Math.max(1, Math.round(words / 200))
+}
+const minutes = readingTime(body)
+const readLabel = lang === 'cs' ? `${minutes} min čtení` : `${minutes} min read`
+
 // ─── SEO / AEO ──────────────────────────────────────────────────────────────
 const canonical = new URL(Astro.url.pathname, Astro.site).toString()
 const ogImage = post?.coverImage
@@ -90,7 +104,7 @@ const breadcrumbLd = post ? {
     <article class="blog-detail">
 
       <!-- Header -->
-      <header class="blog-detail__header container">
+      <header class="blog-detail__header">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
           <a href={homeUrl}>{homeLabel}</a>
           <a href={blogUrl}>Blog</a>
@@ -103,6 +117,8 @@ const breadcrumbLd = post ? {
               {formatDate(post.publishedAt)}
             </time>
           )}
+          <span class="blog-detail__dot" aria-hidden="true">·</span>
+          <span class="blog-detail__read">{readLabel}</span>
         </div>
 
         <h1 class="blog-detail__title" data-fade>{title}</h1>
@@ -110,28 +126,26 @@ const breadcrumbLd = post ? {
         {description && (
           <p class="blog-detail__desc" data-fade>{description}</p>
         )}
-
-        <hr class="blog-detail__divider" data-fade />
       </header>
 
-      <!-- Cover image -->
+      <!-- Cover image (contained, editorial) -->
       {post.coverImage && (
-        <div class="blog-detail__cover" data-fade>
+        <figure class="blog-detail__cover" data-fade>
           <SanityImage
             image={post.coverImage}
             alt={post.coverImage.alt ?? title}
-            width={1800}
-            height={1012}
-            widths={[800, 1200, 1800]}
-            sizes="100vw"
+            width={1600}
+            height={1067}
+            widths={[720, 1080, 1600]}
+            sizes="(max-width: 60em) 100vw, 920px"
             class="blog-detail__cover-img"
           />
-        </div>
+        </figure>
       )}
 
       <!-- Body -->
       {body?.length > 0 && (
-        <div class="blog-body container" data-fade>
+        <div class="blog-body" data-fade>
           <PortableText blocks={body} />
         </div>
       )}
@@ -208,33 +222,46 @@ const breadcrumbLd = post ? {
 </Layout>
 
 <style>
+/* ── Editorial article layout ───────────────────────────────────────────
+   One centered reading column (~42rem) for text, a slightly wider media
+   column (~54rem) for the cover, with a consistent side gutter. */
+.blog-detail {
+  --reading: 42rem;   /* ~672px comfortable measure */
+  --media: 54rem;     /* cover a touch wider than text */
+  --gutter: clamp(1.25rem, 5vw, 2rem);
+}
+
+/* Centered column helper (applied to header + body wrappers) */
+.blog-detail__header,
+.blog-body {
+  width: 100%;
+  max-width: calc(var(--reading) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
 /* Header */
 .blog-detail__header {
-  padding-block: var(--sp-2xl) var(--sp-xl);
+  padding-block: clamp(var(--sp-xl), 6vw, var(--sp-3xl)) var(--sp-lg);
   display: flex;
   flex-direction: column;
   gap: var(--sp-md);
 }
-
-.back-link {
-  font-size: 0.8rem;
-  color: var(--clr-muted);
-  text-decoration: none;
-  letter-spacing: 0.04em;
-  transition: color 0.2s;
-}
-.back-link:hover { color: var(--clr-text); }
+.blog-detail__header .breadcrumbs { margin-bottom: var(--sp-2xs); }
 
 .blog-detail__meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--sp-sm);
 }
-.blog-detail__date {
+.blog-detail__date,
+.blog-detail__read {
   font-size: 0.75rem;
   color: var(--clr-muted);
   letter-spacing: 0.06em;
 }
+.blog-detail__dot { color: var(--clr-border); }
 
 /* Chip */
 .chip {
@@ -251,59 +278,54 @@ const breadcrumbLd = post ? {
 
 .blog-detail__title {
   font-family: var(--font-display);
-  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-size: clamp(2.15rem, 5vw, 3.4rem);
   font-weight: 400;
-  letter-spacing: -0.04em;
-  line-height: 1.0;
-  max-width: 18ch;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
   color: var(--clr-text);
   margin: 0;
+  text-wrap: balance;
 }
 
 .blog-detail__desc {
-  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
   color: var(--clr-muted);
-  max-width: 55ch;
-  line-height: 1.6;
+  line-height: 1.55;
   margin: 0;
+  text-wrap: pretty;
 }
 
-.blog-detail__divider {
-  border: none;
-  border-top: 1px solid var(--clr-border);
-  margin: 0;
-}
-
-/* Cover image */
+/* Cover image — contained figure, not full-bleed */
 .blog-detail__cover {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--clr-surface);
+  max-width: calc(var(--media) + var(--gutter) * 2);
+  margin: clamp(var(--sp-lg), 4vw, var(--sp-2xl)) auto 0;
+  padding-inline: var(--gutter);
 }
 .blog-detail__cover :global(picture),
 .blog-detail__cover :global(.blog-detail__cover-img) {
   display: block;
   width: 100%;
-  height: 100%;
 }
-.blog-detail__cover :global(picture img),
+.blog-detail__cover :global(picture) {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--clr-surface);
+}
 .blog-detail__cover :global(.blog-detail__cover-img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 /* Body */
 .blog-body {
-  max-width: 65ch;
-  margin-inline: auto;
-  padding-block: var(--sp-2xl);
-  font-size: clamp(1rem, 1.3vw, 1.125rem);
-  line-height: 1.8;
+  padding-block: clamp(var(--sp-xl), 5vw, var(--sp-2xl));
+  font-size: 1.1875rem;
+  line-height: 1.75;
   color: var(--clr-text);
+  letter-spacing: -0.003em;
 }
 
 /* ── Prev/next nav (identical structure to WorkDetailPage) ─────────── */
