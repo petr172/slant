@@ -377,6 +377,14 @@
   .portable-text a       { border-bottom: 1px solid currentColor; opacity: 0.7; transition: opacity .2s; }
   .portable-text a:hover { opacity: 1; }
   .portable-text blockquote { margin: var(--sp-lg) 0; padding-left: var(--sp-md); border-left: 2px solid var(--clr-accent); color: var(--clr-muted); font-size: 1.125rem; }
+  .portable-text ul, .portable-text ol { margin: var(--sp-md) 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: var(--sp-2xs); }
+  .portable-text ul { list-style: none; }
+  .portable-text ul > li { position: relative; padding-left: 1.1em; }
+  .portable-text ul > li::before { content: ''; position: absolute; left: 0; top: 0.72em; width: 0.4em; height: 0.4em; border-radius: 999px; background: var(--clr-accent); }
+  .portable-text ol { list-style: decimal; }
+  .portable-text ol > li { padding-left: 0.3em; }
+  .portable-text ol > li::marker { color: var(--clr-muted); font-variant-numeric: tabular-nums; }
+  .portable-text li { line-height: 1.6; }
 
   /* Inline images (figures) */
   .portable-text__figure { margin: var(--sp-2xl) 0; }
