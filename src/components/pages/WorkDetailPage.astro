@@ -528,12 +528,23 @@ const caseStudyLd = {
             let idx = 0
             let current = null
             let animating = false
+            let lastTrigger = null
+            let openedViaKeyboard = false
+            const closeBtn = lb.querySelector('.cs-lightbox__close')
+
+            // Přednačti sousední obrázky → žádný „flash" při přepnutí
+            function preload(i) {
+              ;[i + 1, i - 1].forEach((k) => {
+                const it = items[(k + items.length) % items.length]
+                if (it && it.type === 'image') { const im = new Image(); im.src = it.src }
+              })
+            }
 
             function buildMedia(it) {
               let el
               if (it.type === 'video') {
                 el = document.createElement('video')
-                el.src = it.src; el.controls = true; el.autoplay = true; el.loop = true; el.playsInline = true
+                el.src = it.src; el.controls = true; el.autoplay = true; el.loop = true; el.playsInline = true; el.muted = true
               } else {
                 el = document.createElement('img')
                 el.src = it.src; el.alt = it.alt || ''
@@ -549,41 +560,59 @@ const caseStudyLd = {
               stage.innerHTML = ''
               current = buildMedia(items[idx])
               stage.appendChild(current)
-              gsap.fromTo(current, { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.35, ease: 'power2.out' })
+              gsap.fromTo(current, { opacity: 0, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' })
               lb.removeAttribute('hidden')
               lb.setAttribute('aria-hidden', 'false')
               document.body.style.overflow = 'hidden'
-              requestAnimationFrame(() => lb.classList.add('is-open'))
+              requestAnimationFrame(() => { lb.classList.add('is-open'); closeBtn.focus({ preventScroll: true }) })
+              preload(idx)
             }
             function close() {
               lb.classList.remove('is-open')
               document.body.style.overflow = ''
               lb.setAttribute('aria-hidden', 'true')
               setTimeout(() => { lb.setAttribute('hidden', ''); stage.innerHTML = ''; current = null }, 250)
+              // Fokus vrať na dlaždici jen při ovládání klávesnicí → žádný oranžový rámeček po myši
+              if (openedViaKeyboard && lastTrigger) lastTrigger.focus({ preventScroll: true })
+              else if (lastTrigger) { try { lastTrigger.blur() } catch {} }
             }
 
-            // Směrový přechod: současný vylétne, další přiletí z druhé strany
+            // Čistý směrový slide — bez rotace, stejné easing pro obě karty (plynulé)
             function go(dir, fromX) {
               if (animating || !current) return
               animating = true
-              const w = window.innerWidth
+              const w = stage.clientWidth || window.innerWidth
               const outgoing = current
               idx = (idx + dir + items.length) % items.length
               const incoming = buildMedia(items[idx])
               stage.appendChild(incoming)
               current = incoming
-              gsap.set(incoming, { xPercent: 0, x: dir > 0 ? w : -w, opacity: 0, rotate: dir > 0 ? 5 : -5 })
-              gsap.to(incoming, { x: 0, opacity: 1, rotate: 0, duration: 0.55, ease: 'power4.out' })
+              const dur = 0.44, ease = 'power3.out'
+              gsap.fromTo(incoming, { x: dir > 0 ? w : -w, opacity: 1, scale: 1 }, { x: 0, opacity: 1, duration: dur, ease })
               gsap.fromTo(outgoing,
                 { x: fromX ?? 0 },
-                { x: dir > 0 ? -w : w, opacity: 0, rotate: dir > 0 ? -8 : 8, duration: 0.5, ease: 'power3.in',
+                { x: dir > 0 ? -w : w, opacity: 1, duration: dur, ease,
                   onComplete: () => { outgoing.remove(); animating = false } }
               )
+              preload(idx)
             }
 
             document.querySelectorAll('[data-lightbox-index]').forEach(btn => {
-              btn.addEventListener('click', () => open(Number(btn.dataset.lightboxIndex)))
+              btn.addEventListener('click', (e) => {
+                lastTrigger = btn
+                openedViaKeyboard = e.detail === 0   // aktivace klávesnicí → click má detail 0
+                open(Number(btn.dataset.lightboxIndex))
+              })
             })
+
+            // Inline galerie videa: jisté přehrání i s preload=metadata; pauza mimo viewport (perf)
+            document.querySelectorAll('video.cs-gallery__media').forEach((v) => {
+              const io = new IntersectionObserver((ents) => {
+                ents.forEach((en) => { if (en.isIntersecting) v.play().catch(() => {}); else v.pause() })
+              }, { threshold: 0.15 })
+              io.observe(v)
+            })
+
             lb.querySelector('.cs-lightbox__close').addEventListener('click', close)
             lb.querySelector('.cs-lightbox__nav--prev').addEventListener('click', () => go(-1))
             lb.querySelector('.cs-lightbox__nav--next').addEventListener('click', () => go(1))
@@ -598,7 +627,7 @@ const caseStudyLd = {
             // ── Drag / swipe s live následováním prstu (Tinder-style) ──
             let dragging = false, decided = false, horizontal = false
             let startX = 0, startY = 0, dx = 0, pid = -1
-            let setX = null, setR = null, setO = null   // gsap quickSettery (nejrychlejší)
+            let setX = null, setO = null   // gsap quickSettery (nejrychlejší)
 
             stage.addEventListener('pointerdown', (e) => {
               if (animating || !current) return
@@ -617,23 +646,21 @@ const caseStudyLd = {
                 if (!horizontal) { dragging = false; return }
                 gsap.killTweensOf(current)
                 setX = gsap.quickSetter(current, 'x', 'px')
-                setR = gsap.quickSetter(current, 'rotation', 'deg')
                 setO = gsap.quickSetter(current, 'opacity')
                 try { stage.setPointerCapture(pid) } catch {}
               }
               dx = mx
               setX(dx)
-              setR(dx * 0.03)
-              setO(1 - Math.min(Math.abs(dx) / (window.innerWidth * 0.9), 0.5))
+              setO(1 - Math.min(Math.abs(dx) / (window.innerWidth * 0.9), 0.35))
             })
             function endDrag() {
               if (!dragging) return
               dragging = false
-              const threshold = Math.min(120, window.innerWidth * 0.2)
+              const threshold = Math.min(90, window.innerWidth * 0.16)
               if (Math.abs(dx) > threshold) {
                 go(dx < 0 ? 1 : -1, dx)          // pokračuje z aktuální pozice prstu
               } else {
-                gsap.to(current, { x: 0, rotate: 0, opacity: 1, duration: 0.6, ease: 'elastic.out(1, 0.65)' })
+                gsap.to(current, { x: 0, opacity: 1, duration: 0.4, ease: 'power3.out' })   // jemný návrat, bez pružení
               }
               dx = 0
             }
@@ -937,15 +964,18 @@ const caseStudyLd = {
 }
 .cs-lightbox.is-open { opacity: 1; }
 .cs-lightbox__stage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  max-width: min(92vw, 1100px);
-  max-height: 88vh;
+  position: relative;
+  width: min(92vw, 1100px);
+  height: 88vh;
 }
+/* Karty se vrství přes sebe (absolutně, vycentrováno přes inset+margin),
+   takže transform zůstává volný pro slide a přidání další karty nehýbe layoutem. */
 .cs-lightbox :global(.cs-lightbox__media) {
-  max-width: min(92vw, 1100px);
-  max-height: 88vh;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: 100%;
+  max-height: 100%;
   width: auto;
   height: auto;
   border-radius: var(--radius-md);
@@ -978,8 +1008,7 @@ const caseStudyLd = {
 
 @media (max-width: 48em) {
   /* Menší obrázek → volné místo dole pro šipky (a swipe navíc) */
-  .cs-lightbox__stage { max-height: 66vh; }
-  .cs-lightbox :global(.cs-lightbox__media) { max-width: 92vw; max-height: 66vh; }
+  .cs-lightbox__stage { width: 92vw; height: 66vh; }
   .cs-lightbox__nav {
     width: 3.25rem;
     height: 3.25rem;
