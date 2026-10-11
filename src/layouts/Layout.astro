@@ -144,11 +144,31 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
     })()
   </script>
 
+  <!-- FOUC guard: zakrytí MUSÍ být inline (externí stylesheet se při příchodu
+       přes závěs ještě nenačetl → nová stránka by na snímek problikla bez CSS).
+       Barvy natvrdo, protože CSS proměnné (--clr-bg) žijí až v externím CSS. -->
+  <style is:inline>
+    html.wipe-arrive body { visibility: hidden; }
+    html.wipe-arrive::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      background: #faf9f7; /* --clr-bg light */
+    }
+    html.dark.wipe-arrive::after { background: #0c0c0b; } /* --clr-bg dark */
+  </style>
+
   <script is:inline>
     // Page-wipe: přišli jsme přes závěs → zakryj stránku PŘED prvním paintem
     // (bundlovaný skript běží až po parsování a stránka by probleskla).
     if (sessionStorage.getItem('page-wipe') === '1') {
       document.documentElement.classList.add('wipe-arrive')
+      // Pojistka: kdyby bundlovaný skript nikdy nedoběhl (chyba JS), neschovávej
+      // stránku navždy — po 1,5 s zámek sundej.
+      setTimeout(function () {
+        document.documentElement.classList.remove('wipe-arrive')
+      }, 1500)
     }
   </script>
 
