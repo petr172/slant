@@ -187,11 +187,16 @@ function getSvgContent(logoUrl: string): string {
   will-change: transform, opacity;
 }
 
-.trust-wall__svg {
+/* NOTE: SVG is injected via set:html (both at build and in the JS swap),
+   so Astro's scoped-CSS attribute is NOT added to it — selectors must be
+   :global() or they won't match. Sizing uses max-height + max-width with
+   auto so the logo always scales to fit the card and never gets cropped. */
+:global(.trust-wall__svg) {
   display: block;
-  height: 28px;
   width: auto;
-  max-width: 80%;
+  height: auto;
+  max-height: 52px;
+  max-width: 72%;
   /* Force all paths/shapes to currentColor */
   fill: currentColor;
   color: var(--clr-text);
@@ -200,15 +205,23 @@ function getSvgContent(logoUrl: string): string {
 }
 
 /* SVGs may use stroke instead of fill */
-.trust-wall__svg * {
+:global(.trust-wall__svg *) {
   fill: currentColor;
   stroke: none;
 }
 
+/* Don't recolor mask/clip/defs paint — a luminance mask needs its
+   white fill to stay white, otherwise it hides the artwork (e.g. ARTIN). */
+:global(.trust-wall__svg mask *),
+:global(.trust-wall__svg clipPath *),
+:global(.trust-wall__svg defs *) {
+  fill: white;
+}
+
 @media (max-width: 64em) {
-  .trust-wall__svg { height: 22px; }
+  :global(.trust-wall__svg) { max-height: 42px; }
 }
 @media (max-width: 40em) {
-  .trust-wall__svg { height: 20px; }
+  :global(.trust-wall__svg) { max-height: 36px; }
 }
 </style>
