@@ -1,7 +1,4 @@
 ---
-import { readFileSync } from 'fs'
-import { join } from 'path'
-
 interface Logo {
   _key: string
   name: string
@@ -16,28 +13,6 @@ const { logos, lang = 'cs' } = Astro.props
 
 const SLOTS = 6
 const initial = logos.slice(0, SLOTS)
-
-// Read SVG content from public folder for inline rendering
-function getSvgContent(logoUrl: string): string {
-  try {
-    const filePath = join(process.cwd(), 'public', logoUrl.replace(/^\//, ''))
-    const content = readFileSync(filePath, 'utf8')
-    // Strip XML declaration/doctype, add class, and REMOVE the root svg's
-    // width/height attributes (keep only viewBox). WebKit otherwise uses the
-    // width attribute as the element width, and CSS max-width then clips the
-    // content instead of scaling it — logos end up cropped. Only the opening
-    // <svg ...> tag is touched, never child elements' width/height.
-    return content
-      .replace(/<\?xml[^>]*\?>/g, '')
-      .replace(/<!DOCTYPE[^>]*>/g, '')
-      .replace(/<svg([^>]*)>/, (_m, attrs) =>
-        '<svg class="trust-wall__svg" aria-hidden="true"' +
-        attrs.replace(/\s(?:width|height)="[^"]*"/g, '') + '>')
-      .trim()
-  } catch {
-    return ''
-  }
-}
 ---
 
 {logos?.length > 0 && (
@@ -53,7 +28,11 @@ function getSvgContent(logoUrl: string): string {
         <li class="trust-wall__item" data-index={i}>
           <div class="trust-wall__card">
             <div class="trust-wall__inner">
-              <Fragment set:html={getSvgContent(logo.logoUrl)} />
+              {/* Plain <img>, not inline SVG: object-fit:contain scales the
+                  logo to fit the box in every browser and can never crop it.
+                  Inline SVG + WebKit was an endless source of clipping bugs. */}
+              <img class="trust-wall__logo" src={logo.logoUrl} alt={logo.name}
+                   loading="lazy" decoding="async" />
             </div>
           </div>
         </li>
@@ -63,44 +42,32 @@ function getSvgContent(logoUrl: string): string {
 )}
 
 <script>
-  const list  = document.getElementById('js-trust-wall')
+  const list = document.getElementById('js-trust-wall')
   if (list) {
     const logos: { name: string; logoUrl: string; url?: string }[] =
       JSON.parse(list.dataset.logos ?? '[]')
     const SLOTS = Number(list.dataset.slots ?? 6)
 
-    if (logos.length <= SLOTS) {
-      // nothing to rotate — only one set
-    } else {
-      let offset = 0   // how many logos we've cycled past
+    if (logos.length > SLOTS) {
+      let offset = 0
+
+      const preload = (url: string) =>
+        new Promise<void>((res) => {
+          const img = new Image()
+          img.onload = img.onerror = () => res()
+          img.src = url
+        })
 
       function swapAll() {
         offset = (offset + SLOTS) % logos.length
         const items = list!.querySelectorAll<HTMLElement>('.trust-wall__item')
 
-        const fetched: Record<string, string> = {}
-
-        async function getInlineSvg(url: string): Promise<string> {
-          if (fetched[url]) return fetched[url]
-          try {
-            const res = await fetch(url)
-            const text = await res.text()
-            fetched[url] = text
-              .replace(/<\?xml[^>]*\?>/g, '')
-              .replace(/<!DOCTYPE[^>]*>/g, '')
-              .replace(/<svg([^>]*)>/, (_m, attrs) =>
-                '<svg class="trust-wall__svg" aria-hidden="true"' +
-                attrs.replace(/\s(?:width|height)="[^"]*"/g, '') + '>')
-              .trim()
-          } catch { fetched[url] = '' }
-          return fetched[url]
-        }
-
         items.forEach((item, i) => {
           const inner = item.querySelector<HTMLElement>('.trust-wall__inner')
-          if (!inner) return
+          const img = item.querySelector<HTMLImageElement>('.trust-wall__logo')
+          if (!inner || !img) return
 
-          const stagger = i * 100
+          const next = logos[(offset + i) % logos.length]
 
           setTimeout(async () => {
             // slide out up
@@ -108,14 +75,13 @@ function getSvgContent(logoUrl: string): string {
             inner.style.transform  = 'translateY(-110%)'
             inner.style.opacity    = '0'
 
-            const next = logos[(offset + i) % logos.length]
-            const svgHtml = await getInlineSvg(next.logoUrl)
+            await preload(next.logoUrl)
 
             setTimeout(() => {
-              // swap SVG content
-              inner.innerHTML = svgHtml
+              img.src = next.logoUrl
+              img.alt = next.name
 
-              // snap to bottom
+              // snap to bottom (hidden), then slide in
               inner.style.transition = 'none'
               inner.style.transform  = 'translateY(110%)'
 
@@ -125,11 +91,10 @@ function getSvgContent(logoUrl: string): string {
                 inner.style.opacity    = '1'
               }))
             }, 370)
-          }, stagger)
+          }, i * 100)
         })
       }
 
-      // first swap after 5s, then every 5s
       setInterval(swapAll, 5000)
     }
   }
@@ -195,44 +160,26 @@ function getSvgContent(logoUrl: string): string {
   will-change: transform, opacity;
 }
 
-/* NOTE: SVG is injected via set:html (both at build and in the JS swap),
-   so Astro's scoped-CSS attribute is NOT added to it — selectors must be
-   :global() or they won't match.
-   The injected SVG has had its width/height ATTRIBUTES stripped (only viewBox
-   remains) so every browser computes the element size unambiguously from the
-   viewBox ratio + the CSS below. overflow:visible is a belt-and-suspenders
-   guard against WebKit clipping the content to the element box. */
-:global(.trust-wall__svg) {
+/* <img> is a replaced element: max-height + max-width with auto scale it to
+   fit the box, preserving aspect ratio, in every browser — it cannot crop.
+   grayscale + opacity give the muted monochrome look the inline-SVG
+   currentColor trick used to provide. */
+.trust-wall__logo {
   display: block;
-  height: 64px;
-  width: auto;
+  max-height: 64px;
   max-width: 82%;
-  overflow: visible;
-  /* Force all paths/shapes to currentColor */
-  fill: currentColor;
-  color: var(--clr-text);
-  opacity: 0.4;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: 0.5;
   transition: opacity 0.2s;
 }
 
-/* SVGs may use stroke instead of fill */
-:global(.trust-wall__svg *) {
-  fill: currentColor;
-  stroke: none;
-}
-
-/* Don't recolor mask/clip/defs paint — a luminance mask needs its
-   white fill to stay white, otherwise it hides the artwork (e.g. ARTIN). */
-:global(.trust-wall__svg mask *),
-:global(.trust-wall__svg clipPath *),
-:global(.trust-wall__svg defs *) {
-  fill: white;
-}
-
 @media (max-width: 64em) {
-  :global(.trust-wall__svg) { height: 52px; }
+  .trust-wall__logo { max-height: 52px; }
 }
 @media (max-width: 40em) {
-  :global(.trust-wall__svg) { height: 44px; }
+  .trust-wall__logo { max-height: 44px; }
 }
 </style>
