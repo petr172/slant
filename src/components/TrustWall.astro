@@ -189,13 +189,16 @@ function getSvgContent(logoUrl: string): string {
 
 /* NOTE: SVG is injected via set:html (both at build and in the JS swap),
    so Astro's scoped-CSS attribute is NOT added to it — selectors must be
-   :global() or they won't match. Sizing uses max-height + max-width with
-   auto so the logo always scales to fit the card and never gets cropped. */
+   :global() or they won't match.
+   Sizing: use an EXPLICIT height (not height:auto + max-height). WebKit/Safari
+   does not reliably apply max-height to inline SVG when height is auto — it
+   keeps the intrinsic height and the card's overflow:hidden then crops the
+   logo. A fixed height is honored in every browser; max-width guards against
+   a wide logo overflowing a narrow card. */
 :global(.trust-wall__svg) {
   display: block;
+  height: 52px;
   width: auto;
-  height: auto;
-  max-height: 52px;
   max-width: 72%;
   /* Force all paths/shapes to currentColor */
   fill: currentColor;
@@ -219,9 +222,9 @@ function getSvgContent(logoUrl: string): string {
 }
 
 @media (max-width: 64em) {
-  :global(.trust-wall__svg) { max-height: 42px; }
+  :global(.trust-wall__svg) { height: 42px; }
 }
 @media (max-width: 40em) {
-  :global(.trust-wall__svg) { max-height: 36px; }
+  :global(.trust-wall__svg) { height: 36px; }
 }
 </style>
