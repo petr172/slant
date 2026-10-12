@@ -22,11 +22,17 @@ function getSvgContent(logoUrl: string): string {
   try {
     const filePath = join(process.cwd(), 'public', logoUrl.replace(/^\//, ''))
     const content = readFileSync(filePath, 'utf8')
-    // Strip XML declaration and add class for CSS targeting
+    // Strip XML declaration/doctype, add class, and REMOVE the root svg's
+    // width/height attributes (keep only viewBox). WebKit otherwise uses the
+    // width attribute as the element width, and CSS max-width then clips the
+    // content instead of scaling it — logos end up cropped. Only the opening
+    // <svg ...> tag is touched, never child elements' width/height.
     return content
       .replace(/<\?xml[^>]*\?>/g, '')
       .replace(/<!DOCTYPE[^>]*>/g, '')
-      .replace(/<svg/, '<svg class="trust-wall__svg" aria-hidden="true"')
+      .replace(/<svg([^>]*)>/, (_m, attrs) =>
+        '<svg class="trust-wall__svg" aria-hidden="true"' +
+        attrs.replace(/\s(?:width|height)="[^"]*"/g, '') + '>')
       .trim()
   } catch {
     return ''
@@ -82,7 +88,9 @@ function getSvgContent(logoUrl: string): string {
             fetched[url] = text
               .replace(/<\?xml[^>]*\?>/g, '')
               .replace(/<!DOCTYPE[^>]*>/g, '')
-              .replace(/<svg/, '<svg class="trust-wall__svg" aria-hidden="true"')
+              .replace(/<svg([^>]*)>/, (_m, attrs) =>
+                '<svg class="trust-wall__svg" aria-hidden="true"' +
+                attrs.replace(/\s(?:width|height)="[^"]*"/g, '') + '>')
               .trim()
           } catch { fetched[url] = '' }
           return fetched[url]
@@ -171,7 +179,7 @@ function getSvgContent(logoUrl: string): string {
   background: var(--clr-surface);
   border-radius: var(--radius-md);
   overflow: hidden;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 5 / 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -183,27 +191,27 @@ function getSvgContent(logoUrl: string): string {
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding: var(--sp-md);
+  padding: var(--sp-sm);
   will-change: transform, opacity;
 }
 
 /* NOTE: SVG is injected via set:html (both at build and in the JS swap),
    so Astro's scoped-CSS attribute is NOT added to it — selectors must be
    :global() or they won't match.
-   Sizing: use an EXPLICIT height (not height:auto + max-height). WebKit/Safari
-   does not reliably apply max-height to inline SVG when height is auto — it
-   keeps the intrinsic height and the card's overflow:hidden then crops the
-   logo. A fixed height is honored in every browser; max-width guards against
-   a wide logo overflowing a narrow card. */
+   The injected SVG has had its width/height ATTRIBUTES stripped (only viewBox
+   remains) so every browser computes the element size unambiguously from the
+   viewBox ratio + the CSS below. overflow:visible is a belt-and-suspenders
+   guard against WebKit clipping the content to the element box. */
 :global(.trust-wall__svg) {
   display: block;
-  height: 52px;
+  height: 64px;
   width: auto;
-  max-width: 72%;
+  max-width: 82%;
+  overflow: visible;
   /* Force all paths/shapes to currentColor */
   fill: currentColor;
   color: var(--clr-text);
-  opacity: 0.35;
+  opacity: 0.4;
   transition: opacity 0.2s;
 }
 
@@ -222,9 +230,9 @@ function getSvgContent(logoUrl: string): string {
 }
 
 @media (max-width: 64em) {
-  :global(.trust-wall__svg) { height: 42px; }
+  :global(.trust-wall__svg) { height: 52px; }
 }
 @media (max-width: 40em) {
-  :global(.trust-wall__svg) { height: 36px; }
+  :global(.trust-wall__svg) { height: 44px; }
 }
 </style>
