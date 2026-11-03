@@ -476,14 +476,29 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
     const yearEl = document.getElementById('footer-year')
     if (yearEl) yearEl.textContent = String(new Date().getFullYear())
 
-    // Footer logo — grow 20% when footer scrolls into view
-    const footerLogo = document.querySelector('.site-footer__logo')
+    // Footer logo — scale řízený scrollem: od vjezdu loga do viewportu
+    // (0) po konec stránky (1). Počítá se z rectu každý frame, takže sedí
+    // i když se výška stránky změní (lazy obrázky) a funguje s Lenis i nativním scrollem.
+    const footerLogo = document.querySelector<HTMLElement>('.site-footer__logo')
     if (footerLogo && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const logoObserver = new IntersectionObserver(
-        ([entry]) => footerLogo.classList.toggle('is-grown', entry.isIntersecting),
-        { threshold: 0.6 }
-      )
-      logoObserver.observe(footerLogo)
+      const SCALE_FROM = 0.7
+      const SCALE_TO   = 1.2
+      let ticking = false
+      const updateLogoScale = () => {
+        ticking = false
+        const vh        = window.innerHeight
+        const traveled  = vh - footerLogo.getBoundingClientRect().top
+        const remaining = document.documentElement.scrollHeight - (window.scrollY + vh)
+        const total     = traveled + Math.max(0, remaining)
+        const p = total > 0 ? Math.min(1, Math.max(0, traveled / total)) : 1
+        footerLogo.style.setProperty('--logo-scale', String(SCALE_FROM + (SCALE_TO - SCALE_FROM) * p))
+      }
+      const requestUpdate = () => {
+        if (!ticking) { ticking = true; requestAnimationFrame(updateLogoScale) }
+      }
+      updateLogoScale()
+      window.addEventListener('scroll', requestUpdate, { passive: true })
+      window.addEventListener('resize', requestUpdate)
     }
 
     // Copy-to-clipboard chips (footer) — tooltip feedback
@@ -951,13 +966,10 @@ main { padding-top: 5rem; }
 .site-footer__logo .site-footer__logo-img {
   width: clamp(9rem, 18vw, 16rem);
   height: auto;
-  transform: scale(1);
+  /* --logo-scale nastavuje scroll skript (bez transition — plynulost dává scroll sám) */
+  transform: scale(var(--logo-scale, 1));
   transform-origin: left center;
-  transition: transform 0.7s var(--ease-out-expo);
   will-change: transform;
-}
-.site-footer__logo.is-grown .site-footer__logo-img {
-  transform: scale(1.2);
 }
 
 /* Right cluster: nav + social */
