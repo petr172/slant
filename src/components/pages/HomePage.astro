@@ -1196,6 +1196,19 @@ gsap.from('#js-hero-bot', {
   border-radius: var(--radius-md);
   background: var(--clr-surface);
   margin-bottom: var(--sp-md);
+  /* Gradient map na hover: grayscale + akcent v režimu screen → tmavé = oranžová, světlé = bílá */
+  position: relative;
+  isolation: isolate;
+}
+.blog-card__image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--clr-accent);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
 }
 .blog-card__image :global(picture),
 .blog-card__image :global(picture img) {
@@ -1203,9 +1216,10 @@ gsap.from('#js-hero-bot', {
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  transition: transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.4s ease;
 }
-.blog-card:hover .blog-card__image :global(picture img) { transform: scale(1.04); }
+.blog-card:hover .blog-card__image :global(picture img) { transform: scale(1.04); filter: grayscale(1) contrast(1.1); }
+.blog-card:hover .blog-card__image::after { opacity: 1; }
 
 .blog-card__placeholder {
   width: 100%;

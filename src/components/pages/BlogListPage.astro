@@ -249,7 +249,23 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--clr-surface);
+  position: relative;
+  isolation: isolate;
 }
+/* Gradient map na hover: grayscale + akcent v režimu screen → tmavé = oranžová, světlé = bílá */
+.featured-post__image::after,
+.blog-list__thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--clr-accent);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.featured-post:hover .featured-post__image::after,
+.blog-list__thumb:hover::after { opacity: 1; }
 .featured-post__image :global(picture),
 .featured-post__image :global(.featured-post__img) {
   display: block;
@@ -262,11 +278,12 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s ease, opacity 0.3s ease;
+  transition: transform 0.5s ease, opacity 0.3s ease, filter 0.4s ease;
 }
 .featured-post:hover .featured-post__image :global(picture img),
 .featured-post:hover .featured-post__image :global(.featured-post__img) {
   transform: scale(1.03);
+  filter: grayscale(1) contrast(1.1);
 }
 
 .featured-post__content {
@@ -344,15 +361,17 @@ const catCount = (cat: string) => posts.filter((p: any) => p.category === cat).l
   overflow: hidden;
   background: var(--clr-surface);
   display: block;
+  position: relative;
+  isolation: isolate;
 }
-.blog-list__thumb-img {
+.blog-list__thumb :global(.blog-list__thumb-img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.4s ease;
+  transition: transform 0.4s ease, filter 0.4s ease;
 }
-.blog-list__thumb:hover .blog-list__thumb-img { transform: scale(1.05); }
+.blog-list__thumb:hover :global(.blog-list__thumb-img) { transform: scale(1.05); filter: grayscale(1) contrast(1.1); }
 
 /* Content */
 .blog-list__body {
