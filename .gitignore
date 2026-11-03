@@ -8,3 +8,6 @@ dist/
 Assets/
 .astro/
 _archiv/
+
+# Claude Code — osobní nastavení
+.claude/settings.local.json
