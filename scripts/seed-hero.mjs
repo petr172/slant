@@ -16,17 +16,15 @@ const client = createClient({
   useCdn: false,
 })
 
-const doc = {
-  _id: 'siteSettings',
-  _type: 'siteSettings',
-  heroMedia: [
-    { _type: 'heroExternalImage', _key: 'slide-ajm',      url: '/slider-ajm.png',      alt: 'AJM' },
-    { _type: 'heroExternalImage', _key: 'slide-parkshop', url: '/slider-parkshop.png', alt: 'Park & Shop' },
-    { _type: 'heroExternalImage', _key: 'slide-rostutu',  url: '/slider-rostutu.png',  alt: 'Rostutu' },
-    { _type: 'heroExternalImage', _key: 'slide-vokal',    url: '/slider-vokal.png',    alt: 'Vokal' },
-  ],
-}
+// Obrázky leží v public/ (zdroj: Assets/Slider/, zmenšené na 1920×1080 JPG)
+const heroMedia = [
+  { _type: 'heroExternalImage', _key: 'slide-parkshop', url: '/slider-parkshop.jpg', alt: 'Park & Shop' },
+  { _type: 'heroExternalImage', _key: 'slide-rostutu',  url: '/slider-rostutu.jpg',  alt: 'Rostutu' },
+  { _type: 'heroExternalImage', _key: 'slide-jatvar',   url: '/slider-jatvar.jpg',   alt: 'Jatvar' },
+  { _type: 'heroExternalImage', _key: 'slide-halmax',   url: '/slider-halmax.jpg',   alt: 'Halmax' },
+]
 
+// Jen patch heroMedia — createOrReplace by smazal ostatní Site Settings (loga, chip preview…)
 console.log('Seeding hero slides...')
-const result = await client.createOrReplace(doc)
+const result = await client.patch('siteSettings').set({ heroMedia }).commit()
 console.log('Done:', result._id)
