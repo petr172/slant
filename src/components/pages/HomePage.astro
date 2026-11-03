@@ -397,11 +397,11 @@ const faqLd = {
     const moveX = gsap.quickTo(heroCursor, 'x', { duration: 0.5, ease: 'power3.out' })
     const moveY = gsap.quickTo(heroCursor, 'y', { duration: 0.5, ease: 'power3.out' })
 
-    // Track mouse globally inside hero so cursor position stays correct
+    // Kurzor je position: fixed → souřadnice přímo z viewportu. Při scrollu
+    // (myš stojí, mousemove nepřijde) tak zůstává pod myší a neujíždí s obsahem.
     heroSection.addEventListener('mousemove', (e) => {
-      const rect = heroSection.getBoundingClientRect()
-      moveX(e.clientX - rect.left)
-      moveY(e.clientY - rect.top)
+      moveX(e.clientX)
+      moveY(e.clientY)
     })
 
     // Show/hide only when over the reel area
@@ -492,32 +492,70 @@ gsap.from('#js-hero-bot', {
     y: 20, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.8,
   })
 
-  // ── Hero slideshow — hard cut, video on ended, images 1s ─────────────
+  // ── Hero slideshow — rytmus střihů ───────────────────────────────────
+  // Opakující se „takt" o třech krocích: dlouhé podržení → čistý střih,
+  // krátké podržení → čistý střih, dlouhé podržení → roll (rychlý průlet
+  // ostatními obrázky, který zpomaluje jako dobíhající ruleta a dosedne na další).
+  // Každý střih = obrázek naskočí na 1.06× a během podržení se usadí (CSS).
+  // Video drží do konce. Reduced motion: jen klidné střídání bez rollu.
   const heroSlides = document.querySelectorAll<HTMLElement>('.hero__slide')
   if (heroSlides.length > 1) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const PHRASE = reduced
+      ? [{ hold: 4000, roll: false }]
+      : [
+          { hold: 2600, roll: false },
+          { hold: 1300, roll: false },
+          { hold: 2600, roll: true },
+        ]
+    const ROLL_FRAMES = 5    // počet rychlých záběrů před dosednutím
+    const ROLL_FIRST  = 75   // ms prvního záběru
+    const ROLL_GROW   = 1.45 // každý další záběr o 45 % delší → zpomalení (75→110→160→230→330 ms)
+    const n = heroSlides.length
     let current = 0
+    let step = 0
 
-    function next() {
+    const show = (i: number) => {
       heroSlides[current].classList.remove('is-active')
-      current = (current + 1) % heroSlides.length
+      current = i
       heroSlides[current].classList.add('is-active')
-      scheduleNext()
+    }
+
+    // Roll: cyklí přes ostatní obrázky (cíl vynechá) a nakonec dosedne na cíl
+    const roll = (target: number, done: () => void) => {
+      const frames: number[] = []
+      for (let k = 2; frames.length < ROLL_FRAMES; k++) {
+        const f = (current + k) % n
+        if (f !== target) frames.push(f)
+      }
+      let delay = ROLL_FIRST
+      const tick = () => {
+        const f = frames.shift()
+        if (f === undefined) { show(target); done(); return }
+        show(f)
+        setTimeout(tick, delay)
+        delay *= ROLL_GROW
+      }
+      tick()
+    }
+
+    const advance = () => {
+      const beat = PHRASE[step % PHRASE.length]
+      step++
+      const target = (current + 1) % n
+      if (beat.roll && n > 2) roll(target, scheduleNext)
+      else { show(target); scheduleNext() }
     }
 
     function scheduleNext() {
       const slide = heroSlides[current]
-      const type = slide.dataset.type
-      if (type === 'heroVideo') {
-        const video = slide.querySelector('video')
-        if (video) {
-          video.currentTime = 0
-          video.play()
-          video.addEventListener('ended', next, { once: true })
-        } else {
-          setTimeout(next, 3000)
-        }
+      const video = slide.dataset.type === 'heroVideo' ? slide.querySelector('video') : null
+      if (video) {
+        video.currentTime = 0
+        video.play()
+        video.addEventListener('ended', advance, { once: true })
       } else {
-        setTimeout(next, 1000)
+        setTimeout(advance, PHRASE[step % PHRASE.length].hold)
       }
     }
 
@@ -536,30 +574,45 @@ gsap.from('#js-hero-bot', {
       gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
       gsap.to(reelWrap, { scale: 1, duration: 1.4, ease: 'power4.out', delay: 0.4 })
     } else {
-      // Desktop: scale entrance, pak pin + clip-path scroll expand
-      gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
-      gsap.set(reel, { clipPath: 'inset(4% 10% 4% 10% round 16px)' })
+      // Desktop: wrap je vysoký jako obrazovka (CSS .is-expandable) a clip-path
+      // z něj vyřízne kartu 16:9 uprostřed. Pin se chytí, když wrap vyplní
+      // obrazovku (karta je tedy přesně uprostřed); scroll pak ořez rozevře na
+      // celou plochu, chvíli podrží a scroll pokračuje. Obraz se nedeformuje.
+      reelWrap.classList.add('is-expandable')
+      const CARD_W   = 0.84   // šířka karty vůči šířce wrapu
+      const CARD_MAX = 0.82   // max výška karty vůči výšce wrapu
+      const RADIUS = 16
+      const EXPAND = 0.75   // část pinu, během které se roztahuje; zbytek = podržení
+      let insetV = 0, insetH = 0, progress = 0
 
+      const measure = () => {
+        const w = reelWrap.offsetWidth, h = reelWrap.offsetHeight
+        const cardW = w * CARD_W
+        const cardH = Math.min(cardW * 9 / 16, h * CARD_MAX)
+        insetH = (w - cardW) / 2
+        insetV = (h - cardH) / 2
+      }
+      const setClip = () => {
+        const k = 1 - gsap.parseEase('power2.inOut')(Math.min(1, progress / EXPAND))
+        gsap.set(reel, {
+          clipPath: `inset(${insetV * k}px ${insetH * k}px ${insetV * k}px ${insetH * k}px round ${RADIUS * k}px)`,
+        })
+      }
+      measure()
+      setClip()
+
+      gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
       // Entrance: scale 0.9 → 1
       gsap.to(reelWrap, { scale: 1, duration: 1.4, ease: 'power4.out', delay: 0.4 })
 
-      // Scroll: clip-path se rozevře na celou plochu
       ScrollTrigger.create({
         trigger: reelWrap,
-        start: 'top top',
+        start: 'center center',
         end: '+=120%',
         pin: true,
         pinSpacing: true,
-        scrub: 1,
-        onUpdate: (self) => {
-          const p = self.progress
-          const v = gsap.utils.interpolate(4, 0, p)
-          const h = gsap.utils.interpolate(10, 0, p)
-          const r = gsap.utils.interpolate(16, 0, p)
-          gsap.set(reel, {
-            clipPath: `inset(${v}% ${h}% ${v}% ${h}% round ${r}px)`,
-          })
-        },
+        onRefresh: () => { measure(); setClip() },
+        onUpdate: (self) => { progress = self.progress; setClip() },
       })
     }
   }
@@ -663,7 +716,8 @@ gsap.from('#js-hero-bot', {
 <style>
 /* ── Hero custom cursor ──────────────────────────────────────────────── */
 .hero__cursor {
-  position: absolute;
+  /* fixed = drží se myši i při scrollu (absolute ujížděl s obsahem) */
+  position: fixed;
   top: 0;
   left: 0;
   width: 56px;
@@ -842,9 +896,9 @@ gsap.from('#js-hero-bot', {
 .hero__reel-wrap {
   display: block;
   width: 100%;
-  /* Proportional scaling: 16/9 on mobile, capped at 50vh on desktop */
+  /* Proportional scaling: 16/9, na desktopu max 82vh */
   aspect-ratio: 16 / 9;
-  max-height: 50vh;
+  max-height: 82vh;
   position: relative;
   overflow: hidden;
   text-decoration: none;
@@ -856,12 +910,30 @@ gsap.from('#js-hero-bot', {
   will-change: transform;
 }
 
+/* Desktop expand: wrap je vysoký jako obrazovka, viditelnou kartu 16:9
+   uprostřed vyřízne clip-path (nastavuje JS) a scroll ji rozevře na celou plochu.
+   Roztažený obrázek tak nikdy nepřesahuje wrap a nepřekrývá obsah pod ním. */
+.hero__reel-wrap.is-expandable {
+  aspect-ratio: auto;
+  max-height: none;
+  height: 100vh;
+}
+
 .hero__slide {
   position: absolute;
   inset: 0;
   opacity: 0;
+  /* Nájezd: neaktivní slide čeká na 1.06×, po střihu se pomalu usadí na 1× */
+  transform: scale(1.06);
 }
-.hero__slide.is-active { opacity: 1; }
+.hero__slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: transform 3.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__slide, .hero__slide.is-active { transform: none; transition: none; }
+}
 
 .hero__media {
   width: 100%;
