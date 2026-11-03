@@ -368,9 +368,6 @@ const caseStudyLd = {
         </footer>
       )}
 
-      <!-- ─── CTA ─────────────────────────────────────────────────────── -->
-      <ContactCta {lang} />
-
       <!-- ─── Case study nav ─────────────────────────────────────────── -->
       <nav class="cs-nav container" aria-label="Další projekty">
 
@@ -422,6 +419,9 @@ const caseStudyLd = {
         ) : <span />}
 
       </nav>
+
+      <!-- ─── CTA ─────────────────────────────────────────────────────── -->
+      <ContactCta {lang} />
 
       {galleryRows.length > 0 && (
         <>
@@ -686,26 +686,18 @@ const caseStudyLd = {
   background: var(--clr-surface);
 }
 
-/* Breadcrumb overlaid on the media (top-left), frosted for legibility */
+/* Breadcrumb overlaid on the media (top-left) — bílý text se stínem pro čitelnost */
 .cs-media .cs-breadcrumbs {
   position: absolute;
   top: var(--sp-md);
   left: var(--sp-md);
   margin: 0;
   z-index: 2;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
 }
-.cs-media .cs-breadcrumbs a {
-  color: #fff;
-  background: rgba(0, 0, 0, 0.32);
-  border-color: rgba(255, 255, 255, 0.22);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-.cs-media .cs-breadcrumbs a:hover {
-  color: #fff;
-  background: rgba(0, 0, 0, 0.55);
-  border-color: rgba(255, 255, 255, 0.4);
-}
+.cs-media .cs-breadcrumbs a:hover { color: #fff; }
+.cs-media .cs-breadcrumbs a::after { color: rgba(255, 255, 255, 0.55); }
 
 /* ── Intro block ─────────────────────────────────────────────────────── */
 .cs-intro { padding-block: var(--sp-2xl) var(--sp-xl); }
