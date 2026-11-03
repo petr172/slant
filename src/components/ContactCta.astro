@@ -12,12 +12,12 @@ const { lang = 'cs', id = 'contact' } = Astro.props
   <div class="container">
     <div class="cta-brutal__card">
       <svg class="cta-brutal__svg js-cta-svg" viewBox="0 0 1410 471" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 187.624 0)" fill="var(--clr-accent)"/></g>
-        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 394.817 0)" fill="var(--clr-accent)"/></g>
-        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 602.011 0)" fill="var(--clr-accent)"/></g>
-        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 809.205 0)" fill="var(--clr-accent)"/></g>
-        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1016.4 0)" fill="var(--clr-accent)"/></g>
-        <g class="cta-pill"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1223.59 0)" fill="var(--clr-accent)"/></g>
+        <g class="cta-pill"><g class="cta-pill__inner"><g class="cta-pill__jelly"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 187.624 0)" fill="var(--clr-accent)"/></g></g></g>
+        <g class="cta-pill"><g class="cta-pill__inner"><g class="cta-pill__jelly"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 394.817 0)" fill="var(--clr-accent)"/></g></g></g>
+        <g class="cta-pill"><g class="cta-pill__inner"><g class="cta-pill__jelly"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 602.011 0)" fill="var(--clr-accent)"/></g></g></g>
+        <g class="cta-pill"><g class="cta-pill__inner"><g class="cta-pill__jelly"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 809.205 0)" fill="var(--clr-accent)"/></g></g></g>
+        <g class="cta-pill"><g class="cta-pill__inner"><g class="cta-pill__jelly"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1016.4 0)" fill="var(--clr-accent)"/></g></g></g>
+        <g class="cta-pill"><g class="cta-pill__inner"><g class="cta-pill__jelly"><rect width="220" height="400" rx="110" transform="matrix(0.847001 0.531591 -0.469059 0.883167 1223.59 0)" fill="var(--clr-accent)"/></g></g></g>
       </svg>
       <div class="cta-brutal__content">
         <p class="cta-brutal__text">
@@ -54,20 +54,74 @@ const { lang = 'cs', id = 'contact' } = Astro.props
     mq.addEventListener('change', applyViewBox)
   }
 
-  if (ctaSvg && ctaPills?.length) {
-    gsap.from(ctaPills, {
-      scale: 0.9,
-      transformOrigin: '50% 50%',
-      duration: 1.0,
-      ease: 'expo.out',
-      stagger: { amount: 0.3, from: 'start' },
-      scrollTrigger: { trigger: ctaSvg, start: 'top 88%' },
-    })
+  const ctaInners = ctaSvg?.querySelectorAll<SVGGElement>('.cta-pill__inner')
+  const ctaJellies = ctaSvg?.querySelectorAll<SVGGElement>('.cta-pill__jelly')
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  if (ctaSvg && ctaPills?.length && !reducedMotion) {
+    // Pevné středy transformací spočítané jednou z netransformovaných tvarů.
+    // (transformOrigin '50% 50%' se počítá z aktuálního — už transformovaného —
+    // bboxu skupiny, takže pilulky po animaci zůstaly posunuté a uřízlé.)
+    const boxes = Array.from(ctaPills, (p) => p.getBBox())
+    const center = (i: number) => `${boxes[i].x + boxes[i].width / 2} ${boxes[i].y + boxes[i].height / 2}`
+    const bottom = (i: number) => `${boxes[i].x + boxes[i].width / 2} ${boxes[i].y + boxes[i].height}`
+    ctaPills.forEach((p, i) => gsap.set(p, { svgOrigin: center(i) }))
+    ctaJellies?.forEach((j, i) => gsap.set(j, { svgOrigin: center(i) }))
+    ctaInners?.forEach((n, i) => gsap.set(n, { svgOrigin: bottom(i) }))
+
+    // 1) Pozice scrollu: každá pilulka zvlášť (stagger) z −10° do 0°.
+    //    back.out = lehce přestřelí přes konečný stav a dosedne → bounce tažený scrollem.
+    //    Od vjezdu do viewportu po střed obrazovky, při scrollu zpět se vrací.
+    gsap.fromTo(ctaPills,
+      { rotation: -10 },
+      {
+        rotation: 0,
+        ease: 'back.out(2.2)',
+        stagger: { each: 0.12, from: 'start' },
+        scrollTrigger: { trigger: ctaSvg, start: 'top bottom', end: 'center center', scrub: 0.8, refreshPriority: -1 },
+      }
+    )
+
+    // 2) Rychlost scrollu: pružina na každé pilulce. Rychlý scroll dolů je
+    //    naklopí doprava, nahoru doleva; po zastavení se dokývou. Každá má
+    //    jinou tuhost → vlna zleva doprava.
+    if (ctaJellies?.length) {
+      // Každá pilulka má vlastní quickTo s elastickým dokmitem; delší duration
+      // u dalších pilulek = zpoždění → vlna zleva doprava.
+      const tilts = Array.from(ctaJellies, (el, i) =>
+        gsap.quickTo(el, 'rotation', { duration: 0.7 + i * 0.1, ease: 'elastic.out(1, 0.45)' })
+      )
+      const MAX_TILT = 14  // stupňů při rychlém švihu
+      // Síla náklonu — skočí na rychlost scrollu a plynule spadne na 0, když scroll ustane
+      const kick = { v: 0 }
+      const apply = () => { for (const tilt of tilts) tilt(kick.v) }
+
+      ScrollTrigger.create({
+        trigger: ctaSvg,
+        start: 'top bottom',
+        end: 'bottom top',
+        // přepočítat až po pinnutých sekcích výš na stránce (hero reel), jinak je start o délku pinu vedle
+        refreshPriority: -1,
+        onUpdate: (self) => {
+          // px/s → stupně; scroll dolů = doprava, nahoru = doleva
+          const v = gsap.utils.clamp(-MAX_TILT, MAX_TILT, self.getVelocity() / 110)
+          if (Math.abs(v) > Math.abs(kick.v) || Math.sign(v) !== Math.sign(kick.v)) {
+            kick.v = v
+            gsap.to(kick, { v: 0, duration: 0.6, ease: 'power3.out', overwrite: true, onUpdate: apply })
+            apply()
+          }
+        },
+        onLeave: () => { kick.v = 0; apply() },
+        onLeaveBack: () => { kick.v = 0; apply() },
+      })
+    }
+
+    // Hover jede na vnitřním obalu, aby se nepral se scroll náklonem
     ctaSvg.addEventListener('mouseenter', () => {
-      gsap.to(ctaPills, { rotation: 10, transformOrigin: '50% 100%', duration: 0.4, stagger: { amount: 0.18, from: 'start' }, ease: 'power2.out', overwrite: 'auto' })
+      gsap.to(ctaInners!, { rotation: 10, duration: 0.4, stagger: { amount: 0.18, from: 'start' }, ease: 'power2.out', overwrite: 'auto' })
     })
     ctaSvg.addEventListener('mouseleave', () => {
-      gsap.to(ctaPills, { rotation: 0, transformOrigin: '50% 100%', duration: 0.5, stagger: { amount: 0.12, from: 'start' }, ease: 'power2.inOut', overwrite: 'auto' })
+      gsap.to(ctaInners!, { rotation: 0, duration: 0.5, stagger: { amount: 0.12, from: 'start' }, ease: 'power2.inOut', overwrite: 'auto' })
     })
   }
 </script>
@@ -75,7 +129,8 @@ const { lang = 'cs', id = 'contact' } = Astro.props
 <style>
 .cta-brutal { padding-block: var(--sp-3xl); }
 .cta-brutal__card { position: relative; width: 100%; }
-.cta-brutal__svg { display: block; width: 100%; height: auto; }
+/* overflow: visible — při přestřelení/houpání nesmí viewBox uříznout okraje pilulek */
+.cta-brutal__svg { display: block; width: 100%; height: auto; overflow: visible; }
 .cta-brutal__content {
   position: absolute;
   inset: 0;
@@ -117,7 +172,8 @@ const { lang = 'cs', id = 'contact' } = Astro.props
   .cta-pill:nth-child(n + 5) { display: none; }
   .cta-brutal .container { padding-inline: var(--sp-sm); }
   .cta-brutal__card { min-height: 18rem; }
-  .cta-brutal__svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  /* mobil: viewBox je oříznutý (slice) → přetékání by ukázalo odříznuté pilulky */
+  .cta-brutal__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
   .cta-brutal__content {
     flex-direction: column;
     align-items: center;

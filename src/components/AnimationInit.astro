@@ -42,6 +42,23 @@
     ;(window as any).__ScrollTrigger = ScrollTrigger
     ;(window as any).__SplitText = SplitText
 
+    // ─── Přepočet ScrollTriggerů při změně výšky stránky ──────────────────
+    // Lazy obrázky/videa a rozbalovací bloky mění výšku stránky bez resize
+    // eventu → start/end triggerů by zůstaly staré a scroll animace by běžely
+    // mimo obrazovku. Refresh jen když se výška opravdu změnila (debounce).
+    let lastHeight = document.documentElement.scrollHeight
+    let refreshTimer: number | undefined
+    new ResizeObserver(() => {
+      window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => {
+        const h = document.documentElement.scrollHeight
+        if (Math.abs(h - lastHeight) < 2) return
+        lastHeight = h
+        lenis.resize()
+        ScrollTrigger.refresh()
+      }, 150)
+    }).observe(document.body)
+
     // ─── Základní page-in animace ──────────────────────────────────────────
     // Elementy s [data-fade] se při načtení stránky vyjeví zdola
     document.addEventListener('DOMContentLoaded', () => {
