@@ -80,7 +80,11 @@
   badge.querySelector('.float-badge__img--backtop')?.addEventListener('click', () => {
     scrollingToTop = true
     badge.classList.add('is-scrolling-to-top')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Scroll řídí Lenis — nativní smooth scrollTo by přebil a šipka by zabrala
+    // až na druhý klik. Bez Lenisu (reduced motion) nativní scroll.
+    const lenis = (window as any).__lenis
+    if (lenis) lenis.scrollTo(0, { duration: 1.4 })
+    else window.scrollTo({ top: 0, behavior: 'smooth' })
   })
 </script>
 
