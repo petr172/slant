@@ -62,99 +62,111 @@ function json(data: unknown, status = 200): Response {
   })
 }
 
-// ── Personalizovaný blok podle vybrané služby ────────────────────────────────
-function serviceBlock(services: string[], lang: Lang): string {
-  const s = services.map((x) => x.toLowerCase())
-  const has = (k: string) => s.some((x) => x.includes(k))
+// ── HTML šablona potvrzení pro odesílatele ──────────────────────────────────
+// Potvrzení „zpráva došla" + rekapitulace toho, co odeslal. Obrázky jen PNG
+// (Gmail/Outlook neumí SVG), styly inline, layout tabulkami.
+const LOGO_URL = 'https://slant.cz/email/slant-logo.png'
 
-  const items: string[] = []
-  const push = (cs: string, en: string) => items.push(lang === 'cs' ? cs : en)
-
-  if (has('brand'))
-    push(
-      'U brandingu obvykle začínáme strategií a positioningem, než se pustíme do vizuální identity — rádi vám ukážeme, jak to vypadalo u <a href="https://slant.cz/work/jatvar" style="color:' +
-        BRAND +
-        '">Jatvaru</a>.',
-      'For branding we usually start with strategy and positioning before the visual identity — happy to show how that looked for <a href="https://slant.cz/en/work/jatvar" style="color:' +
-        BRAND +
-        '">Jatvar</a>.',
-    )
-  if (has('web'))
-    push(
-      'U webdesignu řešíme UX, obsah i technické provedení — podívejte se na <a href="https://slant.cz/work/data-msk" style="color:' +
-        BRAND +
-        '">Data MSK</a>.',
-      'For web design we cover UX, content and build — take a look at <a href="https://slant.cz/en/work/data-msk" style="color:' +
-        BRAND +
-        '">Data MSK</a>.',
-    )
-  if (has('packag'))
-    push(
-      'U obalového designu propojujeme značku s reálným produktem na poličce — rádi ukážeme příklady na hovoru.',
-      'For packaging we connect the brand with the real product on the shelf — happy to share examples on the call.',
-    )
-
-  if (items.length === 0)
-    push(
-      'Na úvodním hovoru projdeme, co potřebujete, a navrhneme další kroky.',
-      'On the intro call we’ll walk through what you need and propose next steps.',
-    )
-
-  return items.map((i) => `<p style="margin:0 0 12px">${i}</p>`).join('')
+interface LeadSummary {
+  name: string
+  email: string
+  services: string[]
+  message: string
+  attachmentName?: string
 }
 
-// ── HTML šablona e-mailu pro leada ────────────────────────────────────────────
-function leadEmailHtml(name: string, services: string[], lang: Lang): string {
+function leadEmailHtml(d: LeadSummary, lang: Lang): string {
   const t =
     lang === 'cs'
       ? {
-          hi: `Dobrý den, ${esc(name)},`,
+          title: 'Vaše zpráva dorazila',
+          hi: `Dobrý den, ${esc(d.name)},`,
           intro:
-            'díky za zprávu! Dostali jsme vaši poptávku a ozveme se vám do 1–2 pracovních dnů.',
-          bookLead: 'Chcete to urychlit? Rezervujte si rovnou nezávazný úvodní hovor:',
+            'děkujeme, že jste nám napsali. Vaši zprávu máme a ozveme se vám zpravidla do 3 dnů.',
+          recap: 'Co jste nám poslali',
+          lName: 'Jméno',
+          lEmail: 'E-mail',
+          lServices: 'Služby',
+          lMessage: 'Zpráva',
+          lAttach: 'Příloha',
+          bookLead: 'Chcete to urychlit? Rovnou si rezervujte nezávazný úvodní hovor.',
           book: 'Rezervovat úvodní hovor',
-          work: 'Mezitím se můžete podívat na naše práce',
-          sign: 'Tým Slant',
-          ps: 'Pokud jste tuto poptávku neodeslali, tento e-mail ignorujte.',
+          reply: 'Chcete něco doplnit? Stačí odpovědět na tento e-mail.',
+          sign: 'Těšíme se,<br>tým Slant',
+          ps: 'Tento e-mail jsme poslali, protože někdo vyplnil kontaktní formulář na slant.cz s vaší adresou. Pokud jste to nebyli vy, e-mail ignorujte.',
         }
       : {
-          hi: `Hi ${esc(name)},`,
+          title: 'Your message has arrived',
+          hi: `Hi ${esc(d.name)},`,
           intro:
-            'thanks for reaching out! We’ve received your enquiry and will get back to you within 1–2 business days.',
-          bookLead: 'Want to move faster? Book a no-obligation intro call right away:',
+            'thank you for getting in touch. We have your message and will usually get back to you within 3 days.',
+          recap: 'What you sent us',
+          lName: 'Name',
+          lEmail: 'Email',
+          lServices: 'Services',
+          lMessage: 'Message',
+          lAttach: 'Attachment',
+          bookLead: 'Want to move faster? Book a no-obligation intro call right away.',
           book: 'Book an intro call',
-          work: 'In the meantime, take a look at our work',
-          sign: 'The Slant team',
-          ps: 'If you didn’t send this enquiry, please ignore this email.',
+          reply: 'Want to add something? Just reply to this email.',
+          sign: 'Looking forward to it,<br>the Slant team',
+          ps: 'You received this email because someone filled in the contact form on slant.cz with your address. If it wasn’t you, please ignore it.',
         }
 
-  const workUrl = lang === 'cs' ? 'https://slant.cz/work' : 'https://slant.cz/en/work'
+  const row = (label: string, value: string) => `
+              <tr>
+                <td style="padding:10px 0;border-top:1px solid #ececec;font-size:13px;color:#8a8a8a;width:96px;vertical-align:top">${label}</td>
+                <td style="padding:10px 0;border-top:1px solid #ececec;font-size:14px;line-height:1.55;color:#1a1a1a;vertical-align:top">${value}</td>
+              </tr>`
+
+  const rows = [
+    row(t.lName, esc(d.name)),
+    row(t.lEmail, esc(d.email)),
+    d.services.length ? row(t.lServices, esc(d.services.join(', '))) : '',
+    d.message
+      ? row(t.lMessage, `<span style="white-space:pre-wrap">${esc(d.message)}</span>`)
+      : '',
+    d.attachmentName ? row(t.lAttach, esc(d.attachmentName)) : '',
+  ].join('')
 
   return `<!DOCTYPE html>
 <html lang="${lang}">
-<body style="margin:0;background:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 16px">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${t.title}</title></head>
+<body style="margin:0;padding:0;background:#f4f3f1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a">
+  <div style="display:none;max-height:0;overflow:hidden">${t.intro}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f3f1;padding:32px 12px">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden">
-        <tr><td style="padding:40px 40px 8px">
-          <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1a1a1a">Slant</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px">
+        <tr><td style="padding:36px 40px 0">
+          <a href="https://slant.cz" style="text-decoration:none"><img src="${LOGO_URL}" width="96" height="30" alt="Slant" style="display:block;border:0;width:96px;height:30px"></a>
         </td></tr>
-        <tr><td style="padding:16px 40px 0">
-          <p style="margin:0 0 16px;font-size:18px;font-weight:600">${t.hi}</p>
-          <p style="margin:0 0 20px;font-size:15px;line-height:1.6">${t.intro}</p>
-          ${serviceBlock(services, lang)}
-          <p style="margin:24px 0 12px;font-size:15px;line-height:1.6">${t.bookLead}</p>
-          <p style="margin:0 0 28px">
-            <a href="${esc(BOOKING_URL)}" style="display:inline-block;background:${BRAND};color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 28px;border-radius:999px">${t.book}</a>
-          </p>
-          <p style="margin:0 0 28px;font-size:15px;line-height:1.6">
-            ${t.work}: <a href="${workUrl}" style="color:${BRAND}">${workUrl.replace('https://', '')}</a>
-          </p>
-          <p style="margin:0 0 4px;font-size:15px">${t.sign}</p>
+        <tr><td style="padding:36px 40px 0">
+          <h1 style="margin:0 0 20px;font-size:26px;line-height:1.2;font-weight:700;letter-spacing:-0.02em">${t.title}</h1>
+          <p style="margin:0 0 8px;font-size:15px;line-height:1.6">${t.hi}</p>
+          <p style="margin:0;font-size:15px;line-height:1.6">${t.intro}</p>
         </td></tr>
-        <tr><td style="padding:24px 40px 40px">
-          <hr style="border:none;border-top:1px solid #eee;margin:0 0 16px">
-          <p style="margin:0;font-size:12px;line-height:1.5;color:#999">${t.ps}<br>Slant s.r.o. · Zborovská 940/2a, 616 00 Brno · <a href="https://slant.cz" style="color:#999">slant.cz</a></p>
+        <tr><td style="padding:28px 40px 0">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f5;border-radius:12px">
+            <tr><td style="padding:20px 22px 10px">
+              <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8a8a8a">${t.recap}</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:28px 40px 0">
+          <p style="margin:0 0 14px;font-size:15px;line-height:1.6">${t.bookLead}</p>
+          <a href="${esc(BOOKING_URL)}" style="display:inline-block;background:${BRAND};color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:999px">${t.book}</a>
+        </td></tr>
+        <tr><td style="padding:28px 40px 36px">
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.6">${t.reply}</p>
+          <p style="margin:0;font-size:15px;line-height:1.6">${t.sign}</p>
+        </td></tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+        <tr><td style="padding:20px 40px 0">
+          <p style="margin:0 0 8px;font-size:12px;line-height:1.5;color:#9a9a9a">${t.ps}</p>
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#9a9a9a">Slant s.r.o. · Zborovská 940/2a, 616 00 Brno · <a href="https://slant.cz" style="color:#9a9a9a">slant.cz</a></p>
         </td></tr>
       </table>
     </td></tr>
@@ -260,8 +272,12 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     await sendEmail({
       from: RESEND_FROM,
       to: email,
-      subject: lang === 'cs' ? 'Díky za vaši zprávu — Slant' : 'Thanks for reaching out — Slant',
-      html: leadEmailHtml(name, services, lang),
+      reply_to: CONTACT_TO, // odpověď klienta jde rovnou nám
+      subject: lang === 'cs' ? 'Vaše zpráva dorazila — Slant' : 'Your message has arrived — Slant',
+      html: leadEmailHtml(
+        { name, email, services, message, attachmentName: attachments?.[0]?.filename },
+        lang,
+      ),
     })
 
     return json({ success: true })
