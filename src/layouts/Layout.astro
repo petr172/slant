@@ -236,13 +236,19 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
       <nav class="mobile-menu__nav">
         <a href={navWork}        class="mobile-menu__item">{lang === 'cs' ? 'Práce'   : 'Work'}</a>
         <a href={lang === 'cs' ? '/blog' : '/en/blog'} class="mobile-menu__item">Blog</a>
-        <a href="#" class="mobile-menu__item" data-open-modal onclick="window.openModal?.(); return false">{lang === 'cs' ? 'Kontakt' : 'Contact'}</a>
         {alternateUrl && (
           <a href={alternateUrl} class="mobile-menu__item mobile-menu__item--lang">
             {lang === 'cs' ? 'EN' : 'CZ'}
           </a>
         )}
       </nav>
+      <!-- Kontakt jako akcentní CTA, ne další položka menu -->
+      <a href="#" class="mobile-menu__item mobile-menu__cta" data-open-modal onclick="window.openModal?.(); return false">
+        {lang === 'cs' ? 'Ozvěte se' : 'Get in touch'}
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
       <div class="mobile-menu__footer">
         <a href="mailto:petr@slant.cz">petr@slant.cz</a>
         <div class="mobile-menu__social">
@@ -832,7 +838,8 @@ main { padding-top: 5rem; }
   top: 0;
   left: 0.75rem;
   right: 0.75rem;
-  padding: var(--sp-xl) var(--sp-lg);
+  /* víc vzduchu: větší vnitřní odsazení */
+  padding: var(--sp-3xl) var(--sp-xl) var(--sp-2xl);
   border-radius: 0 0 1.5rem 1.5rem;
   background: color-mix(in srgb, var(--clr-bg) 92%, transparent);
   backdrop-filter: blur(24px);
@@ -841,7 +848,7 @@ main { padding-top: 5rem; }
   border-top: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-xl);
+  gap: var(--sp-2xl);
   transform: translateY(-100%);
   /* Hidden while closed so the panel's bottom border/corners don't peek
      out below the header island */
@@ -859,14 +866,15 @@ main { padding-top: 5rem; }
 .mobile-menu__nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  align-items: flex-start;
+  gap: var(--sp-md);
 }
 
 .mobile-menu__item {
   font-size: clamp(2rem, 8vw, 3rem);
   font-weight: 400;
   letter-spacing: -0.03em;
-  line-height: 1.15;
+  line-height: 1.1;
   color: var(--clr-text);
   opacity: 0;
   transform: translateY(20px);
@@ -880,13 +888,34 @@ main { padding-top: 5rem; }
   text-transform: uppercase;
   font-weight: 600;
   color: var(--clr-muted);
-  margin-top: var(--sp-sm);
+  margin-top: var(--sp-md);
 }
+
+/* Kontakt — akcentní CTA tlačítko (animuje se spolu s položkami: .mobile-menu__item) */
+.mobile-menu__item.mobile-menu__cta {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.95em 1.7em;
+  border-radius: 999px;
+  background: var(--clr-accent);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  transition: background 0.2s, gap 0.25s;
+}
+.mobile-menu__item.mobile-menu__cta:hover { color: #fff; gap: 0.85rem; filter: brightness(1.05); }
 
 .mobile-menu__footer {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  /* tenká linka odděluje kontakt od navigace */
+  padding-top: var(--sp-lg);
+  border-top: 1px solid var(--clr-border);
   font-size: 0.8125rem;
   color: var(--clr-muted);
   opacity: 0;
@@ -923,7 +952,7 @@ main { padding-top: 5rem; }
 
   /* Menu se rozbalí shora, pod navem */
   .mobile-menu__inner {
-    top: calc(4.5rem + env(safe-area-inset-top));
+    top: calc(5.25rem + env(safe-area-inset-top));   /* mezera pod navigací */
     bottom: auto;
     border-radius: 1.5rem;
     border-top: 1px solid var(--clr-border);

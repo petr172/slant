@@ -104,6 +104,10 @@ const featured: any[] = ((await client.fetch(FEATURED_CASE_STUDIES_QUERY)) ?? []
     })
     const contact = document.querySelector('.island-nav__contact')
     if (contact) contact.textContent = 'Contact'
+    // CTA v mobilním menu: přepsat jen text, šipku (svg) nechat
+    const cta = document.querySelector('.mobile-menu__cta')
+    const ctaText = cta && Array.from(cta.childNodes).find((n) => n.nodeType === 3 && n.textContent?.trim())
+    if (ctaText) ctaText.textContent = 'Get in touch '
   }
 
   // ── Piškvorky ──────────────────────────────────────────────────────────────
