@@ -16,11 +16,13 @@ const client = createClient({
   useCdn: false,
 })
 
-// Obrázky leží v public/ (zdroj: Assets/Slider/, zmenšené na 1920×1080 JPG)
+// Média leží v public/ (zdroj: Assets/Slider/ a Assets/Portfolio/, obrázky 1920×1080 JPG).
+// Video drží slider, dokud nedohraje.
 const heroMedia = [
   { _type: 'heroExternalImage', _key: 'slide-parkshop', url: '/slider-parkshop.jpg', alt: 'Park & Shop' },
   { _type: 'heroExternalImage', _key: 'slide-rostutu',  url: '/slider-rostutu.jpg',  alt: 'Rostutu' },
   { _type: 'heroExternalImage', _key: 'slide-jatvar',   url: '/slider-jatvar.jpg',   alt: 'Jatvar' },
+  { _type: 'heroVideo',         _key: 'slide-jatvar-animace', url: '/slider-jatvar-animace.mp4' },
   { _type: 'heroExternalImage', _key: 'slide-halmax',   url: '/slider-halmax.jpg',   alt: 'Halmax' },
 ]
 
