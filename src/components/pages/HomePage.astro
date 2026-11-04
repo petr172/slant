@@ -55,12 +55,11 @@ const faqItems = lang === 'cs' ? [
   { q: 'Kolik stojí spolupráce?', a: 'Každý projekt je jiný, takže cenu vždy stanovujeme na míru. Orientačně se branding pohybuje od 80 000 Kč, webdesign od 50 000 Kč. Na prvním setkání projdeme rozsah a dostanete konkrétní nabídku.' },
   { q: 'Jak dlouho trvá projekt?', a: 'Brandingový projekt typicky trvá 6–10 týdnů, webdesign 4–8 týdnů. Záleží na rozsahu a rychlosti zpětné vazby z vaší strany. Termíny vždy nastavíme dopředu a dodržíme je.' },
   { q: 'Pracujete i s menšími firmami nebo startupy?', a: 'Ano. Pracujeme s firmami v různých fázích — od startupů, které budují brand od nuly, až po zavedené společnosti, které chtějí rebranding. Důležitý je projekt a vzájemná chemie, ne velikost firmy.' },
-  { q: 'Jak probíhá spolupráce krok po kroku?', a: 'Začínáme úvodní schůzkou, kde pochopíme váš byznys a cíle. Následuje discovery fáze, návrh konceptů, prezentace a iterace na základě vaší zpětné vazby. Finální výstupy předáme v dohodnutých formátech.' },
+  { q: 'Jak probíhá spolupráce krok po kroku?', a: 'Začínáme úvodní schůzkou, kde pochopíme váš byznys a cíle. Pak přijde rešerše, moodboard a stylescape, na kterých společně ladíme směr podle vaší zpětné vazby. Na konci předáme brand manuál a všechna data v dohodnutých formátech. Celý postup najdete v sekci „Jak to děláme“.' },
   { q: 'Dodáváte i webové stránky, nebo jen design?', a: 'Primárně se věnujeme designu — strategii, vizuální identitě a UX/UI. U webu spolupracujeme s prověřenými vývojáři, takže zvládneme i kompletní dodávku od návrhu po spuštění.' },
-  { q: 'Co potřebujete od nás na začátku?', a: 'Stačí základní brief — co děláte, pro koho, jaké máte cíle a případně příklady vizuálů, které se vám líbí. Zbytek dobereme společně na úvodní schůzce.' },
+  { q: 'Co od nás na začátku potřebujete?', a: 'Stačí základní brief — co děláte, pro koho, jaké máte cíle a případně příklady vizuálů, které se vám líbí. Zbytek dobereme společně na úvodní schůzce.' },
   { q: 'Můžu u vás poptat jen logo?', a: 'Jasně. Nejvíc nás baví budovat značky komplexně, ale samostatné logo uděláme rádi — i tak ale začneme krátkým briefem, ať dává smysl a vydrží roky.' },
-  { q: 'Nabíráte zaměstnance nebo stážisty?', a: 'Tým rozšiřujeme spíš výjimečně, ale šikovných lidí si všímáme rádi. Pokud tě baví branding nebo UX, ozvi se nám s portfoliem — dáme vědět, až bude místo.' },
-  { q: 'Jak probíhá projekt?', a: 'Začínáme úvodní schůzkou a nabídkou, pak následuje rešerše, moodboard, stylescape a finální brand manuál. Celý proces máme rozepsaný v sekci „Jak to děláme".' },
+  { q: 'Nabíráte zaměstnance nebo stážisty?', a: 'Tým rozšiřujeme spíš výjimečně, ale šikovných lidí si všímáme rádi. Pokud vás baví branding nebo UX, pošlete nám portfolio — ozveme se, až bude místo.' },
   { q: 'Registrujete ochranné známky?', a: 'Registraci sami nepodáváme, ale provedeme vás jí — pomůžeme s rešerší dostupnosti názvu i loga a propojíme vás s prověřeným patentovým zástupcem.' },
 ] : [
   { q: 'How much does a project cost?', a: 'Every project is unique, so we always price it individually. As a rough guide, branding starts at €3 500 and web design at €2 200. We\'ll work out an exact quote after our first meeting.' },
@@ -71,7 +70,6 @@ const faqItems = lang === 'cs' ? [
   { q: 'What do you need from us at the start?', a: 'A basic brief is enough — what you do, who for, what your goals are and any visual references you like. We\'ll figure out the rest together at the kick-off.' },
   { q: 'Can I order just a logo?', a: 'Sure. We love building brands end-to-end, but we\'re happy to design a standalone logo too — we\'ll still start with a short brief so it makes sense and lasts.' },
   { q: 'Are you hiring or taking interns?', a: 'We grow the team only occasionally, but we always keep an eye out for talented people. If you\'re into branding or UX, send us your portfolio — we\'ll reach out when there\'s room.' },
-  { q: 'How does a project work?', a: 'We start with a kick-off meeting and a quote, then research, moodboard, stylescape and the final brand manual. The whole flow is laid out in the “How we work” section.' },
   { q: 'Do you register trademarks?', a: 'We don\'t file registrations ourselves, but we\'ll guide you through it — we help check name and logo availability and connect you with a trusted trademark attorney.' },
 ]
 
@@ -251,11 +249,11 @@ const faqLd = {
     <div class="services__grid">
       {([
         { cs: 'Branding',        en: 'Branding',        tag: 'Branding',        desc_cs: 'Budujeme značky s jasnou osobností — od strategie a pojmenování po vizuální identitu a brand manuál.', desc_en: 'We build brands with clear personality — from strategy and naming to visual identity and brand guidelines.' },
-        { cs: 'Webdesign',       en: 'Web design',      tag: 'Webdesign',       desc_cs: 'Navrhujeme weby, které prodávají. UX výzkum, prototypy, finální design a předání developerům.', desc_en: 'We design websites that convert. UX research, prototypes, final design and developer handoff.' },
-        { cs: 'Obalový design',  en: 'Packaging',       tag: 'Obalový design',  desc_cs: 'Obal je první dotek zákazníka se značkou. Navrhujeme packaging, který na regále nepřehlédnete.', desc_en: 'Packaging is the first touchpoint. We design packaging that stands out on the shelf.' },
+        { cs: 'Webdesign',       en: 'Web design',      tag: 'Webdesign',       desc_cs: 'Navrhujeme weby, které prodávají. UX výzkum, prototypy, finální design a předání vývojářům.', desc_en: 'We design websites that convert. UX research, prototypes, final design and developer handoff.' },
+        { cs: 'Obalový design',  en: 'Packaging',       tag: 'Obalový design',  desc_cs: 'Obal je první dotek zákazníka se značkou. Navrhujeme obaly, které v regálu nepřehlédnete.', desc_en: 'Packaging is the first touchpoint. We design packaging that stands out on the shelf.' },
         { cs: 'Grafický design', en: 'Graphic design',  tag: 'Grafický design', desc_cs: 'Tiskové materiály, infografiky, prezentace a veškerý grafický obsah konzistentní s vaší značkou.', desc_en: 'Print materials, infographics, presentations and all visual content consistent with your brand.' },
         { cs: 'Animace',         en: 'Motion design',   tag: 'Animace',         desc_cs: 'Pohyb dává značkám život. Vytváříme animace pro sociální sítě, pitch decky i produktová videa.', desc_en: 'Motion gives brands life. We create animations for social media, pitch decks and product videos.' },
-        { cs: 'Naming',          en: 'Naming',          tag: 'Naming',          desc_cs: 'Jméno je základní kámen značky. Pomáháme najít název, který rezonuje, je zapamatovatelný a dostupný.', desc_en: 'A name is the cornerstone of a brand. We help find a name that resonates, is memorable and available.' },
+        { cs: 'Naming',          en: 'Naming',          tag: 'Naming',          desc_cs: 'Jméno je základní kámen značky. Pomáháme najít název, který je výstižný, zapamatovatelný a právně dostupný.', desc_en: 'A name is the cornerstone of a brand. We help find a name that resonates, is memorable and available.' },
       ] as const).map(s => (
         <div class="service-item">
           <a

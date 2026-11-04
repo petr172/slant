@@ -7,29 +7,29 @@ export type Lang = keyof typeof languages
 
 export const ui = {
   cs: {
-    'nav.work':    'Work',
-    'nav.contact': 'Contact',
+    'nav.work':    'Práce',
+    'nav.contact': 'Kontakt',
 
     'work.viewAll':   'Zobrazit vše →',
     'work.projects':  'projektů',
-    'work.empty':     'Zatím žádné projekty — přidej je v Sanity Studiu.',
-    'work.backToWork': '← Work',
+    'work.empty':     'Projekty sem brzy přidáme.',
+    'work.backToWork': '← Práce',
     'work.viewSite':  'Zobrazit web ↗',
     'work.notFound':  'Projekt nebyl nalezen.',
 
     'home.location':  'Brno, CZ',
     'home.type':      'Branding & UX Studio',
     'home.headline':  'Identity pro<br>značky, které<br>chtějí vyniknout.',
-    'home.desc':      'Vytváříme vizuální systémy, pojmenování a digitální zážitky pro ambiciózní značky — od prvního konceptu až po spuštění.',
+    'home.desc':      'Vizuální identity, naming a digitální zážitky pro ambiciózní značky. Od prvního konceptu po spuštění.',
     'home.cta':       'Prohlédnout projekty',
-    'home.selected':  'Selected Work',
+    'home.selected':  'Vybrané práce',
     'home.collab':    'Pojďme spolupracovat',
-    'home.contact.headline': 'Máš projekt?<br>Ozvi se.',
+    'home.contact.headline': 'Máte projekt?<br>Ozvěte se.',
 
     'meta.home.title': 'Slant — Branding & UX Studio',
-    'meta.home.desc':  'Branding & UX Studio z Brna. Vytváříme vizuální identity, pojmenování a digitální zážitky pro ambiciózní značky.',
-    'meta.work.title': 'Work',
-    'meta.work.desc':  'Vybrané projekty — branding, UX/UI, packaging a vizuální identity.',
+    'meta.home.desc':  'Branding & UX studio z Brna. Tvoříme vizuální identity, naming a digitální zážitky pro ambiciózní značky.',
+    'meta.work.title': 'Práce',
+    'meta.work.desc':  'Vybrané projekty studia Slant — branding, naming, webdesign, obalový a grafický design.',
 
     'cs.client':   'Klient',
     'cs.year':     'Rok',

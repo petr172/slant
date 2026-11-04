@@ -72,7 +72,7 @@ function serviceBlock(services: string[], lang: Lang): string {
 
   if (has('brand'))
     push(
-      'U brandingu obvykle začínáme strategií a positioningem, než se pustíme do vizuální identity — rád/a vám ukážu, jak to vypadá u <a href="https://slant.cz/work/jatvar" style="color:' +
+      'U brandingu obvykle začínáme strategií a positioningem, než se pustíme do vizuální identity — rádi vám ukážeme, jak to vypadalo u <a href="https://slant.cz/work/jatvar" style="color:' +
         BRAND +
         '">Jatvaru</a>.',
       'For branding we usually start with strategy and positioning before the visual identity — happy to show how that looked for <a href="https://slant.cz/en/work/jatvar" style="color:' +
@@ -81,12 +81,12 @@ function serviceBlock(services: string[], lang: Lang): string {
     )
   if (has('web'))
     push(
-      'U webdesignu řešíme UX, obsah i technické provedení — podívejte se na <a href="https://slant.cz/work/data-jmk" style="color:' +
+      'U webdesignu řešíme UX, obsah i technické provedení — podívejte se na <a href="https://slant.cz/work/data-msk" style="color:' +
         BRAND +
-        '">Data JMK</a>.',
-      'For web design we cover UX, content and build — take a look at <a href="https://slant.cz/en/work/data-jmk" style="color:' +
+        '">Data MSK</a>.',
+      'For web design we cover UX, content and build — take a look at <a href="https://slant.cz/en/work/data-msk" style="color:' +
         BRAND +
-        '">Data JMK</a>.',
+        '">Data MSK</a>.',
     )
   if (has('packag'))
     push(
