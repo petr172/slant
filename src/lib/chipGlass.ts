@@ -10,8 +10,8 @@ const BEZEL = 12          // šíře hrany s lomem (px)
 const isChromium = () =>
   !!(navigator as any).userAgentData?.brands?.some((b: any) => /Chromium/i.test(b.brand))
 
-function displacementMap(w: number, h: number): string {
-  const k = 2                                  // 2× rozlišení → hladší hrana
+function displacementMap(w: number, h: number, bezel = BEZEL): string {
+  const k = w * h > 40000 ? 1 : 2              // 2× rozlišení → hladší hrana; velké prvky (nav) stačí 1×
   const cw = Math.round(w * k), ch = Math.round(h * k)
   const c = document.createElement('canvas')
   c.width = cw; c.height = ch
@@ -22,7 +22,7 @@ function displacementMap(w: number, h: number): string {
     const qx = Math.abs(x - hw) - (hw - r), qy = Math.abs(y - hh) - (hh - r)
     return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r
   }
-  const b = Math.min(BEZEL, hh)
+  const b = Math.min(bezel, hh)
   for (let j = 0; j < ch; j++) {
     for (let i = 0; i < cw; i++) {
       const x = (i + 0.5) / k, y = (j + 0.5) / k
@@ -49,38 +49,54 @@ function displacementMap(w: number, h: number): string {
   return c.toDataURL()
 }
 
-export function initChipGlass(chips: HTMLElement[]) {
+type GlassOpts = { id: string; scale?: number; bezel?: number; blur?: number; minWidth?: string }
+
+let svgHost: SVGSVGElement | null = null
+const host = () => {
+  if (svgHost) return svgHost
+  svgHost = document.createElementNS(SVG_NS, 'svg') as SVGSVGElement
+  svgHost.setAttribute('aria-hidden', 'true')
+  svgHost.setAttribute('width', '0'); svgHost.setAttribute('height', '0')
+  Object.assign(svgHost.style, { position: 'absolute', width: '0', height: '0', overflow: 'hidden' })
+  document.body.appendChild(svgHost)
+  return svgHost
+}
+
+/** Liquid glass lom na libovolném prvku (pilulka s radius = výška/2). Jen Chromium. */
+export function applyLiquidGlass(el: HTMLElement, o: GlassOpts) {
   if (!isChromium() || !CSS.supports('backdrop-filter', 'url(#x)')) return
+  const mq = o.minWidth ? window.matchMedia(`(min-width: ${o.minWidth})`) : null
+  let lastW = 0, lastH = 0
 
-  const svg = document.createElementNS(SVG_NS, 'svg')
-  svg.setAttribute('aria-hidden', 'true')
-  svg.setAttribute('width', '0'); svg.setAttribute('height', '0')
-  Object.assign(svg.style, { position: 'absolute', width: '0', height: '0', overflow: 'hidden' })
-  document.body.appendChild(svg)
-
-  const mq = window.matchMedia('(min-width: 48.0625em)')   // na mobilu chipy leží mimo nadpis → lom zbytečný
-
-  const apply = () => {
-    svg.innerHTML = ''
-    chips.forEach((chip, n) => {
-      if (!mq.matches) { chip.style.backdropFilter = ''; return }
-      const w = chip.offsetWidth, h = chip.offsetHeight
-      if (!w || !h) return
-      const id = `chip-glass-${n}`
-      svg.insertAdjacentHTML('beforeend', `
-        <filter id="${id}" x="0" y="0" width="${w}" height="${h}" filterUnits="userSpaceOnUse"
-                primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-          <feImage href="${displacementMap(w, h)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="soft"/>
-          <feDisplacementMap in="soft" in2="map" scale="${SCALE}" xChannelSelector="R" yChannelSelector="G" result="bent"/>
-          <feColorMatrix in="bent" type="saturate" values="1.5"/>
-        </filter>`)
-      chip.style.backdropFilter = `url(#${id})`
-    })
+  const build = () => {
+    if (mq && !mq.matches) {
+      host().querySelector(`#${o.id}`)?.remove()
+      el.style.backdropFilter = ''; lastW = lastH = 0; return
+    }
+    const w = el.offsetWidth, h = el.offsetHeight
+    if (!w || !h || (w === lastW && h === lastH)) return
+    lastW = w; lastH = h
+    host().querySelector(`#${o.id}`)?.remove()
+    host().insertAdjacentHTML('beforeend', `
+      <filter id="${o.id}" x="0" y="0" width="${w}" height="${h}" filterUnits="userSpaceOnUse"
+              primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feImage href="${displacementMap(w, h, o.bezel ?? BEZEL)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>
+        <feGaussianBlur in="SourceGraphic" stdDeviation="${o.blur ?? 1.2}" result="soft"/>
+        <feDisplacementMap in="soft" in2="map" scale="${o.scale ?? SCALE}" xChannelSelector="R" yChannelSelector="G" result="bent"/>
+        <feColorMatrix in="bent" type="saturate" values="1.5"/>
+      </filter>`)
+    el.style.backdropFilter = `url(#${o.id})`
   }
 
-  apply()
+  build()
+  // Při animaci šířky (nav se při scrollu zužuje) mapu přepočítáme až po doběhnutí
   let t: number | undefined
-  window.addEventListener('resize', () => { clearTimeout(t); t = window.setTimeout(apply, 200) })
-  document.fonts?.ready.then(apply)              // šířka chipu závisí na fontu
+  new ResizeObserver(() => { clearTimeout(t); t = window.setTimeout(build, 140) }).observe(el)
+  mq?.addEventListener('change', build)
+  document.fonts?.ready.then(build)
+}
+
+export function initChipGlass(chips: HTMLElement[]) {
+  // na mobilu chipy leží mimo nadpis → lom zbytečný
+  chips.forEach((chip, n) => applyLiquidGlass(chip, { id: `chip-glass-${n}`, minWidth: '48.0625em' }))
 }

@@ -388,6 +388,11 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   </script>
 
   <script>
+    // ── Nav liquid glass (lom na hraně, Chromium) ─────────────────────────
+    import { applyLiquidGlass } from '@/lib/chipGlass'
+    const glassNav = document.querySelector('.island-nav') as HTMLElement | null
+    if (glassNav) applyLiquidGlass(glassNav, { id: 'nav-glass', scale: 26, bezel: 16 })
+
     // ── Nav scroll shrink ─────────────────────────────────────────────────
     const navWrap = document.querySelector('.island-nav-wrap') as HTMLElement | null
     const nav     = document.querySelector('.island-nav')     as HTMLElement | null
@@ -651,11 +656,19 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   align-items: center;
   gap: var(--sp-lg);
   padding: 0.5rem 0.5rem 0.5rem 1.25rem;
-  border: 1px solid var(--clr-border);
-  background: color-mix(in srgb, var(--clr-bg) 80%, transparent);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 2px 24px rgba(0,0,0,0.06);
+  /* Stejné liquid glass jako hero chipy: lehký blur + saturace, světelná hrana,
+     v Chromiu lom na hraně (applyLiquidGlass). Tón podle tématu, ať drží kontrast obsahu. */
+  border: 0;
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: blur(3px) saturate(160%);
+  -webkit-backdrop-filter: blur(3px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.45),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    inset 0 0 12px rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 20px -10px rgba(0, 0, 0, 0.25);
   /* default: wide — matches the 90rem content container */
   width: 100%;
   max-width: 90rem;
@@ -672,9 +685,15 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   padding: 0.5rem 0.5rem 0.5rem 1.25rem;
 }
 
-.island-nav:hover,
-.island-nav.is-scrolled:hover {
-  box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+:global(.dark) .island-nav {
+  background: rgba(12, 12, 11, 0.74);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+    inset 0 0 12px rgba(255, 255, 255, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 8px 20px -10px rgba(0, 0, 0, 0.55);
 }
 
 .island-nav__logo {

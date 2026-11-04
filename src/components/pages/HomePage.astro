@@ -950,6 +950,8 @@ gsap.from('#js-hero-bot', {
     font-size: 0.7rem;
     padding: 0.6em 1.1em;
   }
+  /* Mobil: za chipy je jen tmavé pozadí → poloprůhledné sklo by zešedlo */
+  :global(.dark) .hero__chip { background: rgba(255, 255, 255, 0.9); }
 }
 
 /* Reel kontejner — sticky při scrollu */
