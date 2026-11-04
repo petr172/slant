@@ -108,7 +108,7 @@ function leadEmailHtml(name: string, services: string[], lang: Lang): string {
   const t =
     lang === 'cs'
       ? {
-          hi: `Ahoj ${esc(name)},`,
+          hi: `Dobrý den, ${esc(name)},`,
           intro:
             'díky za zprávu! Dostali jsme vaši poptávku a ozveme se vám do 1–2 pracovních dnů.',
           bookLead: 'Chcete to urychlit? Rezervujte si rovnou nezávazný úvodní hovor:',
