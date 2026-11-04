@@ -1,397 +1,516 @@
 ---
 import Layout from '../layouts/Layout.astro'
+import SanityImage from '../components/SanityImage.astro'
+import { client } from '../lib/sanity'
+import { FEATURED_CASE_STUDIES_QUERY } from '../lib/queries'
+
+// Pár vybraných projektů do galerie pod hrou (build-time ze Sanity)
+const featured: any[] = ((await client.fetch(FEATURED_CASE_STUDIES_QUERY)) ?? []).filter((p: any) => p.slug && p.coverImage).slice(0, 3)
 ---
 
-<Layout title="404" description="Stránka nenalezena — Slant" lang="cs">
-  <section class="nf">
-    <h1 class="nf__sr" data-en="404 — Page not found">404 — Stránka nenalezena</h1>
-
-    <!-- Hrací plocha: obří „404“ + skleněný prstenec (WebGL), který text láme.
-         Sklo sleduje myš / prst, při stisku se zvětší; bez interakce samo krouží. -->
-    <div class="nf__stage" id="js-nf-stage">
-      <canvas class="nf__canvas" id="js-nf-canvas" aria-hidden="true"></canvas>
-      <div class="nf__fallback" aria-hidden="true">4<span>0</span>4</div>
-      <p class="nf__hint" aria-hidden="true" data-en="Move the glass — drag or hover">Pohrajte si se sklem — táhněte nebo najeďte myší</p>
-    </div>
-
-    <div class="nf__content container">
-      <p class="nf__title" data-en="Lost in the process">Ztraceno v procesu</p>
-      <p class="nf__lede" data-en="This page doesn’t exist — or it never made the final cut. Let’s get you back on track.">
-        Tahle stránka neexistuje — nebo se nedostala do finálního výběru. Vrátíme vás zpátky.
+<!-- 404 je jediná statická stránka pro / i /en/* → jazyk se přepíná podle URL (skript níže).
+     alternateUrl zapne přepínač jazyka v navigaci; přesný cíl doplní skript. -->
+<Layout title="404" description="Stránka nenalezena — Slant" lang="cs" alternateUrl="/en">
+  <section class="nf container">
+    <header class="nf__head">
+      <span class="nf__code">404</span>
+      <h1 class="nf__title" data-en="Oops, nothing here.">Jejda, tady nic není.</h1>
+      <p class="nf__lede" data-en="The page doesn’t exist or has moved. Since you’re here — fancy a quick game of tic-tac-toe?">
+        Stránka neexistuje, nebo se přesunula. Když už jste tady — dáte si partičku piškvorek?
       </p>
-      <div class="nf__actions">
-        <a href="/" class="nf__btn nf__btn--primary" id="js-nf-home" data-en="Back home">Zpět na úvod</a>
-        <a href="/work" class="nf__btn nf__btn--ghost" id="js-nf-work" data-en="View our work">Zobrazit práce →</a>
+    </header>
+
+    <!-- Piškvorky: vy (×) proti Slantu (○) -->
+    <div class="ttt" id="js-ttt">
+      <!-- Obtížnost: 3×3 (3 v řadě) → 6×6 (4) → 9×9 (5, klasické piškvorky) -->
+      <div class="ttt__level">
+        <label class="ttt__level-label" for="js-ttt-level">
+          <span id="js-ttt-level-name">Pohodička</span>
+          <span class="ttt__level-meta" id="js-ttt-level-meta">3×3 · tři v řadě</span>
+        </label>
+        <input class="ttt__range" id="js-ttt-level" type="range" min="0" max="2" step="1" value="0" />
+        <div class="ttt__ticks" aria-hidden="true"><span>3×3</span><span>6×6</span><span>9×9</span></div>
+      </div>
+
+      <div class="ttt__score" aria-live="polite">
+        <div class="ttt__stat"><span class="ttt__stat-label" data-en="You">Vy</span><span class="ttt__stat-val" data-score="x">0</span></div>
+        <div class="ttt__stat"><span class="ttt__stat-label" data-en="Draw">Remíza</span><span class="ttt__stat-val" data-score="draw">0</span></div>
+        <div class="ttt__stat ttt__stat--accent"><span class="ttt__stat-label">Slant</span><span class="ttt__stat-val" data-score="o">0</span></div>
+      </div>
+
+      <!-- Pole generuje skript podle zvolené obtížnosti -->
+      <div class="ttt__board" id="js-ttt-board" role="grid" aria-label="Piškvorky" data-en-label="Tic-tac-toe"></div>
+
+      <p class="ttt__status" id="js-ttt-status" aria-live="polite"></p>
+
+      <div class="ttt__controls">
+        <button class="ttt__btn" type="button" id="js-ttt-new" data-en="New game">Nová hra</button>
+        <button class="ttt__link" type="button" id="js-ttt-reset" data-en="Reset score">Vynulovat skóre</button>
       </div>
     </div>
+
+    <div class="nf__actions">
+      <a href="/" class="nf__btn nf__btn--primary" id="js-nf-home" data-en="Back home">Zpět na úvod</a>
+      <a href="/work" class="nf__btn nf__btn--ghost" id="js-nf-work" data-en="View our work">Zobrazit práce →</a>
+    </div>
+
+    {featured.length > 0 && (
+      <div class="nf__work">
+        <h2 class="nf__work-title" data-en="Or take a look at our work">Nebo mrkněte na naše práce</h2>
+        <div class="nf__grid">
+          {featured.map((p) => (
+            <a class="nf-card" href={`/work/${p.slug}`} data-work-link>
+              <div class="nf-card__img">
+                <SanityImage image={p.coverImage} alt={p.coverImage?.alt ?? p.title} width={720} height={480} widths={[400, 720]} sizes="(max-width: 48em) 100vw, 33vw" />
+              </div>
+              <span class="nf-card__title" data-en={p.titleEn || p.title}>{p.title}</span>
+              {p.tagline && <span class="nf-card__tagline" data-en={p.taglineEn || p.tagline}>{p.tagline}</span>}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
   </section>
 </Layout>
 
 <script>
-  // ── Lokalizace dle URL (statická 404 se servíruje pro /en/* i / ) ──────────
-  const isEn = window.location.pathname.startsWith('/en')
+  // ── Lokalizace dle URL ─────────────────────────────────────────────────────
+  const path = window.location.pathname
+  const isEn = path === '/en' || path.startsWith('/en/')
+
+  // Přepínač jazyka (desktop i mobilní menu): vede na stejnou cestu v druhém jazyce
+  const otherPath = isEn ? (path.replace(/^\/en/, '') || '/') : `/en${path}`
+  document.querySelectorAll<HTMLAnchorElement>('.island-nav__lang, .mobile-menu__item--lang').forEach((a) => {
+    a.href = otherPath
+    if (isEn) {
+      a.textContent = a.classList.contains('island-nav__lang') ? 'CZ' : a.textContent?.replace('EN', 'CZ') ?? 'CZ'
+      a.setAttribute('aria-label', 'Přepnout do češtiny')
+    }
+  })
+
   if (isEn) {
     document.documentElement.lang = 'en'
-    document.querySelectorAll<HTMLElement>('[data-en]').forEach((el) => {
-      el.textContent = el.dataset.en ?? el.textContent
+    document.querySelectorAll<HTMLElement>('[data-en]').forEach((el) => { el.textContent = el.dataset.en ?? el.textContent })
+    document.querySelectorAll<HTMLElement>('[data-en-label]').forEach((el) => el.setAttribute('aria-label', el.dataset.enLabel!))
+    ;(document.getElementById('js-nf-home') as HTMLAnchorElement).href = '/en'
+    ;(document.getElementById('js-nf-work') as HTMLAnchorElement).href = '/en/work'
+    document.querySelectorAll<HTMLAnchorElement>('[data-work-link]').forEach((a) => { a.href = a.getAttribute('href')!.replace(/^\/work/, '/en/work') })
+    // navigace v layoutu je vyrenderovaná česky → přepnout odkazy a popisky
+    document.querySelectorAll<HTMLAnchorElement>('.island-nav__links a, .mobile-menu__item, .site-footer__nav a').forEach((a) => {
+      const href = a.getAttribute('href') ?? ''
+      if (href === '/work') { a.href = '/en/work'; a.textContent = 'Work' }
+      else if (href === '/blog') a.href = '/en/blog'
+      else if (a.textContent?.trim() === 'Kontakt') a.textContent = 'Contact'
     })
-    const home = document.getElementById('js-nf-home') as HTMLAnchorElement | null
-    const work = document.getElementById('js-nf-work') as HTMLAnchorElement | null
-    if (home) home.href = '/en'
-    if (work) work.href = '/en/work'
+    const contact = document.querySelector('.island-nav__contact')
+    if (contact) contact.textContent = 'Contact'
   }
 
-  // ── Skleněný prstenec (WebGL) ──────────────────────────────────────────────
-  // Scéna (text) se kreslí do 2D canvasu → textura. Fragment shader v kruhu
-  // kolem kurzoru počítá profil prstence (torus): sklon povrchu určuje, o kolik
-  // se pozadí posune (lom), každý barevný kanál o kus jinak (chromatická aberace),
-  // k tomu fresnel lem, odlesk a měkký stín. Mimo sklo se kreslí scéna beze změny.
-  const stage  = document.getElementById('js-nf-stage') as HTMLElement
-  const canvas = document.getElementById('js-nf-canvas') as HTMLCanvasElement
-  const gl = canvas.getContext('webgl', { antialias: true, premultipliedAlpha: false })
+  // ── Piškvorky ──────────────────────────────────────────────────────────────
+  type Mark = 'x' | 'o' | null
+  const T = isEn
+    ? { you: 'Your move', thinking: 'Slant is thinking…', win: 'You win. Nice one!', lose: 'Slant wins this one.', draw: 'It’s a draw.', cell: 'Cell', empty: 'empty', x: 'cross', o: 'circle' }
+    : { you: 'Jste na tahu', thinking: 'Slant přemýšlí…', win: 'Vyhráli jste. Dobrá práce!', lose: 'Tohle kolo bere Slant.', draw: 'Remíza.', cell: 'Pole', empty: 'prázdné', x: 'křížek', o: 'kolečko' }
 
-  if (gl) {
-    stage.classList.add('has-gl')
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-    const VERT = `
-      attribute vec2 aPos;
-      varying vec2 vUv;
-      void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`
-
-    const FRAG = `
-      precision highp float;
-      varying vec2 vUv;
-      uniform sampler2D uTex;
-      uniform vec2  uRes;     // velikost canvasu v px
-      uniform vec2  uLens;    // střed skla v px (origin vlevo nahoře)
-      uniform float uR;       // poloměr skla v px
-      uniform vec2  uStretch; // protažení ve směru pohybu
-      uniform float uDark;    // 1 = tmavý režim
-
-      vec3 scene(vec2 px) { return texture2D(uTex, clamp(px / uRes, 0.0, 1.0)).rgb; }
-
-      void main() {
-        vec2 px = vec2(vUv.x, 1.0 - vUv.y) * uRes;
-        vec2 rel = px - uLens;
-        // protažení ve směru pohybu (squash & stretch)
-        float sl = length(uStretch);
-        vec2 sd = sl > 0.0001 ? uStretch / sl : vec2(1.0, 0.0);
-        float along = dot(rel, sd);
-        vec2 relS = rel - sd * along * (sl / (1.0 + sl));
-        vec2 d = relS / uR;
-        float r = length(d);
-        vec3 base = scene(px);
-
-        // měkký stín pod sklem (posunutý dolů)
-        float sh = smoothstep(1.25, 0.7, length((rel - vec2(0.0, uR * 0.16)) / uR));
-        vec3 col = base * (1.0 - sh * mix(0.10, 0.35, uDark));
-
-        // profil prstence: střed trubice rc, poloměr trubice w
-        float rc = 0.64, w = 0.36;
-        float t = (r - rc) / w;
-        if (abs(t) < 1.0) {
-          float h = sqrt(1.0 - t * t);              // výška povrchu
-          float slope = -t / max(h, 0.08);           // dh/dr
-          vec2 n2 = r > 0.0001 ? d / r : vec2(0.0);
-          vec2 off = n2 * slope * uR * 0.16;         // lom
-          float ca = 0.11;                           // chromatická aberace
-          vec3 refr = vec3(
-            scene(px + off * (1.0 + ca)).r,
-            scene(px + off).g,
-            scene(px + off * (1.0 - ca)).b
-          );
-          // zvětšení přes horní část trubice (čočka)
-          vec3 normal = normalize(vec3(n2 * -slope * 0.9, 1.0));
-          float fres = pow(1.0 - normal.z, 2.2);
-          vec3 L = normalize(vec3(-0.5, -0.6, 0.65));
-          float spec = pow(max(dot(normal, L), 0.0), 60.0);
-          float spec2 = pow(max(dot(normal, normalize(vec3(0.6, 0.7, 0.4))), 0.0), 24.0) * 0.35;
-          vec3 glass = refr * mix(0.96, 1.04, uDark);
-          glass = mix(glass, vec3(1.0), fres * 0.55);
-          glass += vec3(spec + spec2);
-          // tenká barevná hrana (modro-oranžový třpyt jako u skutečného skla)
-          float edge = smoothstep(0.82, 1.0, abs(t));
-          glass += edge * vec3(0.10, 0.18, 0.35) * step(0.0, t) + edge * vec3(0.35, 0.16, 0.05) * step(t, 0.0);
-          float aa = smoothstep(1.0, 0.94, abs(t));  // antialias okraje
-          col = mix(col, glass, aa);
-        }
-        gl_FragColor = vec4(col, 1.0);
-      }`
-
-    const compile = (type: number, src: string) => {
-      const s = gl.createShader(type)!
-      gl.shaderSource(s, src)
-      gl.compileShader(s)
-      return s
-    }
-    const prog = gl.createProgram()!
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT))
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG))
-    gl.linkProgram(prog)
-
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      stage.classList.remove('has-gl')
-    } else {
-      gl.useProgram(prog)
-      const buf = gl.createBuffer()
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf)
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
-      const aPos = gl.getAttribLocation(prog, 'aPos')
-      gl.enableVertexAttribArray(aPos)
-      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0)
-
-      const u = (n: string) => gl.getUniformLocation(prog, n)
-      const uRes = u('uRes'), uLens = u('uLens'), uR = u('uR'), uStretch = u('uStretch'), uDark = u('uDark')
-
-      const tex = gl.createTexture()
-      gl.bindTexture(gl.TEXTURE_2D, tex)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-      const sceneCanvas = document.createElement('canvas')
-      const sctx = sceneCanvas.getContext('2d')!
-      let W = 0, H = 0, dpr = 1, dark = false
-
-      // Scéna: obří „404“ (nula v akcentu) + jemné řádky textu kvůli textuře lomu
-      const drawScene = () => {
-        const cs = getComputedStyle(document.documentElement)
-        const bg = cs.getPropertyValue('--clr-bg').trim() || '#f9f8f6'
-        const fg = cs.getPropertyValue('--clr-text').trim() || '#111'
-        const accent = cs.getPropertyValue('--clr-accent').trim() || '#FF5522'
-        const muted = cs.getPropertyValue('--clr-muted').trim() || '#888'
-        const font = cs.getPropertyValue('--font-display').trim() || 'sans-serif'
-        dark = document.documentElement.classList.contains('dark')
-
-        sceneCanvas.width = W
-        sceneCanvas.height = H
-        sctx.fillStyle = bg
-        sctx.fillRect(0, 0, W, H)
-
-        // tenké řádky textu nahoře a dole
-        sctx.fillStyle = muted
-        sctx.globalAlpha = 0.35
-        sctx.font = `500 ${Math.round(14 * dpr)}px ${font}`
-        sctx.textBaseline = 'middle'
-        const line = (isEn ? 'Page not found  ·  404  ·  Lost in the process  ·  ' : 'Stránka nenalezena  ·  404  ·  Ztraceno v procesu  ·  ').repeat(12)
-        for (const y of [0.1, 0.9]) sctx.fillText(line, -40 * dpr, H * y)
-        sctx.globalAlpha = 1
-
-        // obří číslice
-        const size = Math.min(H * 0.78, W * 0.36)
-        sctx.font = `600 ${size}px ${font}`
-        sctx.textBaseline = 'alphabetic'
-        const parts = ['4', '0', '4']
-        const gap = -size * 0.04
-        const widths = parts.map((p) => sctx.measureText(p).width)
-        const total = widths.reduce((a, b) => a + b, 0) + gap * 2
-        let x = (W - total) / 2
-        const y = H / 2 + size * 0.35
-        parts.forEach((p, i) => {
-          sctx.fillStyle = i === 1 ? accent : fg
-          sctx.fillText(p, x, y)
-          x += widths[i] + gap
-        })
-
-        gl.bindTexture(gl.TEXTURE_2D, tex)
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sceneCanvas)
-      }
-
-      const resize = () => {
-        dpr = Math.min(window.devicePixelRatio || 1, 2)
-        const rect = stage.getBoundingClientRect()
-        W = Math.max(1, Math.round(rect.width * dpr))
-        H = Math.max(1, Math.round(rect.height * dpr))
-        canvas.width = W
-        canvas.height = H
-        gl.viewport(0, 0, W, H)
-        drawScene()
-      }
-
-      // ── Stav skla ───────────────────────────────────────────────────────────
-      const lens = { x: 0, y: 0, r: 0, vx: 0, vy: 0 }
-      const target = { x: 0, y: 0, r: 0 }
-      let pointerActive = false
-      let pressed = false
-      let lastMove = -1e9
-      // na výšku (mobil) menší sklo, ať nepřikryje celé číslice
-      const baseR = () => Math.min(W, H) * (W < H ? 0.19 : 0.24)
-
-      const toLocal = (e: PointerEvent) => {
-        const rect = stage.getBoundingClientRect()
-        return { x: (e.clientX - rect.left) * dpr, y: (e.clientY - rect.top) * dpr }
-      }
-      stage.addEventListener('pointermove', (e) => {
-        const p = toLocal(e); target.x = p.x; target.y = p.y
-        pointerActive = true; lastMove = performance.now()
-        stage.classList.add('is-played')
-      })
-      stage.addEventListener('pointerdown', (e) => {
-        const p = toLocal(e); target.x = p.x; target.y = p.y
-        pressed = true; pointerActive = true; lastMove = performance.now()
-        stage.classList.add('is-played')
-        stage.setPointerCapture?.(e.pointerId)
-      })
-      const release = () => { pressed = false }
-      stage.addEventListener('pointerup', release)
-      stage.addEventListener('pointercancel', release)
-      stage.addEventListener('pointerleave', () => { pointerActive = false })
-
-      const t0 = performance.now()
-      const frame = (now: number) => {
-        const t = (now - t0) / 1000
-        const idle = !pointerActive || now - lastMove > 2500
-        if (idle) {
-          // samovolné kroužení nad číslicemi (reduced motion: klid u nuly)
-          target.x = W * 0.5 + (reduced ? W * 0.02 : Math.sin(t * 0.55) * W * 0.22)
-          target.y = H * 0.52 + (reduced ? 0 : Math.sin(t * 0.9) * H * 0.12)
-        }
-        target.r = baseR() * (pressed ? 1.18 : 1)
-
-        // pružina — sklo jemně dobíhá a překmitne
-        const k = idle ? 0.03 : 0.12, damp = 0.78
-        lens.vx = (lens.vx + (target.x - lens.x) * k) * damp
-        lens.vy = (lens.vy + (target.y - lens.y) * k) * damp
-        lens.x += lens.vx
-        lens.y += lens.vy
-        lens.r += (target.r - lens.r) * 0.15
-
-        const speed = Math.hypot(lens.vx, lens.vy)
-        const s = reduced ? 0 : Math.min(speed / (lens.r || 1), 0.35)
-        const sx = speed > 0.01 ? (lens.vx / speed) * s : 0
-        const sy = speed > 0.01 ? (lens.vy / speed) * s : 0
-
-        gl.uniform2f(uRes, W, H)
-        gl.uniform2f(uLens, lens.x, lens.y)
-        gl.uniform1f(uR, lens.r)
-        gl.uniform2f(uStretch, sx, sy)
-        gl.uniform1f(uDark, dark ? 1 : 0)
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-        rafId = requestAnimationFrame(frame)
-      }
-
-      let rafId = 0
-      const start = () => {
-        resize()
-        lens.x = target.x = W * 0.5; lens.y = target.y = H * 0.52; lens.r = target.r = baseR()
-        cancelAnimationFrame(rafId)
-        rafId = requestAnimationFrame(frame)
-      }
-
-      // Font musí být načtený, jinak by se textura nakreslila záložním písmem
-      document.fonts?.ready.then(start) ?? start()
-      new ResizeObserver(() => resize()).observe(stage)
-      // přepnutí světlý/tmavý režim → překreslit scénu
-      new MutationObserver(() => drawScene()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-      // šetřit GPU, když je záložka skrytá
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) cancelAnimationFrame(rafId)
-        else rafId = requestAnimationFrame(frame)
-      })
-    }
+  // Úrovně: velikost mřížky, kolik v řadě vyhrává, jak často Slant zaváhá
+  const LEVELS = [
+    { n: 3, k: 3, slip: 0.25, cs: ['Pohodička', '3×3 · tři v řadě'],     en: ['Easy going', '3×3 · three in a row'] },
+    { n: 6, k: 4, slip: 0.08, cs: ['Na zahřátí', '6×6 · čtyři v řadě'],   en: ['Warming up', '6×6 · four in a row'] },
+    { n: 9, k: 5, slip: 0,    cs: ['Hardcore', '9×9 · pět v řadě'],       en: ['Hardcore', '9×9 · five in a row'] },
+  ]
+  const DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]]
+  const SVG = {
+    x: '<svg viewBox="0 0 100 100" aria-hidden="true"><path class="ttt__stroke" pathLength="1" d="M26 26 L74 74"/><path class="ttt__stroke ttt__stroke--2" pathLength="1" d="M74 26 L26 74"/></svg>',
+    o: '<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ttt__stroke" pathLength="1" cx="50" cy="50" r="25" transform="rotate(-90 50 50)"/></svg>',
   }
+
+  const root     = document.getElementById('js-ttt')!
+  const boardEl  = document.getElementById('js-ttt-board')!
+  const status   = document.getElementById('js-ttt-status')!
+  const range    = document.getElementById('js-ttt-level') as HTMLInputElement
+  const lvlName  = document.getElementById('js-ttt-level-name')!
+  const lvlMeta  = document.getElementById('js-ttt-level-meta')!
+  const scoreEl  = (k: string) => root.querySelector<HTMLElement>(`[data-score="${k}"]`)!
+
+  // Skóre zvlášť pro každou úroveň (prohlížeč si ho pamatuje)
+  const STORE = 'slant-ttt-score-v2'
+  type Score = { x: number; o: number; draw: number }
+  let scores: Record<number, Score> = {}
+  try { scores = JSON.parse(localStorage.getItem(STORE) ?? '{}') } catch {}
+
+  let level = 0
+  try { level = Math.min(2, Math.max(0, Number(localStorage.getItem('slant-ttt-level') ?? 0))) } catch {}
+  let cfg = LEVELS[level]
+  let cells: HTMLButtonElement[] = []
+  let board: Mark[] = []
+  let over = false
+  let busy = false
+  let playerStarts = true
+
+  const score = () => (scores[cfg.n] ??= { x: 0, o: 0, draw: 0 })
+  const saveScore = () => {
+    const s = score()
+    ;(['x', 'o', 'draw'] as const).forEach((k) => { scoreEl(k).textContent = String(s[k]) })
+    try { localStorage.setItem(STORE, JSON.stringify(scores)) } catch {}
+  }
+
+  const at = (r: number, c: number) => (r >= 0 && c >= 0 && r < cfg.n && c < cfg.n ? board[r * cfg.n + c] : undefined)
+
+  // Řada k stejných značek přes poslední tah (nebo kdekoli)
+  const lineThrough = (i: number, m: Mark): number[] | null => {
+    const r0 = Math.floor(i / cfg.n), c0 = i % cfg.n
+    for (const [dr, dc] of DIRS) {
+      const line = [i]
+      for (const s of [1, -1]) {
+        let r = r0 + dr * s, c = c0 + dc * s
+        while (at(r, c) === m) { line.push(r * cfg.n + c); r += dr * s; c += dc * s }
+      }
+      if (line.length >= cfg.k) return line
+    }
+    return null
+  }
+
+  // Ohodnocení pole pro značku m: v každém směru délka řady a otevřené konce
+  const evalCell = (i: number, m: Mark) => {
+    const r0 = Math.floor(i / cfg.n), c0 = i % cfg.n
+    let total = 0
+    for (const [dr, dc] of DIRS) {
+      let count = 1, open = 0
+      for (const s of [1, -1]) {
+        let r = r0 + dr * s, c = c0 + dc * s
+        while (at(r, c) === m) { count++; r += dr * s; c += dc * s }
+        if (at(r, c) === null) open++
+      }
+      if (count >= cfg.k) total += 1e7
+      else if (open > 0) {
+        const left = cfg.k - count                       // kolik ještě chybí
+        total += (open === 2 ? 4 : 1) * Math.pow(12, cfg.k - left)
+        if (left === 1 && open === 2) total += 5e5        // otevřená „čtyřka“ = jistá výhra
+        if (left === 2 && open === 2) total += 2e4        // otevřená „trojka“
+      }
+    }
+    return total
+  }
+
+  const aiMove = (): number => {
+    const free = board.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0)
+    const pick = (arr: number[]) => arr[Math.floor(Math.random() * arr.length)]
+    if (Math.random() < cfg.slip && free.length > 1) {
+      // „zaváhání“: aspoň dokončí vlastní výhru, jinak náhodný tah
+      const win = free.find((i) => evalCell(i, 'o') >= 1e7)
+      return win ?? pick(free)
+    }
+    if (board.every((v) => !v)) return Math.floor(cfg.n / 2) * cfg.n + Math.floor(cfg.n / 2)
+    let best = -1, bestScore = -Infinity
+    for (const i of free) {
+      const r = Math.floor(i / cfg.n), c = i % cfg.n
+      const center = -Math.hypot(r - (cfg.n - 1) / 2, c - (cfg.n - 1) / 2) * 0.5
+      const s = evalCell(i, 'o') * 1.15 + evalCell(i, 'x') + center + Math.random()
+      if (s > bestScore) { bestScore = s; best = i }
+    }
+    return best
+  }
+
+  const render = () => {
+    cells.forEach((c, i) => {
+      const m = board[i]
+      if (m && !c.dataset.mark) { c.innerHTML = SVG[m]; c.dataset.mark = m }
+      if (!m && c.dataset.mark) { c.innerHTML = ''; delete c.dataset.mark }
+      c.setAttribute('aria-label', `${T.cell} ${Math.floor(i / cfg.n) + 1}–${(i % cfg.n) + 1}: ${m ? T[m] : T.empty}`)
+      c.disabled = over || busy || !!m
+    })
+  }
+
+  const finish = (mark: 'x' | 'o' | 'draw', line: number[]) => {
+    over = true
+    line.forEach((i) => cells[i].classList.add('is-win'))
+    root.classList.toggle('is-won', mark === 'x')
+    const s = score()
+    if (mark === 'x') { s.x++; status.textContent = T.win }
+    else if (mark === 'o') { s.o++; status.textContent = T.lose }
+    else { s.draw++; status.textContent = T.draw }
+    saveScore()
+    render()
+  }
+
+  const play = (i: number, m: 'x' | 'o') => {
+    board[i] = m
+    render()
+    const line = lineThrough(i, m)
+    if (line) { finish(m, line); return true }
+    if (board.every(Boolean)) { finish('draw', []); return true }
+    return false
+  }
+
+  const slantTurn = () => {
+    busy = true
+    status.textContent = T.thinking
+    render()
+    setTimeout(() => {
+      busy = false
+      if (!play(aiMove(), 'o')) { status.textContent = T.you; render() }
+    }, 380 + Math.random() * 360)
+  }
+
+  const buildBoard = () => {
+    boardEl.style.setProperty('--n', String(cfg.n))
+    boardEl.innerHTML = ''
+    cells = Array.from({ length: cfg.n * cfg.n }, (_, i) => {
+      const b = document.createElement('button')
+      b.type = 'button'
+      b.className = 'ttt__cell'
+      b.addEventListener('click', () => {
+        if (over || busy || board[i]) return
+        if (!play(i, 'x')) slantTurn()
+      })
+      boardEl.appendChild(b)
+      return b
+    })
+  }
+
+  const newGame = () => {
+    board = Array(cfg.n * cfg.n).fill(null)
+    over = false
+    busy = false
+    cells.forEach((c) => c.classList.remove('is-win'))
+    root.classList.remove('is-won')
+    render()
+    if (playerStarts) status.textContent = T.you
+    else slantTurn()
+    playerStarts = !playerStarts   // příště začíná druhý
+  }
+
+  const setLevel = (l: number) => {
+    level = l
+    cfg = LEVELS[l]
+    const [name, meta] = isEn ? cfg.en : cfg.cs
+    lvlName.textContent = name
+    lvlMeta.textContent = meta
+    range.value = String(l)
+    range.setAttribute('aria-valuetext', `${name}, ${meta}`)
+    root.dataset.level = String(l)
+    try { localStorage.setItem('slant-ttt-level', String(l)) } catch {}
+    playerStarts = true
+    buildBoard()
+    saveScore()
+    newGame()
+  }
+
+  range.addEventListener('input', () => setLevel(Number(range.value)))
+  document.getElementById('js-ttt-new')!.addEventListener('click', newGame)
+  document.getElementById('js-ttt-reset')!.addEventListener('click', () => { scores[cfg.n] = { x: 0, o: 0, draw: 0 }; saveScore(); newGame() })
+
+  setLevel(level)
 </script>
 
 <style>
 .nf {
-  min-height: calc(100svh - 6rem);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-block: var(--sp-xl) var(--sp-2xl);
-}
-.nf__sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.nf__stage {
-  position: relative;
-  height: clamp(300px, 52vh, 620px);
-  touch-action: none;   /* táhnutí prstem hýbe sklem, ne stránkou */
-  cursor: grab;
-  user-select: none;
-}
-.nf__stage:active { cursor: grabbing; }
-.nf__canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-.nf__stage.has-gl .nf__canvas { opacity: 1; }
-
-/* Bez WebGL: obyčejné 404 */
-.nf__fallback {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: min(41vh, 36vw);
-  line-height: 1;
-  letter-spacing: -0.04em;
-  color: var(--clr-text);
-}
-.nf__fallback span { color: var(--clr-accent); }
-.nf__stage.has-gl .nf__fallback { visibility: hidden; }
-
-.nf__hint {
-  position: absolute;
-  left: 50%;
-  bottom: 0.25rem;
-  transform: translateX(-50%);
-  margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  color: var(--clr-muted);
-  white-space: nowrap;
-  pointer-events: none;
-  transition: opacity 0.6s ease;
-}
-.nf__stage:not(.has-gl) .nf__hint,
-.nf__stage.is-played .nf__hint { opacity: 0; }
-
-.nf__content {
+  padding-block: clamp(2rem, 6vw, 4.5rem) var(--sp-3xl);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: var(--sp-sm);
-  margin-top: var(--sp-lg);
+}
+
+/* ── Hlavička ────────────────────────────────────────────────────────── */
+.nf__head { max-width: 40rem; }
+.nf__code {
+  display: inline-block;
+  margin-bottom: var(--sp-sm);
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--clr-accent);
 }
 .nf__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3.6vw, 3rem);
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
   font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
+  letter-spacing: -0.04em;
+  line-height: 1;
   color: var(--clr-text);
 }
 .nf__lede {
-  margin: 0;
-  max-width: 44ch;
-  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
-  line-height: 1.6;
+  margin: var(--sp-md) auto 0;
+  max-width: 38ch;
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  line-height: 1.55;
   color: var(--clr-muted);
 }
+
+/* ── Piškvorky ───────────────────────────────────────────────────────── */
+.ttt {
+  /* šířka celé mřížky; pole = šířka / počet polí v řadě */
+  --board: min(88vw, 23rem);
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-md);
+}
+/* Slider obtížnosti */
+.ttt__level { width: var(--board); display: flex; flex-direction: column; gap: 0.6rem; }
+.ttt__level-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-sm);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--clr-text);
+}
+.ttt__level-meta { font-family: inherit; font-size: 0.8rem; font-weight: 500; letter-spacing: 0; color: var(--clr-muted); }
+.ttt__range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.ttt__range::-webkit-slider-runnable-track { height: 2px; border-radius: 2px; background: var(--clr-border); }
+.ttt__range::-moz-range-track { height: 2px; border-radius: 2px; background: var(--clr-border); }
+.ttt__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px; margin-top: -10px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+  border: 3px solid var(--clr-bg);
+  box-shadow: 0 0 0 1px var(--clr-accent);
+  transition: transform 0.2s;
+}
+.ttt__range::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+  border: 3px solid var(--clr-bg);
+  box-shadow: 0 0 0 1px var(--clr-accent);
+}
+.ttt__range:active::-webkit-slider-thumb { transform: scale(1.15); }
+.ttt__range:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 4px; border-radius: 4px; }
+.ttt__ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -0.2rem;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--clr-muted);
+}
+
+.ttt__score {
+  display: flex;
+  gap: clamp(1.5rem, 5vw, 3rem);
+}
+.ttt__stat { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-width: 3.5rem; }
+.ttt__stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+.ttt__stat-val {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--clr-text);
+}
+.ttt__stat--accent .ttt__stat-val { color: var(--clr-accent); }
+
+/* Mřížka jen z vnitřních čar (gap + pozadí = čáry), bez vnějšího rámu */
+.ttt__board {
+  display: grid;
+  --n: 3;
+  width: var(--board);
+  aspect-ratio: 1;
+  grid-template-columns: repeat(var(--n), 1fr);
+  grid-template-rows: repeat(var(--n), 1fr);
+  gap: 1.5px;
+  background: var(--clr-border);
+}
+.ttt__board :global(.ttt__cell) {
+  position: relative;
+  border: 0;
+  padding: 0;
+  background: var(--clr-bg);
+  cursor: pointer;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ttt__board :global(.ttt__cell:not([data-mark]):not(:disabled):hover) {
+  background: color-mix(in srgb, var(--clr-text) 4%, var(--clr-bg));
+}
+.ttt__board :global(.ttt__cell:focus-visible) { outline: 2px solid var(--clr-accent); outline-offset: -2px; z-index: 1; }
+.ttt__board :global(.ttt__cell:disabled) { cursor: default; }
+.ttt__board :global(.ttt__cell) :global(svg) { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+.ttt__board :global(.ttt__cell) :global(.ttt__stroke) {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ttt-draw 0.32s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+/* menší pole → relativně silnější tah (ve viewBox jednotkách), ať je čitelný */
+.ttt[data-level='1'] .ttt__board :global(.ttt__cell) :global(.ttt__stroke) { stroke-width: 9; }
+.ttt[data-level='2'] .ttt__board :global(.ttt__cell) :global(.ttt__stroke) { stroke-width: 11; }
+.ttt__board :global(.ttt__cell[data-mark='x']) :global(.ttt__stroke) { stroke: var(--clr-text); }
+.ttt__board :global(.ttt__cell[data-mark='x']) :global(.ttt__stroke--2) { animation-delay: 0.14s; }
+.ttt__board :global(.ttt__cell[data-mark='o']) :global(.ttt__stroke) { stroke: var(--clr-accent); }
+@keyframes ttt-draw { to { stroke-dashoffset: 0; } }
+
+/* Výherní trojice */
+.ttt__board :global(.ttt__cell.is-win) { background: color-mix(in srgb, var(--clr-accent) 12%, var(--clr-bg)); }
+.ttt__board :global(.ttt__cell.is-win[data-mark='x']) :global(.ttt__stroke) { stroke: var(--clr-accent); transition: stroke 0.3s; }
+
+.ttt__status {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+.ttt.is-won .ttt__status { color: var(--clr-accent); }
+
+.ttt__controls { display: flex; align-items: center; gap: var(--sp-md); }
+.ttt__btn {
+  padding: 0.7em 1.4em;
+  border-radius: 999px;
+  border: 1px solid var(--clr-text);
+  background: transparent;
+  color: var(--clr-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.ttt__btn:hover { background: var(--clr-text); color: var(--clr-bg); }
+.ttt__link {
+  border: 0;
+  background: none;
+  padding: 0.4em 0;
+  font-size: 0.8rem;
+  color: var(--clr-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+  cursor: pointer;
+}
+.ttt__link:hover { color: var(--clr-text); }
+
+/* ── Tlačítka ────────────────────────────────────────────────────────── */
 .nf__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--sp-sm);
-  margin-top: var(--sp-sm);
+  margin-top: clamp(2rem, 5vw, 3rem);
 }
 .nf__btn {
   display: inline-flex;
@@ -401,17 +520,53 @@ import Layout from '../layouts/Layout.astro'
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.25s;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
 }
-.nf__btn--primary {
-  background: var(--clr-accent);
-  color: #fff;
-  border: 1px solid var(--clr-accent);
-}
-.nf__btn--primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
-.nf__btn--ghost {
-  border: 1px solid var(--clr-border);
+.nf__btn--primary { background: var(--clr-accent); color: #fff; border: 1px solid var(--clr-accent); }
+.nf__btn--primary:hover { filter: brightness(1.06); }
+.nf__btn--ghost { border: 1px solid var(--clr-border); color: var(--clr-text); }
+.nf__btn--ghost:hover { border-color: var(--clr-text); }
+
+/* ── Galerie projektů ────────────────────────────────────────────────── */
+.nf__work { width: 100%; margin-top: clamp(3.5rem, 9vw, 6rem); text-align: left; }
+.nf__work-title {
+  margin: 0 0 var(--sp-lg);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
   color: var(--clr-text);
 }
-.nf__btn--ghost:hover { border-color: var(--clr-text); }
+.nf__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-lg);
+}
+@media (max-width: 48em) {
+  .nf__grid { grid-template-columns: 1fr; gap: var(--sp-xl); }
+}
+.nf-card { display: flex; flex-direction: column; gap: 0.35rem; text-decoration: none; color: inherit; }
+.nf-card__img {
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--clr-surface);
+  margin-bottom: 0.4rem;
+}
+.nf-card__img :global(picture),
+.nf-card__img :global(img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nf-card:hover .nf-card__img :global(img) { transform: scale(1.04); }
+.nf-card__title { font-weight: 600; color: var(--clr-text); transition: color 0.2s; }
+.nf-card:hover .nf-card__title { color: var(--clr-accent); }
+.nf-card__tagline { font-size: 0.875rem; color: var(--clr-muted); line-height: 1.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ttt__board :global(.ttt__cell) :global(.ttt__stroke) { animation: none; stroke-dashoffset: 0; }
+}
 </style>
