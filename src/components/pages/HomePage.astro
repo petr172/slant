@@ -440,7 +440,8 @@ const faqLd = {
       delay: 1.0,
       onComplete: () => {
         // Jemné, pomalé plování nahoru a dolů (každý chip trochu jinak)
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        // (na mobilu jsou chipy v řadě pod nadpisem → bez plování, ať řada neposkakuje)
+        if (window.matchMedia('(prefers-reduced-motion: reduce), (max-width: 48em)').matches) return
         chips.forEach((chip, i) => {
           gsap.to(chip, {
             y: -4 - (i % 3) * 1.5,
@@ -588,18 +589,17 @@ gsap.from('#js-hero-bot', {
   if (reelWrap && reel) {
     const isMobile = window.matchMedia('(max-width: 48em)').matches
 
-    if (isMobile) {
-      // Mobil: jen scale entrance, žádný pin
-      gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
-      gsap.to(reelWrap, { scale: 1, duration: 1.4, ease: 'power4.out', delay: 0.4 })
-    } else {
-      // Desktop: wrap je vysoký jako obrazovka (CSS .is-expandable) a clip-path
-      // z něj vyřízne kartu 16:9 uprostřed. Pin se chytí, když wrap vyplní
-      // obrazovku (karta je tedy přesně uprostřed); scroll pak ořez rozevře na
-      // celou plochu, chvíli podrží a scroll pokračuje. Obraz se nedeformuje.
+    {
+      // Wrap je vysoký jako obrazovka (CSS .is-expandable) a clip-path z něj
+      // vyřízne kartu. Pin se chytí, když wrap vyplní obrazovku; scroll pak ořez
+      // rozevře na celou plochu, odhalí text, chvíli podrží a scroll pokračuje.
+      // Desktop: karta 16:9 uprostřed. Mobil: karta 4:3 nahoře pod navigací
+      // (uprostřed by nad ní zbyla velká prázdná plocha) → roztáhne se na výšku.
       reelWrap.classList.add('is-expandable')
-      const CARD_W   = 0.84   // šířka karty vůči šířce wrapu
-      const CARD_MAX = 0.82   // max výška karty vůči výšce wrapu
+      const CARD_W   = isMobile ? 0.9 : 0.84   // šířka karty vůči šířce wrapu
+      const CARD_MAX = 0.82                     // max výška karty vůči výšce wrapu
+      const CARD_RATIO = isMobile ? 3 / 4 : 9 / 16
+      const MOBILE_TOP = 24                     // px — malý odstup karty od chipů nad ní
       const RADIUS = 16
       // Časování v rámci pinu (0–1): roztažení → slova jedno po druhém → tlačítko → podržení
       const EXPAND = 0.4
@@ -608,19 +608,20 @@ gsap.from('#js-hero-bot', {
       const words = Array.from(reelWrap.querySelectorAll<HTMLElement>('.hero__word'))
       const btn = reelWrap.querySelector<HTMLElement>('.hero__reel-btn')
       const clamp01 = gsap.utils.clamp(0, 1)
-      let insetV = 0, insetH = 0, progress = 0
+      let insetT = 0, insetB = 0, insetH = 0, progress = 0
 
       const measure = () => {
         const w = reelWrap.offsetWidth, h = reelWrap.offsetHeight
         const cardW = w * CARD_W
-        const cardH = Math.min(cardW * 9 / 16, h * CARD_MAX)
+        const cardH = Math.min(cardW * CARD_RATIO, h * CARD_MAX)
         insetH = (w - cardW) / 2
-        insetV = (h - cardH) / 2
+        if (isMobile) { insetT = Math.min(MOBILE_TOP, h - cardH); insetB = h - insetT - cardH }
+        else { insetT = insetB = (h - cardH) / 2 }
       }
       const setClip = () => {
         const k = 1 - gsap.parseEase('power2.inOut')(Math.min(1, progress / EXPAND))
         gsap.set(reel, {
-          clipPath: `inset(${insetV * k}px ${insetH * k}px ${insetV * k}px ${insetH * k}px round ${RADIUS * k}px)`,
+          clipPath: `inset(${insetT * k}px ${insetH * k}px ${insetB * k}px ${insetH * k}px round ${RADIUS * k}px)`,
         })
 
         // Slova: každé se rozsvítí přes ~3 „kroky" → plynulá vlna zleva doprava
@@ -645,7 +646,8 @@ gsap.from('#js-hero-bot', {
 
       ScrollTrigger.create({
         trigger: reelWrap,
-        start: 'center center',
+        // mobil: wrap je 100svh (≤ výška okna) → přilepit k hornímu okraji, ne na střed
+        start: isMobile ? 'top top' : 'center center',
         end: '+=220%',
         pin: true,
         pinSpacing: true,
@@ -915,39 +917,21 @@ gsap.from('#js-hero-bot', {
   .hero__chip-preview { display: none; }
 }
 
-/* Rim light (hover): tenká zářivá hrana bílá → akcent → bílá, jen na obrysu (maska) */
-.hero__chip::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: linear-gradient(120deg,
-    #fff 0%, var(--clr-accent) 28%, rgba(255, 255, 255, 0.95) 50%,
-    var(--clr-accent) 74%, #fff 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.hero__chip:hover::before { opacity: 1; }
-
-/* Hover: sklo zůstává světlé, kolem se rozzáří akcent (pozadí „rozsvítí")
-   + rim light na hraně. Popisek zůstává černý. */
+/* Hover: sklo zůstává světlé, kolem se souměrně rozzáří akcent a hrana dostane
+   čistý stejnoměrný rim light (prstenec v akcentu + bílý odlesk uvnitř).
+   Popisek zůstává černý. */
 .hero__chip:hover,
 :global(.dark) .hero__chip:hover {
   border-color: transparent;
   background: linear-gradient(160deg,
-    rgba(255, 255, 255, 0.9),
-    color-mix(in srgb, var(--clr-accent) 10%, rgba(255, 255, 255, 0.72)));
+    rgba(255, 255, 255, 0.92),
+    color-mix(in srgb, var(--clr-accent) 8%, rgba(255, 255, 255, 0.8)));
   box-shadow:
+    0 0 0 1.5px var(--clr-accent),
     inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 0 16px color-mix(in srgb, var(--clr-accent) 18%, transparent),
-    0 0 18px 2px color-mix(in srgb, var(--clr-accent) 55%, transparent),
-    0 0 48px 10px color-mix(in srgb, var(--clr-accent) 32%, transparent),
-    0 0 110px 30px color-mix(in srgb, var(--clr-accent) 16%, transparent);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.7),
+    0 0 22px 3px color-mix(in srgb, var(--clr-accent) 45%, transparent),
+    0 0 60px 14px color-mix(in srgb, var(--clr-accent) 18%, transparent);
 }
 
 /* On mobile: hide scattered chips, show as simple row below headline */
@@ -956,23 +940,27 @@ gsap.from('#js-hero-bot', {
   .hero {
     padding-top: 0;
   }
+  /* Mobil: nadpis čistě čitelný, chipy NEleží přes text, ale v řadě pod ním */
   .hero__headline-wrap {
-    padding-top: var(--sp-lg);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-lg);
+    padding-block: var(--sp-xl) var(--sp-xs);
   }
-  /* Keep chips floating over the typography like on desktop */
+  .hero__headline { font-size: clamp(3.25rem, 15.5vw, 5rem); }
+  .hero__chips {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    pointer-events: auto;
+  }
+  /* inline top/left z desktopu se při position: static ignoruje */
   .hero__chip {
-    font-size: 0.6rem;
-    padding: 0.45em 0.9em;
+    position: static;
+    font-size: 0.7rem;
+    padding: 0.6em 1.1em;
   }
-
-  /* Mobilní rozmístění chipů, ať se všechny vejdou do view (přepisuje inline styl).
-     Široké tagy vlevo, krátké vpravo. */
-  .hero__chip:nth-child(1) { top: 3%  !important; left: 5%  !important; }  /* Branding */
-  .hero__chip:nth-child(2) { top: 17% !important; left: 58% !important; }  /* Naming */
-  .hero__chip:nth-child(3) { top: 42% !important; left: 6%  !important; }  /* Webdesign */
-  .hero__chip:nth-child(4) { top: 56% !important; left: 60% !important; }  /* Animace */
-  .hero__chip:nth-child(5) { top: 80% !important; left: 4%  !important; }  /* Obalový design */
-  .hero__chip:nth-child(6) { top: 91% !important; left: 4%  !important; }  /* Grafický design */
 }
 
 /* Reel kontejner — sticky při scrollu */
@@ -1000,7 +988,12 @@ gsap.from('#js-hero-bot', {
   aspect-ratio: auto;
   max-height: none;
   height: 100vh;
+  height: 100svh;   /* mobil: stabilní výška bez skákání adresního řádku */
+  /* Na myš/klik reaguje jen viditelná (clip-path) karta, ne průhledná plocha
+     wrapu kolem ní — jinak se kurzor-šipka ukazovala už u chipů nad sliderem */
+  pointer-events: none;
 }
+.hero__reel-wrap.is-expandable .hero__reel { pointer-events: auto; }
 
 .hero__slide {
   position: absolute;
@@ -1057,10 +1050,6 @@ gsap.from('#js-hero-bot', {
   padding-block: var(--sp-xl);
 }
 
-@media (max-width: 48em) {
-  .hero__bot { flex-direction: column; align-items: flex-start; }
-}
-
 .hero__desc {
   font-size: clamp(0.875rem, 1.2vw, 1rem);
   color: var(--clr-muted);
@@ -1070,9 +1059,8 @@ gsap.from('#js-hero-bot', {
 
 .hero__cta { flex-shrink: 0; align-self: flex-start; }
 
-/* Text přes slider — jen desktop (na mobilu je slider malý, text je pod ním) */
-.hero__reel-copy { display: none; }
-@media (min-width: 48.0625em) {
+/* Text přes roztažený slider (desktop i mobil); blok pod sliderem jen pro čtečky */
+@media all {
   .hero__bot {
     position: absolute;
     width: 1px;
@@ -1123,6 +1111,13 @@ gsap.from('#js-hero-bot', {
     color: #fff;
     gap: 0.85rem;
   }
+}
+
+/* Mobil: menší text a odsazení přes roztažený obrázek */
+@media (max-width: 48em) {
+  .hero__reel-copy { padding: var(--sp-lg) var(--sp-lg) calc(var(--sp-xl) + env(safe-area-inset-bottom)); gap: var(--sp-md); }
+  .hero__reel-text { font-size: clamp(1.75rem, 8vw, 2.4rem); max-width: 16ch; }
+  .hero__reel-btn { font-size: 0.875rem; }
 }
 
 /* ── Projects ────────────────────────────────────────────────────────── */
