@@ -101,25 +101,16 @@ const faqLd = {
     <div class="hero__headline-wrap container">
       <h1 class="hero__headline" id="js-headline" set:html={t('home.headline')}></h1>
 
-      <!-- Refracted glass pro chipy: svislé „vroubky" (turbulence jen v ose X)
-           posunou pozadí do stran jako fluted sklo. Používá ho backdrop-filter. -->
-      <svg class="hero__glass-defs" width="0" height="0" aria-hidden="true" focusable="false">
-        <filter id="chip-glass" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-          <feTurbulence type="turbulence" baseFrequency="0.07 0.004" numOctaves="1" seed="7" result="ribs" />
-          <feDisplacementMap in="SourceGraphic" in2="ribs" scale="16" xChannelSelector="R" yChannelSelector="B" />
-        </filter>
-      </svg>
-
       <!-- Service chips — scattered stickers -->
       <div class="hero__chips" id="js-hero-chips" aria-hidden="true">
         {([
           // Pozice záměrně přes písmena nadpisu — sklo láme text pod sebou
-          { label: lang === 'en' ? 'Branding'       : 'Branding',        tag: 'Branding',        style: 'top: 19%; left: 21%; rotate: -4deg;' },
-          { label: lang === 'en' ? 'Naming'         : 'Naming',          tag: 'Naming',          style: 'top: 25%; left: 53%; rotate: 5deg;'  },
-          { label: lang === 'en' ? 'Web design'     : 'Webdesign',       tag: 'Webdesign',       style: 'top: 49%; left: 5%;  rotate: -3deg;' },
-          { label: lang === 'en' ? 'Motion design'  : 'Animace',         tag: 'Animace',         style: 'top: 53%; left: 59%; rotate: 4deg;'  },
-          { label: lang === 'en' ? 'Packaging'      : 'Obalový design',  tag: 'Obalový design',  style: 'top: 77%; left: 13%; rotate: 3deg;'  },
-          { label: lang === 'en' ? 'Graphic design' : 'Grafický design', tag: 'Grafický design', style: 'top: 79%; left: 57%; rotate: -4deg;' },
+          { label: lang === 'en' ? 'Branding'       : 'Branding',        tag: 'Branding',        style: 'top: 19%; left: 21%;' },
+          { label: lang === 'en' ? 'Naming'         : 'Naming',          tag: 'Naming',          style: 'top: 25%; left: 53%;'  },
+          { label: lang === 'en' ? 'Web design'     : 'Webdesign',       tag: 'Webdesign',       style: 'top: 49%; left: 5%;' },
+          { label: lang === 'en' ? 'Motion design'  : 'Animace',         tag: 'Animace',         style: 'top: 53%; left: 59%;'  },
+          { label: lang === 'en' ? 'Packaging'      : 'Obalový design',  tag: 'Obalový design',  style: 'top: 77%; left: 13%;'  },
+          { label: lang === 'en' ? 'Graphic design' : 'Grafický design', tag: 'Grafický design', style: 'top: 79%; left: 57%;' },
         ] as const).map(chip => {
           const topPct = parseFloat(chip.style.match(/top:\s*([\d.]+)%/)?.[1] ?? '0')
           const pbelow = topPct < 48
@@ -848,45 +839,42 @@ gsap.from('#js-hero-bot', {
   pointer-events: all;
   display: inline-flex;
   align-items: center;
-  padding: 0.6em 1.25em;
+  padding: 0.9em 1.8em;
   border-radius: 999px;
   font-size: clamp(0.7rem, 0.95vw, 0.85rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
-  /* Refracted glass: sklo láme nadpis pod sebou (SVG #chip-glass = svislé
-     vroubky), světelný lem nahoře + měkký stín. Jen černobílé.
-     Fallback (Safari/Firefox neumí url() v backdrop-filter): frosted blur. */
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  /* Frosted glass destička: silné rozmazání → písmena pod ní jsou jen měkké
+     skvrny a černý popisek je vždy čitelný. Světlé sklo v obou režimech,
+     jasná hrana s odleskem nahoře a měkký stín → 3D hloubka. */
+  border: 1px solid rgba(255, 255, 255, 0.85);
   color: #111;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12));
-  -webkit-backdrop-filter: blur(10px) saturate(160%);
-  backdrop-filter: blur(10px) saturate(160%);
-  backdrop-filter: url(#chip-glass) blur(2.5px) saturate(160%);
-  /* čitelnost popisku nad zalomenými písmeny */
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.52));
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  backdrop-filter: blur(8px) saturate(140%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.12);
-  transition: background 0.25s, color 0.25s, border-color 0.25s;
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 14px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.08),
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 14px 32px -10px rgba(0, 0, 0, 0.28);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
   will-change: transform;
 }
 
-/* Tmavý režim webu: tmavé sklo s bílým textem */
+/* Tmavý režim: sklo o něco hustší, ať je černý popisek kontrastní i nad tmavým pozadím */
 :global(.dark) .hero__chip {
-  color: #fff;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
-  border-color: rgba(255, 255, 255, 0.22);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
+  border-color: rgba(255, 255, 255, 0.6);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.66));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 8px 24px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 14px rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 14px 32px -10px rgba(0, 0, 0, 0.6);
 }
-
-.hero__glass-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 /* Hover náhled kategorie (desktop) — stack karet 16:9, který se skládá na sebe */
 .hero__chip-preview {
@@ -929,16 +917,39 @@ gsap.from('#js-hero-bot', {
   .hero__chip-preview { display: none; }
 }
 
-/* Hover: čistá plochá Slant red — bez skla, lemů a stínu (v obou režimech) */
+/* Rim light (hover): tenká zářivá hrana bílá → akcent → bílá, jen na obrysu (maska) */
+.hero__chip::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(120deg,
+    #fff 0%, var(--clr-accent) 28%, rgba(255, 255, 255, 0.95) 50%,
+    var(--clr-accent) 74%, #fff 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.hero__chip:hover::before { opacity: 1; }
+
+/* Hover: sklo zůstává světlé, kolem se rozzáří akcent (pozadí „rozsvítí")
+   + rim light na hraně. Popisek zůstává černý. */
 .hero__chip:hover,
 :global(.dark) .hero__chip:hover {
-  background: var(--clr-accent);
-  border-color: var(--clr-accent);
-  color: #fff;
-  text-shadow: none;
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+  border-color: transparent;
+  background: linear-gradient(160deg,
+    rgba(255, 255, 255, 0.9),
+    color-mix(in srgb, var(--clr-accent) 10%, rgba(255, 255, 255, 0.72)));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 16px color-mix(in srgb, var(--clr-accent) 18%, transparent),
+    0 0 18px 2px color-mix(in srgb, var(--clr-accent) 55%, transparent),
+    0 0 48px 10px color-mix(in srgb, var(--clr-accent) 32%, transparent),
+    0 0 110px 30px color-mix(in srgb, var(--clr-accent) 16%, transparent);
 }
 
 /* On mobile: hide scattered chips, show as simple row below headline */
