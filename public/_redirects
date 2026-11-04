@@ -1,0 +1,41 @@
+# Přesměrování adres ze starého webu (WordPress, slant.cz do 11/2026)
+# na nový web. 301 = trvalé → Google přenese hodnocení na nové URL.
+# Pořadí: konkrétní pravidla nahoře, obecná (splat *) dole.
+
+# ── Stránky ──────────────────────────────────────────────────────────
+/vseobecne-obchodni-podminky   /podminky/vseobecne-obchodni-podminky   301
+/vseobecne-obchodni-podminky/  /podminky/vseobecne-obchodni-podminky   301
+/projekty                      /work                                   301
+/projekty/                     /work                                   301
+/studio                        /                                       301
+/studio/                       /                                       301
+/sluzby                        /                                       301
+/sluzby/                       /                                       301
+/kontakty                      /#contact                               301
+/kontakty/                     /#contact                               301
+
+# ── Projekty ─────────────────────────────────────────────────────────
+/projekty/firemni-identita/identita-znacky-konopny-tata   /work/konopny-tata   301
+/projekty/firemni-identita/identita-znacky-konopny-tata/  /work/konopny-tata   301
+# ostatní staré projekty na novém webu nejsou → přehled prací
+/projekty/*                    /work                                   301
+
+# ── Blog: články, které na novém webu nejsou (zatím) ─────────────────
+/blog/knihy-pro-designery                         /blog   302
+/blog/knihy-pro-designery/                        /blog   302
+/blog/6-duvodu-proc-potrebujete-branding          /blog   301
+/blog/6-duvodu-proc-potrebujete-branding/         /blog   301
+/blog/produktivita-v-designu                      /blog   301
+/blog/produktivita-v-designu/                     /blog   301
+/blog/online-utility-pro-designery                /blog   301
+/blog/online-utility-pro-designery/               /blog   301
+/blog/cms-nastroje-je-wordpress-budoucnost-nebo-uz-minulost    /blog   301
+/blog/cms-nastroje-je-wordpress-budoucnost-nebo-uz-minulost/   /blog   301
+/blog/graficke-nastroje-v-roce-2021               /blog   301
+/blog/graficke-nastroje-v-roce-2021/              /blog   301
+
+# ── Pozůstatky WordPressu ────────────────────────────────────────────
+/feed                          /blog                                   301
+/feed/                         /blog                                   301
+/wp-admin/*                    /                                       301
+/wp-login.php                  /                                       301
