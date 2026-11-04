@@ -5,7 +5,7 @@ import CaseStudyCard from '../CaseStudyCard.astro'
 import ContactCta from '../ContactCta.astro'
 import TrustWall from '../TrustWall.astro'
 import { client } from '../../lib/sanity'
-import { urlFor } from '../../lib/imageUrl'
+import { buildChipPreviews } from '../../lib/chipPreviews'
 import { ALL_CASE_STUDIES_QUERY, SITE_SETTINGS_QUERY, FEATURED_BLOG_POSTS_QUERY } from '../../lib/queries'
 import { useTranslations, type Lang } from '../../i18n/ui'
 
@@ -29,26 +29,11 @@ const projects = allProjects.map((cs: any, i: number) => ({
   isLarge:  i === 0 || i === 3,
 }))
 
-// Hero chip hover náhledy (16:9). Primárně kurátorská kolekce ze Sanity
-// (siteSettings.chipPreviews), fallback = cover obrázky projektů dané kategorie.
-const img169 = (src: any) => urlFor(src).width(480).height(270).fit('crop').format('webp').quality(80).url()
-const previewsByTag: Record<string, string[]> = {}
-
-// 1) Kurátorská kolekce ze Sanity
-for (const cp of (siteSettings?.chipPreviews ?? []) as any[]) {
-  if (!cp?.category || !cp.images?.length) continue
-  previewsByTag[cp.category] = cp.images.filter((im: any) => im?.asset).map(img169)
-}
-
-// 2) Fallback z coverů projektů (jen pro kategorie bez kurátorské kolekce)
-for (const cs of allProjects as any[]) {
-  if (!cs.coverImage) continue
-  const src = img169(cs.coverImage)
-  for (const svc of (cs.services ?? [])) {
-    if (previewsByTag[svc]?.length) continue
-    (previewsByTag[svc] ??= []).push(src)
-  }
-}
+// Hero chip hover náhledy — max 3 čtverce, servírované z naší domény (viz lib/chipPreviews)
+const previewsByTag: Record<string, string[]> = Object.fromEntries(
+  Object.entries(buildChipPreviews(siteSettings, allProjects))
+    .map(([tag, list]) => [tag, list.map((p) => `/chip-preview/${p.file}`)])
+)
 
 // ─── FAQ — jeden zdroj pravdy pro render i JSON-LD ──────────────────────────
 const faqItems = lang === 'cs' ? [
@@ -121,7 +106,7 @@ const faqLd = {
             {chip.label}
             {previewsByTag[chip.tag]?.length ? (
               <span class="hero__chip-preview" aria-hidden="true">
-                {previewsByTag[chip.tag].slice(0, 6).map((src) => (
+                {previewsByTag[chip.tag].map((src) => (
                   <img class="hero__chip-preview-img" src={src} alt="" loading="lazy" decoding="async" />
                 ))}
               </span>
@@ -388,6 +373,8 @@ const faqLd = {
   import { gsap } from 'gsap'
   import { ScrollTrigger } from 'gsap/ScrollTrigger'
   import { SplitText } from 'gsap/SplitText'
+  import { initChipMelt } from '@/lib/chipMelt'
+  import { initChipGlass } from '@/lib/chipGlass'
 
   gsap.registerPlugin(ScrollTrigger, SplitText)
 
@@ -455,14 +442,24 @@ const faqLd = {
       },
     })
 
+    // Liquid glass lom (Chromium)
+    initChipGlass(Array.from(chips))
+
     // Float pauza na hover, ať chip neutíká myši
     chips.forEach((chip) => {
       chip.addEventListener('mouseenter', () => gsap.getTweensOf(chip).forEach(t => t.pause()))
       chip.addEventListener('mouseleave', () => gsap.getTweensOf(chip).forEach(t => t.resume()))
     })
 
-    // Hover náhled — karty se skládají na sebe (deck), desktop only
-    if (window.matchMedia('(min-width: 64.0625em)').matches) {
+    // Hover náhled — WebGL „melt": až 3 zaoblené obrázky u kurzoru, které
+    // postupně vytékají jeden z druhého (SDF smooth-union). Desktop only.
+    // Bez WebGL / s reduced motion → původní deck karet níž.
+    const desktopPointer = window.matchMedia('(min-width: 64.0625em) and (hover: hover) and (pointer: fine)').matches
+    const meltOk = desktopPointer && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      && initChipMelt(Array.from(chips), document.getElementById('js-hero-chips')!)
+    if (meltOk) document.getElementById('js-hero-chips')?.classList.add('is-melt')
+
+    if (!meltOk && desktopPointer) {
       chips.forEach((chip) => {
         const imgs = Array.from(chip.querySelectorAll<HTMLImageElement>('.hero__chip-preview-img'))
         if (!imgs.length) return
@@ -846,34 +843,36 @@ gsap.from('#js-hero-bot', {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
-  /* Frosted glass destička: silné rozmazání → písmena pod ní jsou jen měkké
-     skvrny a černý popisek je vždy čitelný. Světlé sklo v obou režimech,
-     jasná hrana s odleskem nahoře a měkký stín → 3D hloubka. */
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  /* Liquid glass: skoro průhledné sklo, lom pozadí na hranách (Chromium přes
+     SVG displacement filtr, viz initChipGlass), jemné rozmazání a světelná hrana.
+     Bílý tón drží černý popisek čitelný nad bílým i černým písmem nadpisu. */
+  border: 0;
   color: #111;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.52));
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
-  backdrop-filter: blur(8px) saturate(140%);
+  background: rgba(255, 255, 255, 0.64);
+  -webkit-backdrop-filter: blur(3px) saturate(160%);
+  backdrop-filter: blur(3px) saturate(160%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 0 14px rgba(255, 255, 255, 0.55),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.08),
-    0 2px 6px rgba(0, 0, 0, 0.08),
-    0 14px 32px -10px rgba(0, 0, 0, 0.28);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.45),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    inset 0 0 12px rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 20px -10px rgba(0, 0, 0, 0.25);
+  transition: background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
   will-change: transform;
 }
+/* Chromium: skutečný lom — filtr nastaví JS (style.backdropFilter) */
 
-/* Tmavý režim: sklo o něco hustší, ať je černý popisek kontrastní i nad tmavým pozadím */
+/* Tmavý režim: tón o něco hustší, ať popisek drží kontrast i nad tmavým pozadím */
 :global(.dark) .hero__chip {
-  border-color: rgba(255, 255, 255, 0.6);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.66));
+  background: rgba(255, 255, 255, 0.62);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 0 14px rgba(255, 255, 255, 0.5),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.12),
-    0 2px 6px rgba(0, 0, 0, 0.3),
-    0 14px 32px -10px rgba(0, 0, 0, 0.6);
+    inset 0 1px 0.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.4),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.55),
+    inset 0 0 12px rgba(255, 255, 255, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 8px 20px -10px rgba(0, 0, 0, 0.55);
 }
 
 /* Hover náhled kategorie (desktop) — stack karet 16:9, který se skládá na sebe */
@@ -881,8 +880,8 @@ gsap.from('#js-hero-bot', {
   position: absolute;
   left: 50%;
   bottom: calc(100% + 0.7rem);            /* default: nad chipem */
-  width: 220px;
-  aspect-ratio: 16 / 9;
+  width: 96px;
+  aspect-ratio: 1;
   opacity: 0;
   transform: translateX(-50%) translateY(8px) scale(0.9);
   transform-origin: bottom center;
@@ -907,31 +906,21 @@ gsap.from('#js-hero-bot', {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  border-radius: 14px;
   opacity: 0;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
-@media (max-width: 64em) {
+@media (max-width: 64em), (hover: none), (pointer: coarse) {
   .hero__chip-preview { display: none; }
 }
+/* S WebGL melt náhledem (src/lib/chipMelt.ts) se DOM náhled nepoužívá, slouží jen jako zdroj URL */
+.hero__chips.is-melt .hero__chip-preview { display: none; }
 
-/* Hover: sklo zůstává světlé, kolem se souměrně rozzáří akcent a hrana dostane
-   čistý stejnoměrný rim light (prstenec v akcentu + bílý odlesk uvnitř).
-   Popisek zůstává černý. */
+/* Hover: decentní — sklo se „zaplní" do téměř neprůhledné bílé, víc nic */
 .hero__chip:hover,
 :global(.dark) .hero__chip:hover {
-  border-color: transparent;
-  background: linear-gradient(160deg,
-    rgba(255, 255, 255, 0.92),
-    color-mix(in srgb, var(--clr-accent) 8%, rgba(255, 255, 255, 0.8)));
-  box-shadow:
-    0 0 0 1.5px var(--clr-accent),
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.7),
-    0 0 22px 3px color-mix(in srgb, var(--clr-accent) 45%, transparent),
-    0 0 60px 14px color-mix(in srgb, var(--clr-accent) 18%, transparent);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 /* On mobile: hide scattered chips, show as simple row below headline */

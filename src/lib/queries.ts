@@ -10,7 +10,9 @@ export const ALL_CASE_STUDIES_QUERY = `
     industry,
     coverImage,
     cardVideo,
-    featured
+    featured,
+    // pro hero chip náhledy (melt) — pár obrázků z galerie
+    "previewImages": (gallery[defined(image.asset)].image + gallery[].items[defined(image.asset)].image)[0...4]
   }
 `
 
