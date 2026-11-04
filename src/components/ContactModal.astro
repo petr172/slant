@@ -48,6 +48,19 @@ const t = {
     none: '—',
     modeWrite: 'Napište nám',
     modeCall: 'Rezervovat call',
+    modeInfo: 'Kontaktní údaje',
+    modeShort: ['Call', 'Napsat', 'Údaje'],
+    infoHeading: 'Kontaktní údaje',
+    infoSub: 'Kliknutím na údaj ho zkopírujete.',
+    copied: 'Zkopírováno',
+    info: [
+      ['E-mail', 'hello@slant.cz', 'hello@slant.cz'],
+      ['Telefon', '+420 605 437 045', '+420605437045'],
+      ['Adresa', 'Slant s.r.o., Zborovská 940/2a, 616 00 Brno', 'Slant s.r.o., Zborovská 940/2a, 616 00 Brno'],
+      ['IČO', '092 50 239', '09250239'],
+      ['DIČ', 'CZ09250239', 'CZ09250239'],
+      ['Bankovní účet', '2601824717 / 2010', '2601824717/2010'],
+    ],
     callHeading: 'Vyberte si termín',
     callSub: '30 minut · Google Meet · Europe/Prague',
     callLoading: 'Načítám volné termíny…',
@@ -96,6 +109,19 @@ const t = {
     none: '—',
     modeWrite: 'Write to us',
     modeCall: 'Book a call',
+    modeInfo: 'Contact details',
+    modeShort: ['Call', 'Write', 'Details'],
+    infoHeading: 'Contact details',
+    infoSub: 'Click any detail to copy it.',
+    copied: 'Copied',
+    info: [
+      ['Email', 'hello@slant.cz', 'hello@slant.cz'],
+      ['Phone', '+420 605 437 045', '+420605437045'],
+      ['Address', 'Slant s.r.o., Zborovská 940/2a, 616 00 Brno, Czechia', 'Slant s.r.o., Zborovská 940/2a, 616 00 Brno, Czechia'],
+      ['Company ID', '092 50 239', '09250239'],
+      ['VAT ID', 'CZ09250239', 'CZ09250239'],
+      ['Bank account', '2601824717 / 2010', '2601824717/2010'],
+    ],
     callHeading: 'Pick a time',
     callSub: '30 minutes · Google Meet · Europe/Prague',
     callLoading: 'Loading available times…',
@@ -123,8 +149,26 @@ const t = {
 
     <!-- Přepínač: formulář × booking -->
     <div class="modal__mode" id="modal-mode" role="tablist" aria-label="Kontakt">
-      <button type="button" class="modal__mode-btn is-active" id="modal-mode-call" role="tab" aria-selected="true">{t.modeCall}</button>
-      <button type="button" class="modal__mode-btn" id="modal-mode-write" role="tab" aria-selected="false">{t.modeWrite}</button>
+      <button type="button" class="modal__mode-btn is-active" id="modal-mode-call" role="tab" aria-selected="true"><span class="modal__mode-lg">{t.modeCall}</span><span class="modal__mode-sm" aria-hidden="true">{t.modeShort[0]}</span></button>
+      <button type="button" class="modal__mode-btn" id="modal-mode-write" role="tab" aria-selected="false"><span class="modal__mode-lg">{t.modeWrite}</span><span class="modal__mode-sm" aria-hidden="true">{t.modeShort[1]}</span></button>
+      <button type="button" class="modal__mode-btn" id="modal-mode-info" role="tab" aria-selected="false"><span class="modal__mode-lg">{t.modeInfo}</span><span class="modal__mode-sm" aria-hidden="true">{t.modeShort[2]}</span></button>
+    </div>
+
+    <!-- Kontaktní údaje — klik = zkopírovat -->
+    <div class="modal__step" data-step="info" hidden>
+      <h2 class="modal__heading">{t.infoHeading}</h2>
+      <p class="modal__call-sub">{t.infoSub}</p>
+      <ul class="modal__info">
+        {t.info.map(([label, value, copy]) => (
+          <li>
+            <button type="button" class="modal__info-row" data-copy={copy} data-copied={t.copied}>
+              <span class="modal__info-label">{label}</span>
+              <span class="modal__info-value">{value}</span>
+              <span class="modal__info-icon" aria-hidden="true"></span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
 
     <!-- Step 1 -->
@@ -350,7 +394,7 @@ const t = {
     updateProgress(n)
     // Přepínač režimů jen na vstupních obrazovkách
     const modeBar = document.getElementById('modal-mode')
-    modeBar?.toggleAttribute('hidden', !(n === 1 || n === 'call'))
+    modeBar?.toggleAttribute('hidden', !(n === 1 || n === 'call' || n === 'info'))
     steps?.forEach(el => {
       const isTarget = el.dataset.step === String(n)
       if (isTarget) {
@@ -549,16 +593,38 @@ const t = {
   let selectedStart: string | null = null
   let selectedLabel = ''
 
-  function setMode(mode: 'write' | 'call') {
-    modeWriteBtn?.classList.toggle('is-active', mode === 'write')
-    modeCallBtn?.classList.toggle('is-active', mode === 'call')
-    modeWriteBtn?.setAttribute('aria-selected', String(mode === 'write'))
-    modeCallBtn?.setAttribute('aria-selected', String(mode === 'call'))
+  const modeInfoBtn = document.getElementById('modal-mode-info') as HTMLButtonElement | null
+  function setMode(mode: 'write' | 'call' | 'info') {
+    ;([[modeWriteBtn, 'write'], [modeCallBtn, 'call'], [modeInfoBtn, 'info']] as const).forEach(([btn, m]) => {
+      btn?.classList.toggle('is-active', mode === m)
+      btn?.setAttribute('aria-selected', String(mode === m))
+    })
     if (mode === 'write') showStep(1)
+    else if (mode === 'info') showStep('info')
     else { showStep('call'); loadSlots() }
   }
   modeWriteBtn?.addEventListener('click', () => setMode('write'))
   modeCallBtn?.addEventListener('click', () => setMode('call'))
+  modeInfoBtn?.addEventListener('click', () => setMode('info'))
+
+  // Kontaktní údaje: klik zkopíruje hodnotu, krátce ukáže „Zkopírováno"
+  modal?.querySelectorAll<HTMLButtonElement>('.modal__info-row').forEach((row) => {
+    let timer: number | undefined
+    row.addEventListener('click', async () => {
+      const text = row.dataset.copy ?? ''
+      try { await navigator.clipboard.writeText(text) }
+      catch {
+        const ta = document.createElement('textarea')
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'
+        document.body.appendChild(ta); ta.select()
+        try { document.execCommand('copy') } catch {}
+        ta.remove()
+      }
+      row.classList.add('is-copied')
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => row.classList.remove('is-copied'), 1600)
+    })
+  })
 
   function fmtDay(dateStr: string): string {
     const [y, m, d] = dateStr.split('-').map(Number)
@@ -795,6 +861,53 @@ const t = {
 .modal__mode-btn { padding: 0.45em 1.2em; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; color: var(--clr-muted); cursor: pointer; transition: color 0.2s, background 0.2s; }
 .modal__mode-btn:hover { color: var(--clr-text); }
 .modal__mode-btn.is-active { background: var(--clr-bg); color: var(--clr-text); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+
+.modal__mode-btn { white-space: nowrap; }
+.modal__mode-sm { display: none; }
+/* Mobil: 3 taby → krátké popisky, lišta nesmí najet pod křížek */
+@media (max-width: 30em) {
+  .modal__mode { max-width: calc(100% - 2.75rem); }
+  .modal__mode-lg { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .modal__mode-sm { display: inline; }
+  .modal__mode-btn { padding: 0.45em 0.95em; }
+}
+
+/* Kontaktní údaje — řádky, klik = zkopírovat */
+.modal__info { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.modal__info li + li { border-top: 1px solid var(--clr-border); }
+.modal__info-row {
+  position: relative; width: 100%; display: grid; grid-template-columns: 8.5rem 1fr 1rem; align-items: baseline; gap: 1rem;
+  padding: 0.9rem 0; text-align: left; font: inherit; color: var(--clr-text); cursor: pointer; background: none; border: 0;
+}
+.modal__info-label { font-size: 0.8125rem; color: var(--clr-muted); }
+.modal__info-value { font-size: 0.9375rem; font-weight: 500; font-variant-numeric: tabular-nums; transition: color 0.2s; }
+.modal__info-row:hover .modal__info-value,
+.modal__info-row:focus-visible .modal__info-value { color: var(--clr-accent); }
+.modal__info-icon {
+  align-self: center; width: 0.95rem; height: 0.95rem; background: var(--clr-muted); opacity: 0.45; transition: opacity 0.2s, background 0.2s;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.modal__info-row:hover .modal__info-icon { opacity: 1; background: var(--clr-accent); }
+.modal__info-row.is-copied .modal__info-icon {
+  opacity: 1; background: var(--clr-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* Tooltip „Zkopírováno" */
+.modal__info-row::after {
+  content: attr(data-copied); position: absolute; right: 1.6rem; top: 50%; transform: translateY(-50%) translateX(4px);
+  padding: 0.25rem 0.5rem; border-radius: 0.4rem; background: var(--clr-accent); color: #fff;
+  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+}
+.modal__info-row.is-copied::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+@media (max-width: 30em) {
+  .modal__info-row { grid-template-columns: 1fr 1rem; gap: 0.15rem 0.75rem; }
+  .modal__info-label { grid-column: 1; }
+  .modal__info-value { grid-column: 1; }
+  .modal__info-icon { grid-column: 2; grid-row: 1 / span 2; }
+}
 
 /* ── Booking ─────────────────────────────────────────────────────────────── */
 .modal__call-sub { margin: -0.75rem 0 0; font-size: 0.8125rem; color: var(--clr-muted); }
