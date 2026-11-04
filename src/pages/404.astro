@@ -3,48 +3,25 @@ import Layout from '../layouts/Layout.astro'
 ---
 
 <Layout title="404" description="Stránka nenalezena — Slant" lang="cs">
-  <section class="nf" id="js-nf">
-    <!-- gradient orb following cursor -->
-    <div class="nf__orb" id="js-nf-orb" aria-hidden="true"></div>
+  <section class="nf">
+    <h1 class="nf__sr" data-en="404 — Page not found">404 — Stránka nenalezena</h1>
 
-    <!-- floating decorative stickers -->
-    <div class="nf__stickers" aria-hidden="true">
-      <span class="nf__sticker" style="top:14%; left:12%;" data-depth="0.05">¯\_(ツ)_/¯</span>
-      <span class="nf__sticker nf__sticker--accent" style="top:22%; right:14%;" data-depth="0.09">?</span>
-      <span class="nf__sticker" style="bottom:24%; left:18%;" data-depth="0.07">404</span>
-      <span class="nf__sticker" style="bottom:18%; right:16%;" data-depth="0.04">↯</span>
+    <!-- Hrací plocha: obří „404“ + skleněný prstenec (WebGL), který text láme.
+         Sklo sleduje myš / prst, při stisku se zvětší; bez interakce samo krouží. -->
+    <div class="nf__stage" id="js-nf-stage">
+      <canvas class="nf__canvas" id="js-nf-canvas" aria-hidden="true"></canvas>
+      <div class="nf__fallback" aria-hidden="true">4<span>0</span>4</div>
+      <p class="nf__hint" aria-hidden="true" data-en="Move the glass — drag or hover">Pohrajte si se sklem — táhněte nebo najeďte myší</p>
     </div>
 
-    <!-- giant decorative number -->
-    <div class="nf__digits" id="js-nf-digits" aria-hidden="true">
-      <span class="nf__digit" data-depth="-0.6" data-text="4">4</span>
-      <span class="nf__digit nf__digit--zero" data-depth="0.9" data-text="0">0</span>
-      <span class="nf__digit" data-depth="-0.4" data-text="4">4</span>
-    </div>
-
-    <!-- content -->
     <div class="nf__content container">
-      <h1 class="nf__title" data-en="Lost in the process">Ztraceno v procesu</h1>
+      <p class="nf__title" data-en="Lost in the process">Ztraceno v procesu</p>
       <p class="nf__lede" data-en="This page doesn’t exist — or it never made the final cut. Let’s get you back on track.">
         Tahle stránka neexistuje — nebo se nedostala do finálního výběru. Vrátíme vás zpátky.
       </p>
       <div class="nf__actions">
         <a href="/" class="nf__btn nf__btn--primary" id="js-nf-home" data-en="Back home">Zpět na úvod</a>
         <a href="/work" class="nf__btn nf__btn--ghost" id="js-nf-work" data-en="View our work">Zobrazit práce →</a>
-      </div>
-    </div>
-
-    <!-- outline marquee -->
-    <div class="nf__marquee" aria-hidden="true">
-      <div class="nf__marquee-track" id="js-nf-marquee">
-        {Array.from({ length: 2 }).map(() => (
-          <span class="nf__marquee-group">
-            <span>404</span><span class="nf__dot">•</span>
-            <span>Page not found</span><span class="nf__dot">•</span>
-            <span>Stránka nenalezena</span><span class="nf__dot">•</span>
-            <span>Lost</span><span class="nf__dot">•</span>
-          </span>
-        ))}
       </div>
     </div>
   </section>
@@ -64,280 +41,377 @@ import Layout from '../layouts/Layout.astro'
     if (work) work.href = '/en/work'
   }
 
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  // ── Skleněný prstenec (WebGL) ──────────────────────────────────────────────
+  // Scéna (text) se kreslí do 2D canvasu → textura. Fragment shader v kruhu
+  // kolem kurzoru počítá profil prstence (torus): sklon povrchu určuje, o kolik
+  // se pozadí posune (lom), každý barevný kanál o kus jinak (chromatická aberace),
+  // k tomu fresnel lem, odlesk a měkký stín. Mimo sklo se kreslí scéna beze změny.
+  const stage  = document.getElementById('js-nf-stage') as HTMLElement
+  const canvas = document.getElementById('js-nf-canvas') as HTMLCanvasElement
+  const gl = canvas.getContext('webgl', { antialias: true, premultipliedAlpha: false })
 
-  if (!reduced && fine) {
-    ;(async () => {
-      const { gsap } = await import('gsap')
+  if (gl) {
+    stage.classList.add('has-gl')
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-      const section = document.getElementById('js-nf') as HTMLElement
-      const orb     = document.getElementById('js-nf-orb') as HTMLElement
-      const digits  = Array.from(document.querySelectorAll<HTMLElement>('.nf__digit'))
-      const floaters = Array.from(document.querySelectorAll<HTMLElement>('[data-depth]'))
+    const VERT = `
+      attribute vec2 aPos;
+      varying vec2 vUv;
+      void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`
 
-      // Orb follows cursor (smoothed)
-      const orbX = gsap.quickTo(orb, 'x', { duration: 0.8, ease: 'power3.out' })
-      const orbY = gsap.quickTo(orb, 'y', { duration: 0.8, ease: 'power3.out' })
+    const FRAG = `
+      precision highp float;
+      varying vec2 vUv;
+      uniform sampler2D uTex;
+      uniform vec2  uRes;     // velikost canvasu v px
+      uniform vec2  uLens;    // střed skla v px (origin vlevo nahoře)
+      uniform float uR;       // poloměr skla v px
+      uniform vec2  uStretch; // protažení ve směru pohybu
+      uniform float uDark;    // 1 = tmavý režim
 
-      // Per-element parallax setters
-      const setters = floaters.map((el) => ({
-        el,
-        depth: parseFloat(el.dataset.depth ?? '0'),
-        x: gsap.quickTo(el, 'x', { duration: 1, ease: 'power3.out' }),
-        y: gsap.quickTo(el, 'y', { duration: 1, ease: 'power3.out' }),
-      }))
+      vec3 scene(vec2 px) { return texture2D(uTex, clamp(px / uRes, 0.0, 1.0)).rgb; }
 
-      section.addEventListener('mousemove', (e) => {
-        const r = section.getBoundingClientRect()
-        const cx = e.clientX - r.left
-        const cy = e.clientY - r.top
-        orbX(cx)
-        orbY(cy)
+      void main() {
+        vec2 px = vec2(vUv.x, 1.0 - vUv.y) * uRes;
+        vec2 rel = px - uLens;
+        // protažení ve směru pohybu (squash & stretch)
+        float sl = length(uStretch);
+        vec2 sd = sl > 0.0001 ? uStretch / sl : vec2(1.0, 0.0);
+        float along = dot(rel, sd);
+        vec2 relS = rel - sd * along * (sl / (1.0 + sl));
+        vec2 d = relS / uR;
+        float r = length(d);
+        vec3 base = scene(px);
 
-        const nx = (cx / r.width - 0.5) * 2   // -1 → 1
-        const ny = (cy / r.height - 0.5) * 2
-        setters.forEach((s) => {
-          s.x(nx * s.depth * 60)
-          s.y(ny * s.depth * 60)
+        // měkký stín pod sklem (posunutý dolů)
+        float sh = smoothstep(1.25, 0.7, length((rel - vec2(0.0, uR * 0.16)) / uR));
+        vec3 col = base * (1.0 - sh * mix(0.10, 0.35, uDark));
+
+        // profil prstence: střed trubice rc, poloměr trubice w
+        float rc = 0.64, w = 0.36;
+        float t = (r - rc) / w;
+        if (abs(t) < 1.0) {
+          float h = sqrt(1.0 - t * t);              // výška povrchu
+          float slope = -t / max(h, 0.08);           // dh/dr
+          vec2 n2 = r > 0.0001 ? d / r : vec2(0.0);
+          vec2 off = n2 * slope * uR * 0.16;         // lom
+          float ca = 0.11;                           // chromatická aberace
+          vec3 refr = vec3(
+            scene(px + off * (1.0 + ca)).r,
+            scene(px + off).g,
+            scene(px + off * (1.0 - ca)).b
+          );
+          // zvětšení přes horní část trubice (čočka)
+          vec3 normal = normalize(vec3(n2 * -slope * 0.9, 1.0));
+          float fres = pow(1.0 - normal.z, 2.2);
+          vec3 L = normalize(vec3(-0.5, -0.6, 0.65));
+          float spec = pow(max(dot(normal, L), 0.0), 60.0);
+          float spec2 = pow(max(dot(normal, normalize(vec3(0.6, 0.7, 0.4))), 0.0), 24.0) * 0.35;
+          vec3 glass = refr * mix(0.96, 1.04, uDark);
+          glass = mix(glass, vec3(1.0), fres * 0.55);
+          glass += vec3(spec + spec2);
+          // tenká barevná hrana (modro-oranžový třpyt jako u skutečného skla)
+          float edge = smoothstep(0.82, 1.0, abs(t));
+          glass += edge * vec3(0.10, 0.18, 0.35) * step(0.0, t) + edge * vec3(0.35, 0.16, 0.05) * step(t, 0.0);
+          float aa = smoothstep(1.0, 0.94, abs(t));  // antialias okraje
+          col = mix(col, glass, aa);
+        }
+        gl_FragColor = vec4(col, 1.0);
+      }`
+
+    const compile = (type: number, src: string) => {
+      const s = gl.createShader(type)!
+      gl.shaderSource(s, src)
+      gl.compileShader(s)
+      return s
+    }
+    const prog = gl.createProgram()!
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT))
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG))
+    gl.linkProgram(prog)
+
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      stage.classList.remove('has-gl')
+    } else {
+      gl.useProgram(prog)
+      const buf = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+      const aPos = gl.getAttribLocation(prog, 'aPos')
+      gl.enableVertexAttribArray(aPos)
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0)
+
+      const u = (n: string) => gl.getUniformLocation(prog, n)
+      const uRes = u('uRes'), uLens = u('uLens'), uR = u('uR'), uStretch = u('uStretch'), uDark = u('uDark')
+
+      const tex = gl.createTexture()
+      gl.bindTexture(gl.TEXTURE_2D, tex)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+      const sceneCanvas = document.createElement('canvas')
+      const sctx = sceneCanvas.getContext('2d')!
+      let W = 0, H = 0, dpr = 1, dark = false
+
+      // Scéna: obří „404“ (nula v akcentu) + jemné řádky textu kvůli textuře lomu
+      const drawScene = () => {
+        const cs = getComputedStyle(document.documentElement)
+        const bg = cs.getPropertyValue('--clr-bg').trim() || '#f9f8f6'
+        const fg = cs.getPropertyValue('--clr-text').trim() || '#111'
+        const accent = cs.getPropertyValue('--clr-accent').trim() || '#FF5522'
+        const muted = cs.getPropertyValue('--clr-muted').trim() || '#888'
+        const font = cs.getPropertyValue('--font-display').trim() || 'sans-serif'
+        dark = document.documentElement.classList.contains('dark')
+
+        sceneCanvas.width = W
+        sceneCanvas.height = H
+        sctx.fillStyle = bg
+        sctx.fillRect(0, 0, W, H)
+
+        // tenké řádky textu nahoře a dole
+        sctx.fillStyle = muted
+        sctx.globalAlpha = 0.35
+        sctx.font = `500 ${Math.round(14 * dpr)}px ${font}`
+        sctx.textBaseline = 'middle'
+        const line = (isEn ? 'Page not found  ·  404  ·  Lost in the process  ·  ' : 'Stránka nenalezena  ·  404  ·  Ztraceno v procesu  ·  ').repeat(12)
+        for (const y of [0.1, 0.9]) sctx.fillText(line, -40 * dpr, H * y)
+        sctx.globalAlpha = 1
+
+        // obří číslice
+        const size = Math.min(H * 0.78, W * 0.36)
+        sctx.font = `600 ${size}px ${font}`
+        sctx.textBaseline = 'alphabetic'
+        const parts = ['4', '0', '4']
+        const gap = -size * 0.04
+        const widths = parts.map((p) => sctx.measureText(p).width)
+        const total = widths.reduce((a, b) => a + b, 0) + gap * 2
+        let x = (W - total) / 2
+        const y = H / 2 + size * 0.35
+        parts.forEach((p, i) => {
+          sctx.fillStyle = i === 1 ? accent : fg
+          sctx.fillText(p, x, y)
+          x += widths[i] + gap
         })
-      })
 
-      // Entrance
-      gsap.fromTo(
-        digits,
-        { yPercent: 120, rotate: (i) => (i % 2 ? 8 : -8), opacity: 0 },
-        { yPercent: 0, rotate: 0, opacity: 1, duration: 1.1, ease: 'power4.out', stagger: 0.08 }
-      )
-      gsap.fromTo(
-        '.nf__content > *',
-        { y: 24, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08, delay: 0.35 }
-      )
+        gl.bindTexture(gl.TEXTURE_2D, tex)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sceneCanvas)
+      }
 
-      // Glitch on hover per digit
-      digits.forEach((d) => {
-        d.addEventListener('mouseenter', () => {
-          d.classList.add('is-glitch')
-          gsap.fromTo(d, { x: 0 }, {
-            x: 0, duration: 0.4, ease: 'power1.inOut',
-            keyframes: { x: [0, -6, 5, -3, 0] },
-            onComplete: () => d.classList.remove('is-glitch'),
-          })
-        })
+      const resize = () => {
+        dpr = Math.min(window.devicePixelRatio || 1, 2)
+        const rect = stage.getBoundingClientRect()
+        W = Math.max(1, Math.round(rect.width * dpr))
+        H = Math.max(1, Math.round(rect.height * dpr))
+        canvas.width = W
+        canvas.height = H
+        gl.viewport(0, 0, W, H)
+        drawScene()
+      }
+
+      // ── Stav skla ───────────────────────────────────────────────────────────
+      const lens = { x: 0, y: 0, r: 0, vx: 0, vy: 0 }
+      const target = { x: 0, y: 0, r: 0 }
+      let pointerActive = false
+      let pressed = false
+      let lastMove = -1e9
+      // na výšku (mobil) menší sklo, ať nepřikryje celé číslice
+      const baseR = () => Math.min(W, H) * (W < H ? 0.19 : 0.24)
+
+      const toLocal = (e: PointerEvent) => {
+        const rect = stage.getBoundingClientRect()
+        return { x: (e.clientX - rect.left) * dpr, y: (e.clientY - rect.top) * dpr }
+      }
+      stage.addEventListener('pointermove', (e) => {
+        const p = toLocal(e); target.x = p.x; target.y = p.y
+        pointerActive = true; lastMove = performance.now()
+        stage.classList.add('is-played')
       })
-    })()
-  } else {
-    // No-motion fallback: ensure content visible
-    document.querySelectorAll<HTMLElement>('.nf__digit, .nf__content > *').forEach((el) => {
-      el.style.opacity = '1'
-    })
+      stage.addEventListener('pointerdown', (e) => {
+        const p = toLocal(e); target.x = p.x; target.y = p.y
+        pressed = true; pointerActive = true; lastMove = performance.now()
+        stage.classList.add('is-played')
+        stage.setPointerCapture?.(e.pointerId)
+      })
+      const release = () => { pressed = false }
+      stage.addEventListener('pointerup', release)
+      stage.addEventListener('pointercancel', release)
+      stage.addEventListener('pointerleave', () => { pointerActive = false })
+
+      const t0 = performance.now()
+      const frame = (now: number) => {
+        const t = (now - t0) / 1000
+        const idle = !pointerActive || now - lastMove > 2500
+        if (idle) {
+          // samovolné kroužení nad číslicemi (reduced motion: klid u nuly)
+          target.x = W * 0.5 + (reduced ? W * 0.02 : Math.sin(t * 0.55) * W * 0.22)
+          target.y = H * 0.52 + (reduced ? 0 : Math.sin(t * 0.9) * H * 0.12)
+        }
+        target.r = baseR() * (pressed ? 1.18 : 1)
+
+        // pružina — sklo jemně dobíhá a překmitne
+        const k = idle ? 0.03 : 0.12, damp = 0.78
+        lens.vx = (lens.vx + (target.x - lens.x) * k) * damp
+        lens.vy = (lens.vy + (target.y - lens.y) * k) * damp
+        lens.x += lens.vx
+        lens.y += lens.vy
+        lens.r += (target.r - lens.r) * 0.15
+
+        const speed = Math.hypot(lens.vx, lens.vy)
+        const s = reduced ? 0 : Math.min(speed / (lens.r || 1), 0.35)
+        const sx = speed > 0.01 ? (lens.vx / speed) * s : 0
+        const sy = speed > 0.01 ? (lens.vy / speed) * s : 0
+
+        gl.uniform2f(uRes, W, H)
+        gl.uniform2f(uLens, lens.x, lens.y)
+        gl.uniform1f(uR, lens.r)
+        gl.uniform2f(uStretch, sx, sy)
+        gl.uniform1f(uDark, dark ? 1 : 0)
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        rafId = requestAnimationFrame(frame)
+      }
+
+      let rafId = 0
+      const start = () => {
+        resize()
+        lens.x = target.x = W * 0.5; lens.y = target.y = H * 0.52; lens.r = target.r = baseR()
+        cancelAnimationFrame(rafId)
+        rafId = requestAnimationFrame(frame)
+      }
+
+      // Font musí být načtený, jinak by se textura nakreslila záložním písmem
+      document.fonts?.ready.then(start) ?? start()
+      new ResizeObserver(() => resize()).observe(stage)
+      // přepnutí světlý/tmavý režim → překreslit scénu
+      new MutationObserver(() => drawScene()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+      // šetřit GPU, když je záložka skrytá
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) cancelAnimationFrame(rafId)
+        else rafId = requestAnimationFrame(frame)
+      })
+    }
   }
 </script>
 
 <style>
-  .nf {
-    position: relative;
-    min-height: calc(100svh - 5rem);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    isolation: isolate;
-  }
+.nf {
+  min-height: calc(100svh - 6rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: var(--sp-xl) var(--sp-2xl);
+}
+.nf__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
-  /* ── Gradient orb ─────────────────────────────────────────────────────── */
-  .nf__orb {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 38rem;
-    height: 38rem;
-    margin: -19rem 0 0 -19rem;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--clr-accent) 0%, transparent 60%);
-    opacity: 0.22;
-    filter: blur(40px);
-    pointer-events: none;
-    z-index: -1;
-    will-change: transform;
-  }
-  .dark .nf__orb { opacity: 0.28; }
+.nf__stage {
+  position: relative;
+  height: clamp(300px, 52vh, 620px);
+  touch-action: none;   /* táhnutí prstem hýbe sklem, ne stránkou */
+  cursor: grab;
+  user-select: none;
+}
+.nf__stage:active { cursor: grabbing; }
+.nf__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.nf__stage.has-gl .nf__canvas { opacity: 1; }
 
-  /* ── Giant digits ─────────────────────────────────────────────────────── */
-  .nf__digits {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(0.5rem, 2vw, 2rem);
-    line-height: 0.8;
-    user-select: none;
-    pointer-events: none;
-  }
+/* Bez WebGL: obyčejné 404 */
+.nf__fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: min(41vh, 36vw);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--clr-text);
+}
+.nf__fallback span { color: var(--clr-accent); }
+.nf__stage.has-gl .nf__fallback { visibility: hidden; }
 
-  .nf__digit {
-    position: relative;
-    font-family: var(--font-display);
-    font-size: clamp(8rem, 30vw, 22rem);
-    font-weight: 400;
-    letter-spacing: -0.05em;
-    color: var(--clr-text);
-    pointer-events: auto;
-    will-change: transform;
-    transition: color 0.3s;
-  }
-  .nf__digit--zero { color: var(--clr-accent); }
+.nf__hint {
+  position: absolute;
+  left: 50%;
+  bottom: 0.25rem;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--clr-muted);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.nf__stage:not(.has-gl) .nf__hint,
+.nf__stage.is-played .nf__hint { opacity: 0; }
 
-  .nf__digit:hover { color: var(--clr-accent); }
-  .nf__digit--zero:hover { color: var(--clr-text); }
-
-  /* RGB glitch split */
-  .nf__digit::before,
-  .nf__digit::after {
-    content: attr(data-text);
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .nf__digit.is-glitch::before {
-    opacity: 0.8;
-    color: #00e5ff;
-    transform: translate(-4px, 2px);
-    mix-blend-mode: screen;
-  }
-  .nf__digit.is-glitch::after {
-    opacity: 0.8;
-    color: var(--clr-accent);
-    transform: translate(4px, -2px);
-    mix-blend-mode: screen;
-  }
-
-  /* ── Floating stickers ────────────────────────────────────────────────── */
-  .nf__stickers { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-  .nf__sticker {
-    position: absolute;
-    font-family: var(--font-display);
-    font-size: clamp(1rem, 2.5vw, 1.75rem);
-    font-weight: 500;
-    color: var(--clr-muted);
-    opacity: 0.5;
-    will-change: transform;
-  }
-  .nf__sticker--accent {
-    color: var(--clr-accent);
-    opacity: 0.8;
-    font-size: clamp(1.5rem, 4vw, 3rem);
-  }
-
-  /* ── Content ──────────────────────────────────────────────────────────── */
-  .nf__content {
-    text-align: center;
-    margin-top: clamp(1.5rem, 4vw, 3rem);
-    max-width: 34rem;
-  }
-  .nf__title {
-    font-family: var(--font-display);
-    font-size: clamp(1.75rem, 5vw, 2.75rem);
-    font-weight: 400;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    color: var(--clr-text);
-    margin: 0 0 0.75rem;
-  }
-  .nf__lede {
-    font-size: clamp(0.95rem, 2vw, 1.0625rem);
-    line-height: 1.6;
-    color: var(--clr-muted);
-    margin: 0 auto 2rem;
-    max-width: 28rem;
-  }
-
-  .nf__actions {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .nf__btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.7em 1.6em;
-    border-radius: 999px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    transition: opacity 0.2s, background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
-  }
-  .nf__btn--primary {
-    background: var(--clr-accent);
-    color: #fff;
-    border: 1px solid var(--clr-accent);
-  }
-  .nf__btn--primary:hover { opacity: 0.88; transform: translateY(-2px); }
-  .nf__btn--ghost {
-    background: transparent;
-    color: var(--clr-text);
-    border: 1px solid var(--clr-border);
-  }
-  .nf__btn--ghost:hover {
-    border-color: var(--clr-text);
-    background: color-mix(in srgb, var(--clr-text) 5%, transparent);
-    transform: translateY(-2px);
-  }
-
-  /* ── Marquee ──────────────────────────────────────────────────────────── */
-  .nf__marquee {
-    position: absolute;
-    bottom: clamp(1.5rem, 5vh, 4rem);
-    left: 0;
-    width: 100%;
-    overflow: hidden;
-    pointer-events: none;
-    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-  }
-  .nf__marquee-track {
-    display: flex;
-    width: max-content;
-    animation: nf-scroll 28s linear infinite;
-  }
-  .nf__marquee-group {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding-right: 1.5rem;
-  }
-  .nf__marquee-group > span {
-    font-family: var(--font-display);
-    font-size: clamp(1.5rem, 4vw, 2.75rem);
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    color: transparent;
-    -webkit-text-stroke: 1px var(--clr-muted);
-    text-stroke: 1px var(--clr-muted);
-    white-space: nowrap;
-    opacity: 0.5;
-  }
-  .nf__marquee-group .nf__dot {
-    -webkit-text-stroke: 0;
-    color: var(--clr-accent);
-    opacity: 0.9;
-  }
-
-  @keyframes nf-scroll {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .nf__marquee-track { animation: none; }
-    .nf__orb { display: none; }
-  }
-
-  @media (max-width: 48em) {
-    .nf { min-height: calc(100svh - 2rem); }
-    .nf__sticker { display: none; }
-  }
+.nf__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-lg);
+}
+.nf__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.6vw, 3rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--clr-text);
+}
+.nf__lede {
+  margin: 0;
+  max-width: 44ch;
+  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+  line-height: 1.6;
+  color: var(--clr-muted);
+}
+.nf__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-sm);
+}
+.nf__btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.85em 1.6em;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.25s;
+}
+.nf__btn--primary {
+  background: var(--clr-accent);
+  color: #fff;
+  border: 1px solid var(--clr-accent);
+}
+.nf__btn--primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.nf__btn--ghost {
+  border: 1px solid var(--clr-border);
+  color: var(--clr-text);
+}
+.nf__btn--ghost:hover { border-color: var(--clr-text); }
 </style>
