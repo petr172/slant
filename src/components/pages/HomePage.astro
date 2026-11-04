@@ -178,10 +178,25 @@ const faqLd = {
           </div>
         )}
         <div class="hero__reel-overlay"></div>
+
+        <!-- Desktop: velký text + tlačítko přes roztažený slider, odhalí se scrollem
+             během pinu. Celý wrap je odkaz na projekty → tlačítko je jen span. -->
+        <div class="hero__reel-copy" aria-hidden="true">
+          <p class="hero__reel-text">
+            {t('home.desc').split(' ').map((w) => <><span class="hero__word">{w}</span>{' '}</>)}
+          </p>
+          <span class="hero__reel-btn">
+            {t('home.cta')}
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
       </div>
     </a>
 
-    <!-- Spodní desc + CTA -->
+    <!-- Spodní desc + CTA — mobil viditelně; na desktopu jen pro čtečky
+         (vizuálně ho nahrazuje text přes slider) -->
     <div class="hero__bot container" id="js-hero-bot">
       <p class="hero__desc">{t('home.desc')}</p>
       <a href={workUrl} class="hero__cta btn-secondary">
@@ -560,9 +575,15 @@ gsap.from('#js-hero-bot', {
       const slide = heroSlides[current]
       const video = slide.dataset.type === 'heroVideo' ? slide.querySelector('video') : null
       if (video) {
+        // Drží, dokud video nedohraje. Pojistka: když se nepřehraje (autoplay
+        // blokovaný, chyba načtení), slider se nezasekne a po čase pokračuje.
+        let finished = false
+        const done = () => { if (!finished) { finished = true; advance() } }
+        video.addEventListener('ended', done, { once: true })
+        const dur = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 10
+        setTimeout(done, dur * 1000 + 1500)
         video.currentTime = 0
-        video.play()
-        video.addEventListener('ended', advance, { once: true })
+        video.play()?.catch(() => setTimeout(done, PHRASE[0].hold))
       } else {
         setTimeout(advance, PHRASE[step % PHRASE.length].hold)
       }
@@ -591,7 +612,13 @@ gsap.from('#js-hero-bot', {
       const CARD_W   = 0.84   // šířka karty vůči šířce wrapu
       const CARD_MAX = 0.82   // max výška karty vůči výšce wrapu
       const RADIUS = 16
-      const EXPAND = 0.75   // část pinu, během které se roztahuje; zbytek = podržení
+      // Časování v rámci pinu (0–1): roztažení → slova jedno po druhém → tlačítko → podržení
+      const EXPAND = 0.4
+      const WORDS_FROM = 0.45, WORDS_TO = 0.78
+      const BTN_FROM = 0.8, BTN_TO = 0.88
+      const words = Array.from(reelWrap.querySelectorAll<HTMLElement>('.hero__word'))
+      const btn = reelWrap.querySelector<HTMLElement>('.hero__reel-btn')
+      const clamp01 = gsap.utils.clamp(0, 1)
       let insetV = 0, insetH = 0, progress = 0
 
       const measure = () => {
@@ -606,6 +633,19 @@ gsap.from('#js-hero-bot', {
         gsap.set(reel, {
           clipPath: `inset(${insetV * k}px ${insetH * k}px ${insetV * k}px ${insetH * k}px round ${RADIUS * k}px)`,
         })
+
+        // Slova: každé se rozsvítí přes ~3 „kroky" → plynulá vlna zleva doprava
+        const t = clamp01((progress - WORDS_FROM) / (WORDS_TO - WORDS_FROM)) * (words.length + 3)
+        words.forEach((w, i) => {
+          const o = clamp01((t - i) / 3)
+          w.style.opacity = String(o)
+          w.style.transform = `translateY(${(1 - o) * 0.25}em)`
+        })
+        if (btn) {
+          const b = clamp01((progress - BTN_FROM) / (BTN_TO - BTN_FROM))
+          btn.style.opacity = String(b)
+          btn.style.transform = `translateY(${(1 - b) * 14}px)`
+        }
       }
       measure()
       setClip()
@@ -617,7 +657,7 @@ gsap.from('#js-hero-bot', {
       ScrollTrigger.create({
         trigger: reelWrap,
         start: 'center center',
-        end: '+=120%',
+        end: '+=220%',
         pin: true,
         pinSpacing: true,
         onRefresh: () => { measure(); setClip() },
@@ -1020,6 +1060,61 @@ gsap.from('#js-hero-bot', {
 }
 
 .hero__cta { flex-shrink: 0; align-self: flex-start; }
+
+/* Text přes slider — jen desktop (na mobilu je slider malý, text je pod ním) */
+.hero__reel-copy { display: none; }
+@media (min-width: 48.0625em) {
+  .hero__bot {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .hero__reel-copy {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-lg);
+    padding: clamp(2.5rem, 6vw, 6rem);
+    color: #fff;
+    pointer-events: none;
+  }
+  .hero__reel-text {
+    margin: 0;
+    max-width: 22ch;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.2vw, 4rem);
+    font-weight: 500;
+    line-height: 1.06;
+    letter-spacing: -0.035em;
+  }
+  .hero__word { display: inline-block; opacity: 0; will-change: opacity, transform; }
+  .hero__reel-btn { opacity: 0; }
+  .hero__reel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.85em 1.6em;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: background 0.25s, color 0.25s, gap 0.25s;
+  }
+  .hero__reel-wrap:hover .hero__reel-btn {
+    background: var(--clr-accent);
+    color: #fff;
+    gap: 0.85rem;
+  }
+}
 
 /* ── Projects ────────────────────────────────────────────────────────── */
 .projects { padding-block: var(--sp-3xl); }
