@@ -136,7 +136,8 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
 
   <!-- DNS prefetch for Sanity CDN -->
   <link rel="dns-prefetch" href="https://cdn.sanity.io" />
-  <link rel="preconnect"   href="https://cdn.sanity.io" crossorigin />
+  <!-- bez crossorigin: obrázky se stahují jako no-cors, jinak by se spojení nevyužilo -->
+  <link rel="preconnect"   href="https://cdn.sanity.io" />
 
   <!-- Theme init — runs before paint to avoid flash -->
   <script is:inline>

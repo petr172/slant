@@ -29,11 +29,12 @@ const cardVideo = Astro.props.cardVideo
 const Heading = (headingLevel === 3 ? 'h3' : 'h2') as 'h2' | 'h3'
 
 // Image sizing per variant
+// Na mobilu má karta šířku okna minus okraje (~4rem) → menší varianty pro 1,5–2× DPR
 const dims = variant === 'wide'
-  ? { width: 1400, height: 800, widths: [700, 1100, 1400], sizes: '(max-width: 768px) 100vw, 70vw' }
+  ? { width: 1400, height: 800, widths: [500, 700, 1000, 1400], sizes: '(max-width: 768px) calc(100vw - 4rem), 70vw' }
   : variant === 'home'
-    ? { width: 900, height: 600, widths: [450, 700, 900], sizes: '(max-width: 768px) 100vw, 40vw' }
-    : { width: 900, height: 600, widths: [400, 700, 900], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw' }
+    ? { width: 900, height: 600, widths: [400, 650, 900], sizes: '(max-width: 768px) calc(100vw - 4rem), 40vw' }
+    : { width: 900, height: 600, widths: [400, 650, 900], sizes: '(max-width: 640px) calc(100vw - 4rem), (max-width: 1024px) 50vw, 33vw' }
 ---
 
 <article class={`case-card case-card--${variant}${cardVideo ? ' case-card--has-video' : ''}`} data-fade>
@@ -47,6 +48,7 @@ const dims = variant === 'wide'
             height={dims.height}
             widths={dims.widths}
             sizes={dims.sizes}
+            quality={78}
             class="case-card__img"
           />
         : <div class="case-card__placeholder" aria-hidden="true" />

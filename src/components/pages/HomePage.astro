@@ -547,8 +547,9 @@ gsap.from('#js-hero-bot', {
     let current = 0
     let step = 0
 
-    // Odložené slidy: doplní src/srcset (viz markup). Po načtení stránky všechny,
-    // pojistkou i těsně před zobrazením, kdyby load ještě nedoběhl.
+    // Odložené slidy: doplní src/srcset (viz markup). Stahují se až při prvním
+    // střihu — kdyby se stahovaly hned po načtení, Lighthouse by jejich ~1,4 MB
+    // (obrázky + video) započítal do LCP prvního obrázku.
     const hydrate = (slide: HTMLElement) => {
       slide.querySelectorAll<HTMLElement>('[data-srcset]').forEach((el) => {
         el.setAttribute('srcset', el.dataset.srcset!); el.removeAttribute('data-srcset')
@@ -557,9 +558,29 @@ gsap.from('#js-hero-bot', {
         el.src = el.dataset.src!; el.removeAttribute('data-src')
       })
     }
-    const hydrateAll = () => heroSlides.forEach(hydrate)
-    if (document.readyState === 'complete') setTimeout(hydrateAll, 0)
-    else window.addEventListener('load', hydrateAll, { once: true })
+    const isVideo = (i: number) => heroSlides[i].dataset.type === 'heroVideo'
+    let imagesHydrated = false
+    // Obrázky všechny naráz (roll jimi rychle proletí), video jen když je na řadě
+    // nebo hned za ním
+    const prepare = (target: number) => {
+      if (!imagesHydrated) {
+        imagesHydrated = true
+        heroSlides.forEach((sl, i) => { if (!isVideo(i)) hydrate(sl) })
+      }
+      hydrate(heroSlides[target])
+      const after = (target + 1) % n
+      if (isVideo(after)) hydrate(heroSlides[after])
+    }
+    // Počkej, až je cílový obrázek stažený (max 1,2 s), ať střih neukáže prázdno
+    const whenReady = (i: number, cb: () => void) => {
+      const img = heroSlides[i].querySelector('img')
+      if (!img || img.complete) { cb(); return }
+      let fired = false
+      const go = () => { if (!fired) { fired = true; cb() } }
+      img.addEventListener('load', go, { once: true })
+      img.addEventListener('error', go, { once: true })
+      setTimeout(go, 1200)
+    }
 
     const show = (i: number) => {
       hydrate(heroSlides[i])
@@ -590,8 +611,11 @@ gsap.from('#js-hero-bot', {
       const beat = PHRASE[step % PHRASE.length]
       step++
       const target = (current + 1) % n
-      if (beat.roll && n > 2) roll(target, scheduleNext)
-      else { show(target); scheduleNext() }
+      prepare(target)
+      whenReady(target, () => {
+        if (beat.roll && n > 2) roll(target, scheduleNext)
+        else { show(target); scheduleNext() }
+      })
     }
 
     function scheduleNext() {
