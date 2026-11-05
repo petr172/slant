@@ -137,16 +137,23 @@ const faqLd = {
         {heroMedia.length > 0 ? heroMedia.map((slide: any, i: number) => (
           <div class={`hero__slide${i === 0 ? ' is-active' : ''}`} data-index={i} data-type={slide._type}>
             {slide._type === 'heroVideo'
-              ? <video src={slide.url} autoplay muted playsinline class="hero__media" />
+              ? (i === 0
+                  ? <video src={slide.url} autoplay muted playsinline class="hero__media" />
+                  : <video data-src={slide.url} preload="none" autoplay muted playsinline class="hero__media" />)
               : slide._type === 'heroExternalImage'
-              ? <picture>
-                  {webpTwin(slide.url) && <source srcset={webpTwin(slide.url)} type="image/webp" />}
-                  <img src={slide.url} alt={slide.alt ?? ''} class="hero__media"
-                       width="1920" height="1080"
-                       loading={i === 0 ? 'eager' : 'lazy'}
-                       fetchpriority={i === 0 ? 'high' : undefined}
-                       decoding={i === 0 ? 'sync' : 'async'} />
-                </picture>
+              ? (i === 0
+                  ? <picture>
+                      {webpTwin(slide.url) && <source srcset={webpTwin(slide.url)} type="image/webp" />}
+                      <img src={slide.url} alt={slide.alt ?? ''} class="hero__media"
+                           width="1920" height="1080" loading="eager" fetchpriority="high" decoding="sync" />
+                    </picture>
+                  /* Další slidy se stáhnou až po načtení stránky (data-src → src ve skriptu),
+                     ať nekonkurují prvnímu obrázku (LCP) o přenos */
+                  : <picture>
+                      {webpTwin(slide.url) && <source data-srcset={webpTwin(slide.url)} type="image/webp" />}
+                      <img data-src={slide.url} alt={slide.alt ?? ''} class="hero__media"
+                           width="1920" height="1080" decoding="async" />
+                    </picture>)
               : <SanityImage
                   image={slide.image}
                   alt={slide.alt ?? ''}
@@ -540,7 +547,22 @@ gsap.from('#js-hero-bot', {
     let current = 0
     let step = 0
 
+    // Odložené slidy: doplní src/srcset (viz markup). Po načtení stránky všechny,
+    // pojistkou i těsně před zobrazením, kdyby load ještě nedoběhl.
+    const hydrate = (slide: HTMLElement) => {
+      slide.querySelectorAll<HTMLElement>('[data-srcset]').forEach((el) => {
+        el.setAttribute('srcset', el.dataset.srcset!); el.removeAttribute('data-srcset')
+      })
+      slide.querySelectorAll<HTMLImageElement | HTMLVideoElement>('[data-src]').forEach((el) => {
+        el.src = el.dataset.src!; el.removeAttribute('data-src')
+      })
+    }
+    const hydrateAll = () => heroSlides.forEach(hydrate)
+    if (document.readyState === 'complete') setTimeout(hydrateAll, 0)
+    else window.addEventListener('load', hydrateAll, { once: true })
+
     const show = (i: number) => {
+      hydrate(heroSlides[i])
       heroSlides[current].classList.remove('is-active')
       current = i
       heroSlides[current].classList.add('is-active')
@@ -651,9 +673,12 @@ gsap.from('#js-hero-bot', {
       measure()
       setClip()
 
-      gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
-      // Entrance: scale 0.9 → 1
-      gsap.to(reelWrap, { scale: 1, duration: 1.4, ease: 'power4.out', delay: 0.4 })
+      // Entrance: scale 0.9 → 1 — jen desktop. Na mobilu by zmenšená karta byla
+      // menší než nadpis a LCP by se započítal až při prvním střihu slideru.
+      if (!isMobile) {
+        gsap.set(reelWrap, { scale: 0.9, transformOrigin: '50% 50%' })
+        gsap.to(reelWrap, { scale: 1, duration: 1.4, ease: 'power4.out', delay: 0.4 })
+      }
 
       ScrollTrigger.create({
         trigger: reelWrap,

@@ -1085,13 +1085,16 @@ main { padding-top: 5rem; }
 .site-footer__legal {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0;
   font-size: 0.75rem;
   color: color-mix(in srgb, var(--clr-bg) 60%, transparent);
   line-height: 1.5;
 }
 
 .site-footer__legal { margin-left: auto; align-items: flex-end; }
+/* min. 24px vysoká klikací plocha (WCAG target size) */
+.site-footer__legal a,
+.site-footer__legal-btn { display: inline-block; padding-block: 0.2rem; }
 .site-footer__legal a {
   color: color-mix(in srgb, var(--clr-bg) 60%, transparent);
   transition: color 0.2s;
