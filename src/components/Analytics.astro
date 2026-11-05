@@ -161,7 +161,10 @@ const t = {
         if (consent) {
           if (consent.analytics) loadAnalytics()
         } else {
-          showBanner('main')
+          // Až po načtení fontů: přepnutí fontu by lištu (ukotvenou dole) přeskládalo → CLS
+          const fontsReady = document.fonts?.ready ?? Promise.resolve()
+          Promise.race([fontsReady, new Promise((r) => setTimeout(r, 2500))])
+            .then(() => setTimeout(() => showBanner('main'), 600))
         }
 
         // First layer — reject & accept equally easy

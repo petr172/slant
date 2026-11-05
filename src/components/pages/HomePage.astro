@@ -4,6 +4,7 @@ import SanityImage from '../SanityImage.astro'
 import CaseStudyCard from '../CaseStudyCard.astro'
 import ContactCta from '../ContactCta.astro'
 import TrustWall from '../TrustWall.astro'
+import { existsSync } from 'node:fs'
 import { client } from '../../lib/sanity'
 import { buildChipPreviews } from '../../lib/chipPreviews'
 import { ALL_CASE_STUDIES_QUERY, SITE_SETTINGS_QUERY, FEATURED_BLOG_POSTS_QUERY } from '../../lib/queries'
@@ -17,6 +18,12 @@ const allProjects = await client.fetch(ALL_CASE_STUDIES_QUERY)
 const siteSettings = await client.fetch(SITE_SETTINGS_QUERY)
 const blogPosts    = await client.fetch(FEATURED_BLOG_POSTS_QUERY)
 const heroMedia: any[] = siteSettings?.heroMedia ?? []
+// Lokální hero obrázek (/slider-x.jpg) → má-li v public/ .webp dvojče, nabídneme ho přes <picture>
+const webpTwin = (url: string) => {
+  if (!/^\/[^?#]+\.jpe?g$/i.test(url ?? '')) return null
+  const webp = url.replace(/\.jpe?g$/i, '.webp')
+  return existsSync(`public${webp}`) ? webp : null
+}
 
 const workUrl      = lang === 'cs' ? '/work'  : '/en/work'
 const alternateUrl = lang === 'cs' ? '/en'    : '/'
@@ -125,14 +132,21 @@ const faqLd = {
   </div>
 
   <!-- Video kontejner — clip-path se rozevře při scrollu -->
-    <a href={workUrl} class="hero__reel-wrap" id="js-reel-wrap" aria-label={lang === 'cs' ? 'Zobrazit práce' : 'View work'}>
+    <a href={workUrl} class="hero__reel-wrap is-expandable" id="js-reel-wrap" aria-label={lang === 'cs' ? 'Zobrazit práce' : 'View work'}>
       <div class="hero__reel" id="js-reel">
         {heroMedia.length > 0 ? heroMedia.map((slide: any, i: number) => (
           <div class={`hero__slide${i === 0 ? ' is-active' : ''}`} data-index={i} data-type={slide._type}>
             {slide._type === 'heroVideo'
               ? <video src={slide.url} autoplay muted playsinline class="hero__media" />
               : slide._type === 'heroExternalImage'
-              ? <img src={slide.url} alt={slide.alt ?? ''} class="hero__media" loading={i === 0 ? 'eager' : 'lazy'} />
+              ? <picture>
+                  {webpTwin(slide.url) && <source srcset={webpTwin(slide.url)} type="image/webp" />}
+                  <img src={slide.url} alt={slide.alt ?? ''} class="hero__media"
+                       width="1920" height="1080"
+                       loading={i === 0 ? 'eager' : 'lazy'}
+                       fetchpriority={i === 0 ? 'high' : undefined}
+                       decoding={i === 0 ? 'sync' : 'async'} />
+                </picture>
               : <SanityImage
                   image={slide.image}
                   alt={slide.alt ?? ''}
@@ -985,6 +999,18 @@ gsap.from('#js-hero-bot', {
   pointer-events: none;
 }
 .hero__reel-wrap.is-expandable .hero__reel { pointer-events: auto; }
+/* Výchozí ořez karty ještě před JS (stejná geometrie jako measure() ve skriptu),
+   aby první vykreslení neukázalo obrázek přes celou obrazovku */
+.hero__reel-wrap.is-expandable .hero__reel {
+  --card-h: min(84vw * 0.5625, 82svh);
+  clip-path: inset(calc((100svh - var(--card-h)) / 2) 8vw round 16px);
+}
+@media (max-width: 48em) {
+  .hero__reel-wrap.is-expandable .hero__reel {
+    --card-h: min(90vw * 0.75, 82svh);
+    clip-path: inset(24px 5vw calc(100svh - 24px - var(--card-h)) 5vw round 16px);
+  }
+}
 
 .hero__slide {
   position: absolute;

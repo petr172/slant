@@ -7,6 +7,8 @@ import cloudflare from '@astrojs/cloudflare'
 export default defineConfig({
   site: 'https://slant.cz',
   output: 'static',
+  // CSS přímo v HTML → žádný render-blocking request (styly mají jen ~17 KB)
+  build: { inlineStylesheets: 'always' },
   adapter: cloudflare({ imageService: 'passthrough' }),
 
   // Prefetch všech interních odkazů při hover
