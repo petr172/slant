@@ -1181,7 +1181,8 @@ gsap.from('#js-hero-bot', {
 
 /* Mobil: menší text a odsazení přes roztažený obrázek */
 @media (max-width: 48em) {
-  .hero__reel-copy { padding: var(--sp-lg) var(--sp-lg) calc(var(--sp-xl) + env(safe-area-inset-bottom)); gap: var(--sp-md); }
+  /* Spodní odsazení nad plovoucí kuličkou (FloatBadge: 70px + 1.25rem odspodu) */
+  .hero__reel-copy { padding: var(--sp-lg) var(--sp-lg) calc(8.5rem + env(safe-area-inset-bottom)); gap: var(--sp-md); }
   .hero__reel-text { font-size: clamp(1.75rem, 8vw, 2.4rem); max-width: 16ch; }
   .hero__reel-btn { font-size: 0.875rem; }
 }
