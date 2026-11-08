@@ -181,9 +181,9 @@ function internalEmailHtml(name: string, email: string, services: string[], mess
     <h2 style="margin:0 0 16px">Nová poptávka z webu</h2>
     <p style="margin:0 0 6px"><strong>Jméno:</strong> ${esc(name)}</p>
     <p style="margin:0 0 6px"><strong>E-mail:</strong> <a href="mailto:${esc(email)}">${esc(email)}</a></p>
-    <p style="margin:0 0 6px"><strong>Služby:</strong> ${esc(services.join(', ') || '—')}</p>
+    <p style="margin:0 0 6px"><strong>Služby:</strong> ${esc(services.join(', ') || 'neuvedeno')}</p>
     <p style="margin:16px 0 4px"><strong>Zpráva:</strong></p>
-    <p style="margin:0;white-space:pre-wrap">${esc(message || '—')}</p>
+    <p style="margin:0;white-space:pre-wrap">${esc(message || 'neuvedeno')}</p>
   </div>`
 }
 
@@ -263,7 +263,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       from: RESEND_FROM,
       to: CONTACT_TO,
       reply_to: email,
-      subject: `Nová poptávka — ${name}`,
+      subject: `Nová poptávka: ${name}`,
       html: internalEmailHtml(name, email, services, message),
       ...(attachments && { attachments }),
     })
@@ -273,7 +273,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       from: RESEND_FROM,
       to: email,
       reply_to: CONTACT_TO, // odpověď klienta jde rovnou nám
-      subject: lang === 'cs' ? 'Vaše zpráva dorazila — Slant' : 'Your message has arrived — Slant',
+      subject: lang === 'cs' ? 'Vaše zpráva dorazila | Slant' : 'Your message has arrived | Slant',
       html: leadEmailHtml(
         { name, email, services, message, attachmentName: attachments?.[0]?.filename },
         lang,

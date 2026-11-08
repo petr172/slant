@@ -10,13 +10,13 @@ const featured: any[] = ((await client.fetch(FEATURED_CASE_STUDIES_QUERY)) ?? []
 
 <!-- 404 je jediná statická stránka pro / i /en/* → jazyk se přepíná podle URL (skript níže).
      alternateUrl zapne přepínač jazyka v navigaci; přesný cíl doplní skript. -->
-<Layout title="404" description="Stránka nenalezena — Slant" lang="cs" alternateUrl="/en">
+<Layout title="404" description="Stránka nenalezena | Slant" lang="cs" alternateUrl="/en">
   <section class="nf container">
     <header class="nf__head">
       <span class="nf__code">404</span>
       <h1 class="nf__title" data-en="Oops, nothing here.">Jejda, tady nic není.</h1>
-      <p class="nf__lede" data-en="The page doesn’t exist or has moved. Since you’re here — fancy a quick game of tic-tac-toe?">
-        Stránka neexistuje, nebo se přesunula. Když už jste tady — dáte si partičku piškvorek?
+      <p class="nf__lede" data-en="The page doesn’t exist or has moved. Since you’re here, fancy a quick game of tic-tac-toe?">
+        Stránka neexistuje, nebo se přesunula. Když už jste tady, dáte si partičku piškvorek?
       </p>
     </header>
 

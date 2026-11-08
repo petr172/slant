@@ -45,7 +45,7 @@ const t = {
     errEmail: 'Zadejte platný e-mail.',
     errCaptcha: 'Potvrďte prosím, že nejste robot.',
     errSend: 'Něco se pokazilo. Zkuste to prosím znovu nebo napište na petr@slant.cz.',
-    none: '—',
+    none: 'Neuvedeno',
     modeWrite: 'Napište nám',
     modeCall: 'Rezervovat call',
     modeInfo: 'Kontaktní údaje',
@@ -64,7 +64,7 @@ const t = {
     callHeading: 'Vyberte si termín',
     callSub: '30 minut · Google Meet · Europe/Prague',
     callLoading: 'Načítám volné termíny…',
-    callEmpty: 'Teď nemáme volný žádný termín. Napište nám — ozveme se.',
+    callEmpty: 'Teď nemáme volný žádný termín. Napište nám a ozveme se.',
     callError: 'Termíny se nepodařilo načíst. Zkuste to znovu, nebo nám napište.',
     callTaken: 'Tenhle termín si někdo právě zabral. Vyberte prosím jiný.',
     callDetailHeading: 'Kdo se s námi potká?',
@@ -106,7 +106,7 @@ const t = {
     errEmail: 'Please enter a valid email.',
     errCaptcha: 'Please confirm you are not a robot.',
     errSend: 'Something went wrong. Please try again or email petr@slant.cz.',
-    none: '—',
+    none: 'Not provided',
     modeWrite: 'Write to us',
     modeCall: 'Book a call',
     modeInfo: 'Contact details',
@@ -125,7 +125,7 @@ const t = {
     callHeading: 'Pick a time',
     callSub: '30 minutes · Google Meet · Europe/Prague',
     callLoading: 'Loading available times…',
-    callEmpty: 'No open slots right now. Drop us a line instead — we’ll get back to you.',
+    callEmpty: 'No open slots right now. Drop us a line instead and we’ll get back to you.',
     callError: 'Couldn’t load available times. Try again, or write to us.',
     callTaken: 'Someone just grabbed that slot. Please pick another one.',
     callDetailHeading: 'Who are we meeting?',
@@ -495,7 +495,7 @@ const t = {
   })
 
   function buildSummary() {
-    const none = isEn() ? '—' : '—'
+    const none = isEn() ? 'Not provided' : 'Neuvedeno'
     const set = (k: string, v: string) => {
       const el = modal.querySelector(`[data-sum="${k}"]`); if (el) el.textContent = v || none
     }
@@ -583,8 +583,8 @@ const t = {
   const callDone   = document.getElementById('call-done') as HTMLButtonElement | null
 
   const ct = () => (isEn()
-    ? { loading: 'Loading available times…', empty: 'No open slots right now. Drop us a line instead — we’ll get back to you.', error: 'Couldn’t load available times. Try again, or write to us.', taken: 'Someone just grabbed that slot. Please pick another one.' }
-    : { loading: 'Načítám volné termíny…', empty: 'Teď nemáme volný žádný termín. Napište nám — ozveme se.', error: 'Termíny se nepodařilo načíst. Zkuste to znovu, nebo nám napište.', taken: 'Tenhle termín si někdo právě zabral. Vyberte prosím jiný.' })
+    ? { loading: 'Loading available times…', empty: 'No open slots right now. Drop us a line instead and we’ll get back to you.', error: 'Couldn’t load available times. Try again, or write to us.', taken: 'Someone just grabbed that slot. Please pick another one.' }
+    : { loading: 'Načítám volné termíny…', empty: 'Teď nemáme volný žádný termín. Napište nám a ozveme se.', error: 'Termíny se nepodařilo načíst. Zkuste to znovu, nebo nám napište.', taken: 'Tenhle termín si někdo právě zabral. Vyberte prosím jiný.' })
 
   type SlotDay = { date: string; slots: Array<{ start: string; label: string }> }
   let slotDays: SlotDay[] = []

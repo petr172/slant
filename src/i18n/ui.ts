@@ -26,10 +26,10 @@ export const ui = {
     'home.collab':    'Pojďme spolupracovat',
     'home.contact.headline': 'Máte projekt?<br>Ozvěte se.',
 
-    'meta.home.title': 'Slant — Branding & UX Studio',
+    'meta.home.title': 'Slant | Branding & UX Studio',
     'meta.home.desc':  'Branding & UX studio z Brna. Tvoříme vizuální identity, naming a digitální zážitky pro ambiciózní značky.',
     'meta.work.title': 'Práce',
-    'meta.work.desc':  'Vybrané projekty studia Slant — branding, naming, webdesign, obalový a grafický design.',
+    'meta.work.desc':  'Vybrané projekty studia Slant: branding, naming, webdesign, obalový a grafický design.',
 
     'cs.client':   'Klient',
     'cs.year':     'Rok',
@@ -56,10 +56,10 @@ export const ui = {
     'home.collab':    'Let\'s work together',
     'home.contact.headline': 'Got a project?<br>Get in touch.',
 
-    'meta.home.title': 'Slant — Branding & UX Studio',
+    'meta.home.title': 'Slant | Branding & UX Studio',
     'meta.home.desc':  'Branding & UX studio based in Brno, Czech Republic. We create visual identities, naming and digital experiences for ambitious brands.',
     'meta.work.title': 'Work',
-    'meta.work.desc':  'Selected work by Slant — branding, naming, web design, packaging and graphic design.',
+    'meta.work.desc':  'Selected work by Slant: branding, naming, web design, packaging and graphic design.',
 
     'cs.client':   'Client',
     'cs.year':     'Year',

@@ -269,7 +269,7 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ success: false, code: 'taken', message: 'Slot already taken' }, 409)
     }
 
-    const summary = lang === 'en' ? `Discovery call — ${name} × Slant` : `Discovery call — ${name} × Slant`
+    const summary = lang === 'en' ? `Discovery call: ${name} × Slant` : `Discovery call: ${name} × Slant`
     const description = [
       lang === 'en' ? '30-minute intro call booked via slant.cz.' : '30minutový úvodní hovor rezervovaný přes slant.cz.',
       note ? `\n${lang === 'en' ? 'Note' : 'Poznámka'}: ${note}` : '',

@@ -37,7 +37,7 @@ export const GET: APIRoute = async () => {
 
   const body = `# Slant
 
-> Independent branding & UX design studio based in Brno, Czech Republic. We create visual identities, naming, UX/UI and design systems for ambitious brands — in Czech and English.
+> Independent branding & UX design studio based in Brno, Czech Republic. We create visual identities, naming, UX/UI and design systems for ambitious brands, in Czech and English.
 
 Slant s.r.o., founded 2019. Zborovská 940/2a, 616 00 Brno, Czech Republic. Company ID (IČO): 092 50 239. We work with clients across Central Europe and remotely abroad.
 

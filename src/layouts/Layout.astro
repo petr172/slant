@@ -17,12 +17,15 @@ interface Props {
 
 const {
   title,
-  description = 'Slant — Branding & UX Studio',
+  description = 'Slant | Branding & UX Studio',
   ogImage,
   lang = 'cs',
   alternateUrl,
   extraLd,
 } = Astro.props
+
+// Titulek, který už „Slant“ obsahuje (homepage, blog), nedostane značku podruhé
+const fullTitle = /\bSlant\b/.test(title) ? title : `${title} | Slant`
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site)
 const alternateLang = lang === 'cs' ? 'en' : 'cs'
@@ -91,7 +94,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf9f7" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0c0c0b" />
 
-  <title>{title} | Slant</title>
+  <title>{fullTitle}</title>
   <meta name="description" content={description} />
   <meta name="author" content="Slant s.r.o." />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -108,7 +111,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   <!-- Open Graph -->
   <meta property="og:site_name"   content="Slant" />
   <meta property="og:locale"      content={lang === 'cs' ? 'cs_CZ' : 'en_US'} />
-  <meta property="og:title"       content={`${title} | Slant`} />
+  <meta property="og:title"       content={fullTitle} />
   <meta property="og:description" content={description} />
   <meta property="og:url"         content={canonicalURL} />
   <meta property="og:type"        content="website" />
@@ -119,7 +122,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   <!-- Twitter / X -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:site"        content="@slantcz" />
-  <meta name="twitter:title"       content={`${title} | Slant`} />
+  <meta name="twitter:title"       content={fullTitle} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image"       content={ogImage ?? defaultOgImage} />
 
@@ -184,7 +187,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
   <header class="island-nav-wrap">
     <nav class="island-nav" aria-label={lang === 'cs' ? 'Hlavní navigace' : 'Main navigation'}>
       <!-- Logo -->
-      <a href={logoHref} class="island-nav__logo" aria-label="Slant — home">
+      <a href={logoHref} class="island-nav__logo" aria-label="Slant">
         <img src="/logo.svg" alt="Slant" class="island-nav__logo-img" width="64" height="20" />
       </a>
 
@@ -274,7 +277,7 @@ const logoHref   = lang === 'cs' ? '/'         : '/en'
 
         <!-- Top row: logo left · nav + social right -->
         <div class="site-footer__top">
-          <a href={logoHref} class="site-footer__logo" aria-label="Slant — home">
+          <a href={logoHref} class="site-footer__logo" aria-label="Slant">
             <img src="/logo.svg" alt="Slant" class="site-footer__logo-img" width="200" height="62" />
           </a>
           <div class="site-footer__links">
